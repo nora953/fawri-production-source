@@ -1,4 +1,5 @@
 name: V1 G2-C three production LOGINs and minimal grants (OWNER OPT-IN)
+# Owner-confirmed one-time G2-C activation; exact actor, commit and opt-in guards remain enforced.
 on:
   pull_request:
     paths:
