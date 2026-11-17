@@ -1,0 +1,63 @@
+name: FAWRI V1 owner administrator one-time bootstrap (owner opt-in)
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/v1-owner-admin-bootstrap.yml"
+      - "artifacts/api-server/scripts/v1-owner-admin-bootstrap.ts"
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - ".github/workflows/v1-owner-admin-bootstrap.yml"
+      - "artifacts/api-server/scripts/v1-owner-admin-bootstrap.ts"
+permissions:
+  contents: read
+concurrency:
+  group: fawri-v1-owner-admin-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  source-safety:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Only offline validation
+        run: |
+          node --check scripts/lib/v1-owner-admin-bootstrap-safety.mjs
+          node --test scripts/tests/v1-owner-admin-bootstrap-safety.test.mjs
+  real-one-time-owner:
+    needs: source-safety
+    if: >-
+      github.event_name == 'push'
+      && github.repository == 'nora953/fawri-production-source'
+      && github.actor == 'nora953'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+      && github.event.head_commit.message == 'FAWRI_V1_OWNER_AUTHORIZED_OWNER_ADMIN_BOOTSTRAP'
+      && vars.FAWRI_V1_OWNER_ADMIN_BOOTSTRAP_ENABLED == '1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FAWRI_V1_OWNER_ADMIN_BOOTSTRAP_ENABLED: ${{ vars.FAWRI_V1_OWNER_ADMIN_BOOTSTRAP_ENABLED }}
+      FAWRI_V1_OWNER_ADMIN_BOOTSTRAP_COMMIT: ${{ github.event.head_commit.message }}
+      FAWRI_V1_G2B_RECEIPT: G2B-20261116-SCHEMA54-43852308674
+      FAWRI_V1_G2C_RECEIPT: G2C-20261116-THREE-LOGIN-43917539519
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - run: corepack enable && pnpm install --frozen-lockfile --ignore-scripts
+      - name: Provision a single owner from private GitHub secret values
+        env:
+          FAWRI_V1_PRODUCTION_PREWRITE_DUMP_URL: ${{ secrets.FAWRI_V1_PRODUCTION_PREWRITE_DUMP_URL }}
+          FAWRI_V1_G2_TENANT_LOGIN_PASSWORD: ${{ secrets.FAWRI_V1_G2_TENANT_LOGIN_PASSWORD }}
+          FAWRI_V1_G2_AUTH_LOGIN_PASSWORD: ${{ secrets.FAWRI_V1_G2_AUTH_LOGIN_PASSWORD }}
+          FAWRI_V1_OWNER_ADMIN_PHONE: ${{ secrets.FAWRI_V1_OWNER_ADMIN_PHONE }}
+          FAWRI_V1_OWNER_ADMIN_PASSWORD: ${{ secrets.FAWRI_V1_OWNER_ADMIN_PASSWORD }}
+          FAWRI_V1_OWNER_ADMIN_PASSWORD_SALT: ${{ secrets.FAWRI_V1_OWNER_ADMIN_PASSWORD_SALT }}
+        run: pnpm exec tsx artifacts/api-server/scripts/v1-owner-admin-bootstrap.ts
