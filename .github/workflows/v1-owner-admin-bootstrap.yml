@@ -1,5 +1,6 @@
 name: FAWRI V1 owner administrator one-time bootstrap (owner opt-in)
 # FAWRI owner one-time execution consent received; see issue 553.
+# V1 safe per-field diagnostic retry after no-write input rejection.
 on:
   pull_request:
     paths:
