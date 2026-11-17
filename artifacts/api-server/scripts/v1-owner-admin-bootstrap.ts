@@ -1,4 +1,5 @@
 /**
+ * Owner phone correction approved 2026-11-17.
  * One-shot gated V1 owner bootstrap. Logs only approved status codes.
  * All database sessions authenticate as the least-privilege auth role.
  * Never emit passwords, phone, pepper, hashes or connection URLs.
