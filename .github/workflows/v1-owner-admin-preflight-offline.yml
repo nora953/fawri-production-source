@@ -4,6 +4,7 @@ on:
     paths:
       - "scripts/lib/v1-owner-admin-bootstrap-safety.mjs"
       - "scripts/tests/v1-owner-admin-bootstrap-safety.test.mjs"
+      - "artifacts/api-server/scripts/v1-owner-admin-bootstrap.ts"
       - ".github/workflows/v1-owner-admin-preflight-offline.yml"
   push:
     branches:
@@ -11,6 +12,7 @@ on:
     paths:
       - "scripts/lib/v1-owner-admin-bootstrap-safety.mjs"
       - "scripts/tests/v1-owner-admin-bootstrap-safety.test.mjs"
+      - "artifacts/api-server/scripts/v1-owner-admin-bootstrap.ts"
       - ".github/workflows/v1-owner-admin-preflight-offline.yml"
 permissions:
   contents: read
@@ -23,7 +25,11 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
       - name: Validate owner bootstrap source auth / target / credential negative guards
         run: |
           node --check scripts/lib/v1-owner-admin-bootstrap-safety.mjs
+          node --check artifacts/api-server/scripts/v1-owner-admin-bootstrap.ts
           node --test scripts/tests/v1-owner-admin-bootstrap-safety.test.mjs
