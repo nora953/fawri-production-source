@@ -61,8 +61,11 @@ services:
         value: v1-g3-gated
       - key: FAWRI_AUTH_SECURITY_SECRET
         generateValue: true
+      # Admin bootstrap hashes depend on this pepper. Must be the SAME
+      # privately retained value used during the one-shot GitHub bootstrap;
+      # never generate a different value during Render provisioning.
       - key: FAWRI_PASSWORD_SALT
-        generateValue: true
+        sync: false
       - key: FAWRI_OBSERVABILITY_BEARER_TOKEN
         generateValue: true
       - key: DATABASE_URL
@@ -73,5 +76,7 @@ services:
         sync: false
       - key: FAWRI_ALLOWED_ORIGINS
         sync: false
+      # Deterministic source policy is non-secret and does NOT constitute GO.
+      # The live Neon tenant RLS + backup and app startup gates still decide.
       - key: FAWRI_FIRST_COMMERCIAL_SOURCE_MANIFEST_JSON
-        sync: false
+        value: '{"intent":"first_commercial_launch","project_id":"crimson-cherry-65705041","target_branch_id":"br-holy-waterfall-b993zglb","source_mode":"fresh_schema_migrations_only","source_branch_id":null,"source_backup_id":null,"data_import_requested":false,"restore_requested":false}'

@@ -1,0 +1,29 @@
+name: FAWRI V1 Render source-build and owner-salt guards (offline only)
+on:
+  pull_request:
+    paths:
+      - Dockerfile.staging
+      - render.yaml
+      - scripts/tests/v1-render-preflight-source.test.mjs
+      - .github/workflows/v1-render-preflight-source.yml
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - Dockerfile.staging
+      - render.yaml
+      - scripts/tests/v1-render-preflight-source.test.mjs
+      - .github/workflows/v1-render-preflight-source.yml
+permissions:
+  contents: read
+jobs:
+  check-no-deploy:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify manual-only build, persistent salt, no public deploy and source manifest
+        run: node --test scripts/tests/v1-render-preflight-source.test.mjs
