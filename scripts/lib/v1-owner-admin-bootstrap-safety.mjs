@@ -59,12 +59,18 @@ export function assertV1OwnerSecretInputs(env=process.env){
   const phone=String(env.FAWRI_V1_OWNER_ADMIN_PHONE||"").trim();
   const pwd=String(env.FAWRI_V1_OWNER_ADMIN_PASSWORD||"");
   const salt=String(env.FAWRI_V1_OWNER_ADMIN_PASSWORD_SALT||"");
-  if(!/^\+[1-9]\d{7,14}$/.test(phone) ||
-    pwd.length<12||pwd.length>128 ||
+  // Only a non-sensitive field CODE is emitted. Never print actual values,
+  // whether present/absent, approximate length, characters or masks.
+  if(!/^\+[1-9]\d{7,14}$/.test(phone)) {
+    fail("V1_OWNER_BOOTSTRAP_PHONE_INVALID");
+  }
+  if(pwd.length<12||pwd.length>128 ||
     !/^[A-Za-z0-9@#$%&!_-]+$/.test(pwd)||
-    !/[A-Z]/.test(pwd)||!/[0-9]/.test(pwd)||
-    salt.length<32||salt.length>256||phone===pwd||pwd===salt){
-    fail("V1_OWNER_BOOTSTRAP_INPUTS_INVALID");
+    !/[A-Z]/.test(pwd)||!/[0-9]/.test(pwd)) {
+    fail("V1_OWNER_BOOTSTRAP_PASSWORD_INVALID");
+  }
+  if(salt.length<32||salt.length>256||phone===pwd||pwd===salt) {
+    fail("V1_OWNER_BOOTSTRAP_PEPPER_INVALID");
   }
   if(!env.FAWRI_V1_G2_TENANT_LOGIN_PASSWORD ||
      !env.FAWRI_V1_G2_AUTH_LOGIN_PASSWORD ||
