@@ -1,0 +1,29 @@
+name: FAWRI V1 owner bootstrap source preflight (OFFLINE ONLY)
+on:
+  pull_request:
+    paths:
+      - "scripts/lib/v1-owner-admin-bootstrap-safety.mjs"
+      - "scripts/tests/v1-owner-admin-bootstrap-safety.test.mjs"
+      - ".github/workflows/v1-owner-admin-preflight-offline.yml"
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - "scripts/lib/v1-owner-admin-bootstrap-safety.mjs"
+      - "scripts/tests/v1-owner-admin-bootstrap-safety.test.mjs"
+      - ".github/workflows/v1-owner-admin-preflight-offline.yml"
+permissions:
+  contents: read
+jobs:
+  offline-bootstrap-auth-and-credential-negatives:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Validate owner bootstrap source auth / target / credential negative guards
+        run: |
+          node --check scripts/lib/v1-owner-admin-bootstrap-safety.mjs
+          node --test scripts/tests/v1-owner-admin-bootstrap-safety.test.mjs
