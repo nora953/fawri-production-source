@@ -1,4 +1,5 @@
 name: V1 production 54-stage POSTSCHEMA encrypted backup (OWNER OPT-IN)
+# Fresh owner-reported one-shot opt-in for encrypted post-schema54 export; exact target and safety checks retained.
 on:
   pull_request:
     paths:
