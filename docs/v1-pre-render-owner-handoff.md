@@ -20,3 +20,16 @@ Status 2026-11-17: **no paid Render service and no public launch**.
 3. Recheck hosted-ready startup contract **without customer HTTP**; then ask owner to add a payment method only when actual Render build/startup and first merchant E2E tests are next. Before approving a paid Blueprint, review exact pricing/changes.
 
 G2 two-merchant HTTP/SQL proof, G3 Render deployment and restart media, G4 full manual-merchant journey, G5 post-user-data/media backup restoration and stability, and G6 domain remain **NO-GO**.
+
+
+## 2026-11-17 — Actual no-cost source work, verified
+- [Commercial Render source contract #44049029653](https://github.com/nora953/fawri-production-source/actions/runs/44049029653): PASS. Commercial UI is compiled with the V1 manual-only flag; Render password pepper is now a required `sync:false` private secret and therefore must be the same value as at initial admin bootstrap. The FIELD002 source manifest is pinned to the new Neon branch with no historical import.
+- [Restricted owner-bootstrap offline negative tests #44049987704](https://github.com/nora953/fawri-production-source/actions/runs/44049987704): PASS. These test source authorization/target/credential rules only, **NOT** creation of a production admin. Production owner account remains absent. There is no automatic secret/provisioning job authorized.
+- [Full Docker image build smoke #44050328442](https://github.com/nora953/fawri-production-source/actions/runs/44050328442) checks compilation of React + API and absence of `cashier.html` from the runtime image. Do not close this checkpoint before the actual workflow conclusion is SUCCESS.
+
+## Secure owner setup handoff
+The existing legitimate provisioning command is `pnpm --dir artifacts/api-server provision:owner-admin --phone <E164> --display-name <owner-display-name>` in a **trusted private shell** with `NODE_ENV=production`, `FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=required`, separate least-privilege tenant/auth Postgres URLs targeting the approved commercial Neon branch, and one stable private `FAWRI_PASSWORD_SALT` (32+ characters). The owner password must be supplied to **stdin only**, not a command-line argument or recorded log. Do not use owner/superuser URL for application SQL. Preserve a private copy of the pepper because a different Render value invalidates verification of scrypt password hashes.
+
+Before activating this transaction, insist on a separately authorized one-time private environment, confirm current Neon owner/admin count is 0 and auth issuer can INSERT account/admin profile, then verify exactly one owner/admin and no unintended merchant/order data changed. Do not fake successful provisioning, and do not create an active administrator with a placeholder phone/password. When there is no approved private execution environment, defer this particular credential write, not its security checks.
+
+No paid Render service, new account, tenant test data, or domain cutover created as part of this preparation.
