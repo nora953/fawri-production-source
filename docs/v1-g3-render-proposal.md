@@ -42,3 +42,11 @@ Checkpoint: 2026-11-16. Connected Render workspace: `Noor's workspace` (`tea-db3
 - G3 blueprint file and plan **source only**; G3 hosted service/disk/secrets/healthcheck not yet accepted.
 - G4/G5/G6 open, release **NO-GO**, PR remains draft.
 - Never rerun the accepted G2 role/54-stage migrations or change app roles just to make Render start.
+
+
+### Offsite encrypted artifact accepted (2026-11-17, no production writes)
+- The owner reported the one-shot GitHub Actions variable `FAWRI_V1_POSTSCHEMA_BACKUP_ENABLED` reverted to `0`. Repo variables cannot be independently read through the GitHub connector.
+- Downloaded the exact encrypted ZIP artifact `14286090103` from successful run `43985533445`, inspected both ZIP entries (`fawri-v1-production-postschema54.pgcustom.enc` and `manifest.json`), verified ZIP CRC integrity and its GitHub-provided SHA-256 `b4fe2bb90244d6a77e73671a7f60f9214f111014b1b91e30e6a8aa55baed233b`. Encrypted payload SHA-256 matched manifest: `0273f25e7d818a9e1e79b5c82597050d5ffcad634d71e484cc859d77bfa9a230`.
+- Uploaded the **encrypted ZIP only**, never the passphrase or plaintext PostgreSQL dump, to the connected owner's private Google Drive. Verified Drive owner-only sharing metadata (`shared=false`, owner permission only), size `643652` bytes, re-downloaded the stored ZIP and matched the full SHA-256 `b4fe2bb90244d6a77e73671a7f60f9214f111014b1b91e30e6a8aa55baed233b`, ZIP integrity OK.
+- **Do not publish the private Drive link or encryption passphrase in repository documentation.** Offsite encrypted DB archive transfer/readback now **PASS** for fresh empty 54-stage baseline. Actual runtime+media restoration, credentials/global-role reconstruction and live customer data backup policy remain G5 **OPEN**.
+- Existing held hash-pinned `v1_pos_off_merchant_deletion_guard.sql` is still **NOT applied** to Neon. Separate explicit owner permission for this production DDL remains required before G3 startup.
