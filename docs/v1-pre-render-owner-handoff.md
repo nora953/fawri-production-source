@@ -33,3 +33,16 @@ The existing legitimate provisioning command is `pnpm --dir artifacts/api-server
 Before activating this transaction, insist on a separately authorized one-time private environment, confirm current Neon owner/admin count is 0 and auth issuer can INSERT account/admin profile, then verify exactly one owner/admin and no unintended merchant/order data changed. Do not fake successful provisioning, and do not create an active administrator with a placeholder phone/password. When there is no approved private execution environment, defer this particular credential write, not its security checks.
 
 No paid Render service, new account, tenant test data, or domain cutover created as part of this preparation.
+
+
+## 2026-11-17 — owner saved private secrets; bootstrap source approved for offline inspection only
+
+The owner reported saving `FAWRI_V1_OWNER_ADMIN_PHONE`, `FAWRI_V1_OWNER_ADMIN_PASSWORD` and `FAWRI_V1_OWNER_ADMIN_PASSWORD_SALT` to private GitHub Actions secrets. The connected GitHub app cannot read the secret values, and **the owner account has NOT been created**.
+
+A one-shot source-only TypeScript bootstrap was added at `artifacts/api-server/scripts/v1-owner-admin-bootstrap.ts` (commit `dbb07734`). It checks the existing owner-actor/branch/one-shot opt-in and G2B/G2C acceptance, derives limited auth/tenant URLs from existing protected source and passwords, authenticates only as `fawri_auth_issuer`, asserts zero owners / no phone collision, invokes the audited `provisionOwnerAdminPostgres` singleton transaction, and emits only sanitized status codes. It requires a separate, authorized private execution path; merely committing it does not execute it.
+
+[Offline CI run #44055694071](https://github.com/nora953/fawri-production-source/actions/runs/44055694071) **SUCCESS**, checking the script syntax and previously accepted negative source-authorization/role/credential tests; actual production provisioning **not executed**. A new production bootstrap GitHub Actions job is **not installed**. Do not claim source-only guard proof is production acceptance.
+
+Latest independent commercial Neon read-only query: `owner_count=0`, `account_count=0`, `merchant_count=0`, and `migrations=54`. Preserved state: NO-GO, no changes to commercial records, no paid Render service.
+
+**Unresolved:** secure permitted one-shot execution of the prepared bootstrap with private stored secrets (which cannot be retrieved into chat) and explicit owner approval. Once executed, verify `ownerCount=usableOwnerCount=1` and keep the exact stored pepper for later Render `FAWRI_PASSWORD_SALT`. Do not expose phone/password/pepper or substitute placeholder credentials.
