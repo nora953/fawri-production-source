@@ -1,4 +1,5 @@
 name: V1 production POSTOWNER+POS-OFF pre-RLS encrypted backup (OWNER ONESHOT)
+# One-shot owner authorization: fresh encrypted commercial backup before any RLS DDL.
 on:
   pull_request:
     paths:
