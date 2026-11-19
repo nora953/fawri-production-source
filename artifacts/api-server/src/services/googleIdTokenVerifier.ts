@@ -99,10 +99,12 @@ async function loadGoogleKeys(now: number): Promise<GoogleJwk[]> {
  *
  * This alone is NOT sufficient for login: route-level CSRF/nonce/replay
  * validation and atomic DB account binding remain required before activation.
+ * A caller establishing a new session MUST provide a one-time consumed nonce.
  */
 export async function verifyGoogleIdTokenSignature(
   idToken: string,
   expectedClientId: string,
+  expectedNonce?: string,
 ): Promise<VerifiedGoogleIdentity> {
   if (
     typeof idToken !== "string" ||
@@ -123,6 +125,11 @@ export async function verifyGoogleIdTokenSignature(
     !GOOGLE_ISSUERS.has(String(claims.iss)) ||
     claims.aud !== expectedClientId ||
     (claims.azp !== undefined && claims.azp !== expectedClientId) ||
+    (expectedNonce !== undefined && (
+      typeof expectedNonce !== "string" ||
+      !/^[A-Za-z0-9_-]{32,128}$/.test(expectedNonce) ||
+      claims.nonce !== expectedNonce
+    )) ||
     typeof claims.sub !== "string" ||
     !/^[A-Za-z0-9_-]{1,128}$/.test(claims.sub)
   ) refused();

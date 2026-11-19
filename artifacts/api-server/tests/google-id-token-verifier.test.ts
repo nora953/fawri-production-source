@@ -16,6 +16,7 @@ function fixture() {
     iss: "https://accounts.google.com", aud: AUD, sub: "123456789012345678901",
     iat: now - 10, exp: now + 1200, email: "first@example.invalid",
     email_verified: true,
+    nonce: "UjhdERBrgdoZdB1YZz_7IexTPlSuVz9IJ4TAjtQmB3c",
   };
   function sign(claims = payload, header = { alg: "RS256", kid, typ: "JWT" }) {
     const first = Buffer.from(JSON.stringify(header)).toString("base64url");
@@ -122,4 +123,18 @@ test("never accepts a forged payload with modified subject but original signatur
   const parts = f.sign().split(".");
   parts[1] = Buffer.from(JSON.stringify({ ...f.payload, sub: "attacker" })).toString("base64url");
   await assert.rejects(verifyGoogleIdTokenSignature(parts.join("."), AUD), /GOOGLE_ID_TOKEN_REJECTED/);
+});
+
+test("login-bound verifier accepts only a matching signed nonce, never missing/replayed browser input", async t => {
+  const f = fixture();
+  mockKeys(t, f.body);
+  const verified = await verifyGoogleIdTokenSignature(f.sign(), AUD, f.payload.nonce);
+  assert.equal(verified.subject, f.payload.sub);
+  for (const expected of ["", "not-base64", "UjhdERBrgdoZdB1YZz_7IexTPlSuVz9IJ4TAjtQmB3d"]) {
+    await assert.rejects(verifyGoogleIdTokenSignature(f.sign(), AUD, expected), /GOOGLE_ID_TOKEN_REJECTED/);
+  }
+  await assert.rejects(
+    verifyGoogleIdTokenSignature(f.sign({ ...f.payload, nonce: "" }), AUD, f.payload.nonce),
+    /GOOGLE_ID_TOKEN_REJECTED/,
+  );
 });
