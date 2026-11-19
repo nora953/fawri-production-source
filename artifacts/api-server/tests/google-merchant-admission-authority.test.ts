@@ -22,6 +22,7 @@ test("Google account admission cannot activate without approved environment gate
   await assert.rejects(
     admitPendingGoogleMerchant({
       idToken: "fake", expectedNonce: "client-nonce",
+      challengeId: "fake", csrfProofFromCookie: "fake",
       ownerName: "Owner", storeName: "Shop", activityType: "retail",
       countryCode: "US", language: "en",
     }),
@@ -36,6 +37,9 @@ test("Google account admission is subject-scoped, pending only, never an automat
   assert.match(source, /verifyGoogleIdTokenSignature\(/);
   assert.match(source, /input\.idToken,\s*clientId,\s*input\.expectedNonce/);
   assert.match(source, /withAuthenticationTransaction\(async client =>/);
+  assert.match(source, /consumeGoogleOidcChallenge\(/);
+  assert.match(source, /csrfProof: input\.csrfProofFromCookie/);
+  assert.match(source, /if \(!consumed\) throw new Error\("GOOGLE_OIDC_CHALLENGE_INVALID"\)/);
   assert.match(source, /a\.google_issuer = \$1 AND a\.google_subject = \$2/);
   assert.match(source, /FOR UPDATE OF a/);
   assert.match(source, /JOIN public\.merchants AS m/);

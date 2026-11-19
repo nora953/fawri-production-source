@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import { hashPassword } from "./authPasswordService";
 import { verifyGoogleIdTokenSignature } from "./googleIdTokenVerifier";
+import { consumeGoogleOidcChallenge } from "./googleOidcChallengeAuthority";
 import { normalizeMerchantRegionalProfile } from "./merchantRegionalRuntime";
 import { operationalPostgresAuthorityRequired, operationalQueryRows } from "./operationalPostgresAuthority";
 import type { RequestedPlan } from "./authAccountRepository";
@@ -16,6 +17,8 @@ import type { RequestedPlan } from "./authAccountRepository";
 type Registration = Readonly<{
   idToken: string;
   expectedNonce: string;
+  challengeId: string;
+  csrfProofFromCookie: string;
   ownerName: string;
   storeName: string;
   activityType: string;
@@ -72,11 +75,17 @@ export async function admitPendingGoogleMerchant(input: Registration): Promise<G
     currency_code: input.currencyCode,
   });
 
-  // Client-submitted email and sub are NEVER accepted here. Nonce must have
-  // been independently issued and consumed once by a future trusted handler.
+  // Client-submitted email and sub are NEVER accepted here. The future route
+  // MUST pass csrfProofFromCookie from an HttpOnly cookie, not the request body.
   const identity = await verifyGoogleIdTokenSignature(
     input.idToken, clientId, input.expectedNonce,
   );
+  const consumed = await consumeGoogleOidcChallenge({
+    challengeId: input.challengeId,
+    nonce: input.expectedNonce,
+    csrfProof: input.csrfProofFromCookie,
+  });
+  if (!consumed) throw new Error("GOOGLE_OIDC_CHALLENGE_INVALID");
 
   return withAuthenticationTransaction(async client => {
     const existing = await operationalQueryRows<{
