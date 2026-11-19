@@ -7,11 +7,11 @@ import { operationalPostgresAuthorityRequired } from "./operationalPostgresAutho
  * Server-only, pre-launch candidate for trial abuse prevention. NOT mounted.
  * An account is not entitled to a trial merely because Google was verified.
  *
- * Only a phone ALREADY VERIFIED by the trusted account authority is accepted
- * here; unverified self-reported phone, email, name and IP must NEVER reserve
- * a unique trial identity. The WhatsApp-only provider verification cutover,
- * alternative business evidence, risk scoring, admin review and activation
- * require separate acceptance before this service is permitted in production.
+ * A legacy phone_verified flag is NOT trusted as WhatsApp provenance. A new
+ * source-attested WhatsApp Authentication OTP redemption must bind the current
+ * E.164 phone HMAC, unique challenge ID and verification time to this account.
+ * No writer for that evidence is activated: old records fail closed. Alternative
+ * business evidence, risk review and trial activation remain separately gated.
  *
  * A successful reservation only adds to a manual-review queue. It does not
  * grant a trial, subscription, reply quota or any merchant permissions.
@@ -43,6 +43,10 @@ type PhoneAccountRow = {
   id: string;
   phone: string | null;
   phone_verified: boolean;
+  phone_verified_at: Date | null;
+  trial_wa_proof_hash: string | null;
+  trial_wa_proof_verified_at: Date | null;
+  trial_wa_proof_challenge_id: string | null;
   account_status: "pending_review" | "approved" | "rejected" | "suspended";
   state: "active" | "suspended" | "closed";
   trial_status: "eligible" | "not_started" | "active" | "expired" | "already_used" | "ineligible";
@@ -61,7 +65,9 @@ export async function reserveVerifiedPhoneForTrialReview(
     // The merchant and its account must be the same tenant ID. Database is
     // the only authority for the verified phone and prior trial status.
     const result = await client.query<PhoneAccountRow>(
-      "SELECT a.id, a.phone, a.phone_verified, a.state, " +
+      "SELECT a.id, a.phone, a.phone_verified, a.phone_verified_at, " +
+      "a.trial_wa_proof_hash, a.trial_wa_proof_verified_at, " +
+      "a.trial_wa_proof_challenge_id, a.state, " +
       "m.account_status, m.trial_status, m.trial_started_at " +
       "FROM public.accounts a " +
       "JOIN public.merchants m ON m.id=a.id AND m.account_id=a.id " +
@@ -83,6 +89,17 @@ export async function reserveVerifiedPhoneForTrialReview(
 
     const merchantHash = digest(secret, "trial-merchant-id:v1", row.id);
     const evidenceHash = digest(secret, "trial-evidence:verified-phone:v1", row.phone);
+    // Only a trusted WhatsApp Authentication OTP redemption may populate the
+    // proof columns; checking legacy phone_verified alone would allow older
+    // SMS, free-form WhatsApp or staging-bypass verifications into the ledger.
+    // A verified phone change also invalidates the proof by HMAC mismatch.
+    if (!(row.phone_verified_at instanceof Date) ||
+        !(row.trial_wa_proof_verified_at instanceof Date) ||
+        row.trial_wa_proof_verified_at < row.phone_verified_at ||
+        row.trial_wa_proof_hash !== evidenceHash ||
+        !row.trial_wa_proof_challenge_id) {
+      return fail("TRIAL_WHATSAPP_AUTH_PROVENANCE_REQUIRED");
+    }
     const claimId = crypto.randomUUID();
     const created = await client.query<{ id: string }>(
       "INSERT INTO public.merchant_trial_claims (id,merchant_id,merchant_hash) " +
