@@ -39,6 +39,16 @@ services:
         value: required
       - key: FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE
         value: fawri_restricted_runtime
+      # Exact first-commercial POS-off startup selection; source-pinned,
+      # without granting cashier privileges or enabling cashier routes.
+      - key: FAWRI_CASHIER_STORAGE_PROFILE
+        value: first-commercial-invoker-v1
+      - key: FAWRI_FT01_REVIEWED_INVOKER_0052_SHA256
+        value: 4879d09310a651580a23efcae60bba71b14ceae43b5cc84840f2e53a2bbfed09
+      - key: FAWRI_FT01_REVIEWED_FOUR_ROLE_SQL_SHA256
+        value: ad152346f7f02447db656bd1d04a76d1f7ba3a78ebe218dc2b4e0355b2bf152e
+      - key: FAWRI_FT01_REVIEWED_HELD_JOURNAL_SHA256
+        value: 7683b1fe807a514c0662ffb216e995492712433302f8292f9b2966582ed46339
       - key: FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER
         value: filesystem
       - key: FAWRI_DATA_DIR
