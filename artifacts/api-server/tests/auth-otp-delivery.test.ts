@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test, { type TestContext } from "node:test";
-import { deliverAuthOtp } from "../src/services/authOtpDelivery";
+import { deliverAuthOtp, createProductionOtpReadinessCheck, productionOtpDeliveryConfigurationReady } from "../src/services/authOtpDelivery";
 import type { OtpPurpose } from "../src/services/authSecurityTypes";
 
 function configure(t: TestContext, overrides: NodeJS.ProcessEnv = {}) {
@@ -131,4 +131,39 @@ test("staging bypass does not bypass merchant signup or recovery OTP delivery", 
     if (!result.ok) assert.equal(result.code, "OTP_DELIVERY_NOT_CONFIGURED");
   }
   assert.deepEqual(recipients, []);
+});
+
+test("production signup OTP readiness requires a real provider configuration, never a bypass", () => {
+  const base = {
+    NODE_ENV: "production",
+    FAWRI_DEPLOYMENT_MODE: "production",
+    FAWRI_V1_MANUAL_COMMERCE: "1",
+    OTP_DELIVERY_CHANNEL: "whatsapp",
+    WHATSAPP_ACCESS_TOKEN: "synthetic-nonproduction-test-token",
+    WHATSAPP_PHONE_NUMBER_ID: "synthetic-nonproduction-test-sender",
+    FAWRI_STAGING_OTP_BYPASS: "1",
+    AUTH_ALLOW_DEV_OTP_BYPASS: "true",
+  };
+  assert.equal(productionOtpDeliveryConfigurationReady(base), true);
+  assert.doesNotThrow(() => createProductionOtpReadinessCheck(base).check());
+  for (const missing of [
+    { OTP_DELIVERY_CHANNEL: undefined },
+    { OTP_DELIVERY_CHANNEL: "sms" },
+    { WHATSAPP_ACCESS_TOKEN: undefined },
+    { WHATSAPP_ACCESS_TOKEN: "  " },
+    { WHATSAPP_PHONE_NUMBER_ID: undefined },
+    { WHATSAPP_PHONE_NUMBER_ID: "  " },
+  ]) {
+    const env = { ...base, ...missing };
+    assert.equal(productionOtpDeliveryConfigurationReady(env), false);
+    assert.throws(
+      () => createProductionOtpReadinessCheck(env).check(),
+      /OTP_DELIVERY_NOT_CONFIGURED/,
+    );
+  }
+  // Staging/dev do not falsely claim a production-delivery acceptance.
+  assert.doesNotThrow(() => createProductionOtpReadinessCheck({
+    NODE_ENV: "test", FAWRI_DEPLOYMENT_MODE: "staging",
+  }).check());
+  assert.equal(createProductionOtpReadinessCheck(base).name, "signup_otp_delivery_configuration");
 });

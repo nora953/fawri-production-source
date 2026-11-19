@@ -5,6 +5,31 @@ export type OtpDeliveryResult =
   | { ok: true }
   | { ok: false; code: string; message: string };
 
+
+/** A configuration preflight, NOT proof that a real OTP was delivered. */
+export function productionOtpDeliveryConfigurationReady(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return (
+    String(env.OTP_DELIVERY_CHANNEL || "").trim().toLowerCase() === "whatsapp" &&
+    Boolean(String(env.WHATSAPP_ACCESS_TOKEN || "").trim()) &&
+    Boolean(String(env.WHATSAPP_PHONE_NUMBER_ID || "").trim())
+  );
+}
+
+export function createProductionOtpReadinessCheck(
+  env: NodeJS.ProcessEnv = process.env,
+): { name: string; check: () => void } {
+  return {
+    name: "signup_otp_delivery_configuration",
+    check() {
+      if (productionReleaseGateRequired(env) && !productionOtpDeliveryConfigurationReady(env)) {
+        throw new Error("OTP_DELIVERY_NOT_CONFIGURED");
+      }
+    },
+  };
+}
+
 function deliveryChannel(): string {
   return String(process.env.OTP_DELIVERY_CHANNEL || "").trim().toLowerCase();
 }

@@ -68,6 +68,7 @@ import {
 } from "./middleware/metaWebhookSecurity";
 import { logger } from "./lib/logger";
 import { hasAdminPermission } from "./services/authPolicy";
+import { createProductionOtpReadinessCheck } from "./services/authOtpDelivery";
 import {
   refreshMerchantRetentionPolicy,
   startMerchantRetentionPolicyScheduler,
@@ -303,6 +304,7 @@ app.use(
     version: observabilityVersion(),
     readinessChecks: [
       createPostgresAuthorityReadinessCheck(),
+      createProductionOtpReadinessCheck(),
       {
         name: "production_release_configuration",
         check() {
