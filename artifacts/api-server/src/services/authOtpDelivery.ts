@@ -32,10 +32,6 @@ export function createProductionOtpReadinessCheck(
   };
 }
 
-function deliveryChannel(): string {
-  return String(process.env.OTP_DELIVERY_CHANNEL || "").trim().toLowerCase();
-}
-
 function developmentDeliveryAllowed(): boolean {
   return (
     (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") &&
@@ -119,6 +115,7 @@ export async function deliverAuthOtp(
       `https://graph.facebook.com/v22.0/${encodeURIComponent(phoneNumberId)}/messages`,
       {
         method: "POST",
+        signal: AbortSignal.timeout(10_000),
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
