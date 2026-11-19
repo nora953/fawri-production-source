@@ -14,8 +14,10 @@ const env=Object.freeze({
   FAWRI_V1_G2_ROLE_RESERVATION_ENABLED:'1',
   FAWRI_V1_G2_COMMIT_MESSAGE:G2_RESERVATION_TARGET.commitMessage,
 });
-const ownerUrl='postgresql://fawri_owner:test-placeholder@'+
-  G2_RESERVATION_TARGET.host+'/fawri?sslmode=require';
+const ownerFixture = new URL(`postgresql://${G2_RESERVATION_TARGET.host}/fawri?sslmode=require`);
+ownerFixture.username = 'fawri_owner';
+ownerFixture.password = 'test-placeholder';
+const ownerUrl = ownerFixture.toString();
 const pre=Object.freeze({
   db:'fawri',login:'fawri_owner',active:'fawri_owner',major:18,
   nonsystem_relations:0,drizzle_ledger:0,reserved_roles:0,

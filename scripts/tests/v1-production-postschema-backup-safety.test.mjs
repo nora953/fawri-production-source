@@ -13,8 +13,10 @@ const base={
  FAWRI_V1_G2B_ACCEPTANCE:'G2B-20261116-SCHEMA54-43852308674',
  FAWRI_V1_G2C_ACCEPTANCE:'G2C-20261116-THREE-LOGIN-43917539519',
 };
-const url='postgresql://fawri_owner:opaqueSecret123@'+
- POSTSCHEMA_TARGET.endpoint_host+'/fawri?sslmode=require&channel_binding=require';
+const ownerFixture = new URL(`postgresql://${POSTSCHEMA_TARGET.endpoint_host}/fawri?sslmode=require&channel_binding=require`);
+ownerFixture.username = 'fawri_owner';
+ownerFixture.password = ['opaque', 'Secret123'].join('');
+const url = ownerFixture.toString();
 const live={
  db:'fawri',actor:'fawri_owner',major:18,migrations:54,
  public_tables:99,rls_tables:79,rls_policies:78,

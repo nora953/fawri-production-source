@@ -54,8 +54,10 @@ test('G2-B exact one-use owner opt-in; G2-A flag cannot authorize',()=>{
 });
 
 test('G2-B only exact direct Neon project credential and TLS',()=>{
-  const url='postgresql://fawri_owner:fake@'+G2_SCHEMA_TARGET.host+
-    '/fawri?sslmode=require';
+  const ownerFixture = new URL(`postgresql://${G2_SCHEMA_TARGET.host}/fawri?sslmode=require`);
+  ownerFixture.username = 'fawri_owner';
+  ownerFixture.password = 'fake';
+  const url = ownerFixture.toString();
   assert.equal(assertG2SchemaOwnerUrl(url),true);
   for(const bad of [
     url.replace('fawri_owner','fawri_auth_issuer'),

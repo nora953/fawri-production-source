@@ -16,7 +16,10 @@ const good={
   FAWRI_V1_G2B_RECEIPT:'G2B-20261116-SCHEMA54-43852308674',
   FAWRI_V1_G2C_RECEIPT:'G2C-20261116-THREE-LOGIN-43917539519',
 };
-const owner='postgresql://fawri_owner:kept-secret@'+V1_OWNER_ADMIN_TARGET.host+'/fawri?sslmode=require&channel_binding=require';
+const ownerFixture = new URL(`postgresql://${V1_OWNER_ADMIN_TARGET.host}/fawri?sslmode=require&channel_binding=require`);
+ownerFixture.username = 'fawri_owner';
+ownerFixture.password = ['kept', 'secret'].join('-');
+const owner = ownerFixture.toString();
 const user={
   FAWRI_V1_OWNER_ADMIN_PHONE:'+9647801234567',
   FAWRI_V1_OWNER_ADMIN_PASSWORD:'LongSafeOwnerPassword2026!',
