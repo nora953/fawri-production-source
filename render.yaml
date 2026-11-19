@@ -64,9 +64,9 @@ services:
       - key: FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER
         value: disabled
       - key: FAWRI_KNOWLEDGE_TRANSLATION_PROVIDER
-        value: disabled
+        value: ""
       - key: FAWRI_KNOWLEDGE_AI_PROVIDER
-        value: disabled
+        value: ""
       - key: FAWRI_SERVICE_VERSION
         value: v1-g3-gated
       - key: FAWRI_AUTH_SECURITY_SECRET
