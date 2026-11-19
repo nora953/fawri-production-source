@@ -3,6 +3,7 @@ import { authPostgresSessionAuthority } from "../services/authPostgresSessionAut
 import { findAdminByIdAuthoritative } from "../services/postgresAdminAccountAuthority";
 import { listAdminDevicesAuthoritative } from "../services/postgresAdminSecurityAuthority";
 import { findMerchantByIdAuthoritative } from "../services/postgresMerchantAccountAuthority";
+import { isGoogleMerchantIdentityLinked } from "../services/googleMerchantIdentityAssurance";
 import {
   clearAuthSessionCookie,
   getAuthContext,
@@ -155,7 +156,11 @@ router.get("/lifecycle", async (req, res) => {
   const account = await findMerchantByIdAuthoritative(
     validated.session.account_id,
   );
-  if (!account?.merchantProfile || !account.account.otpVerified) {
+  const googleIdentityAllowed = account?.merchantProfile && !account.account.otpVerified
+    ? await isGoogleMerchantIdentityLinked(account.account.id)
+    : false;
+  if (!account?.merchantProfile || !account.account.enabled ||
+      (!account.account.otpVerified && !googleIdentityAllowed)) {
     await authPostgresSessionAuthority.revokeSession(
       token,
       "merchant",
