@@ -19,7 +19,7 @@ export type VerifiedGoogleIdentity = Readonly<{
   audience: string;
 }>;
 
-type GoogleJwk = crypto.JsonWebKey & {
+type GoogleJwk = {
   kid: string;
   kty: "RSA";
   n: string;
