@@ -17,6 +17,7 @@ import {
   isKnownHistoricalField002SyntheticBuilderFixture,
   isKnownHistoricalField002AuthConfigFixture,
   isKnownHistoricalIsolatedNeonDumpFixture,
+  isKnownHistoricalV1SyntheticOwnerUrlFixture,
   evaluateDependencyChange,
   validateRepositoryPolicy,
 } from "./security-final-audit.mjs";
@@ -562,4 +563,63 @@ test("FIELD002 historical synthetic auth URL exceptions are exact-blob/span/byte
     }
   }
   assert.equal(reviewed, 23);
+});
+
+test("V1 retired owner-URL history exemptions are immutable and never broaden secret scanning", () => {
+  const fixtures = [
+  { blob: "2b6cdbee6c7d9108753105702f9e2f7eaced2a5e", path: "scripts/tests/v1-g2-production-role-reservation-safety.test.mjs",
+    index: 605, length: 44,
+    fragmentParts: ["postgresql://fawri_owner:", "test-placeholder", "@'+"],
+  },
+  { blob: "65d90ab0920177fa5345a3f1d9427bf5f2c86860", path: "scripts/tests/v1-g2-production-schema-migration-safety.test.mjs",
+    index: 2340, length: 54,
+    fragmentParts: ["postgresql://fawri_owner:", "fake", "@'+G2_SCHEMA_TARGET.host+"],
+  },
+  { blob: "43b019b77bebb79c1c4a60f59c5015b3a815c85f", path: "scripts/tests/v1-owner-admin-bootstrap-safety.test.mjs",
+    index: 749, length: 67,
+    fragmentParts: ["postgresql://fawri_owner:", "kept-secret", "@'+V1_OWNER_ADMIN_TARGET.host+'"],
+  },
+  { blob: "6a10a26fda03cd9ff19cecd90360532ef046f375", path: "scripts/tests/v1-production-postowner-rls-backup-safety.test.mjs",
+    index: 651, length: 72,
+    fragmentParts: ["postgresql://fawri_owner:", "exampleSecret", "@'+POSTOWNER_TARGET.endpoint_host+"],
+  },
+  { blob: "9f97b048b00e462e161d248a282e7185072cfc14", path: "scripts/tests/v1-production-postschema-backup-safety.test.mjs",
+    index: 699, length: 43,
+    fragmentParts: ["postgresql://fawri_owner:", "opaqueSecret123", "@'+"],
+  },
+  ];
+  for (const fixture of fixtures) {
+    const fragment = fixture.fragmentParts.join("");
+    const text = " ".repeat(fixture.index) + fragment + "/fixture";
+    const findings = findSensitiveText(text, {
+      includePrivateData: false,
+      includeAssignments: false,
+    });
+    assert.equal(findings.length, 1, fixture.path);
+    const finding = findings[0];
+    assert.equal(finding.rule, "credential-url");
+    assert.equal(finding.index, fixture.index);
+    assert.equal(finding.length, fixture.length);
+    const accepts = (str, match, path, blob) =>
+      isKnownHistoricalV1SyntheticOwnerUrlFixture(str, match, path, blob);
+    assert.equal(accepts(text, finding, fixture.path, fixture.blob), true);
+    assert.equal(accepts(text, finding, fixture.path, "0".repeat(40)), false);
+    assert.equal(accepts(text, finding, "scripts/another-file.test.mjs", fixture.blob), false);
+    assert.equal(accepts(text, {...finding, index: finding.index + 1}, fixture.path, fixture.blob), false);
+    assert.equal(accepts(text, {...finding, length: finding.length - 1}, fixture.path, fixture.blob), false);
+    assert.equal(accepts(text, {...finding, rule: "private-key"}, fixture.path, fixture.blob), false);
+    assert.equal(
+      accepts(text.replace(fixture.fragmentParts[1], "not-the-reviewed-fixture"),
+        finding, fixture.path, fixture.blob), false,
+    );
+  }
+  const unexpected = ["postgresql://production_user:", "realvalue", "@server.example"].join("");
+  const unknownFinding = findSensitiveText(unexpected, {
+    includePrivateData: false, includeAssignments: false,
+  })[0];
+  assert.ok(unknownFinding);
+  assert.equal(
+    isKnownHistoricalV1SyntheticOwnerUrlFixture(unexpected, unknownFinding,
+      fixtures[0].path, fixtures[0].blob), false,
+  );
 });

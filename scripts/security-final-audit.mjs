@@ -428,6 +428,46 @@ export function isKnownHistoricalIsolatedNeonDumpFixture(
       fixture.fragment;
 }
 
+// Five retired, fabricated owner-URL strings existed in historic offline negative
+// tests as JS concatenation source, never as usable connection strings. Current
+// tests construct URL objects. History exemptions are EXACT Git blob, source path,
+// scanner rule, byte span and text. Every other finding still blocks the release.
+const HISTORICAL_V1_SYNTHETIC_OWNER_URLS = Object.freeze({
+  "2b6cdbee6c7d9108753105702f9e2f7eaced2a5e": {
+    path: "scripts/tests/v1-g2-production-role-reservation-safety.test.mjs", index: 605, length: 44,
+    fragmentParts: ["postgresql://fawri_owner:", "test-placeholder", "@'+"],
+  },
+  "65d90ab0920177fa5345a3f1d9427bf5f2c86860": {
+    path: "scripts/tests/v1-g2-production-schema-migration-safety.test.mjs", index: 2340, length: 54,
+    fragmentParts: ["postgresql://fawri_owner:", "fake", "@'+G2_SCHEMA_TARGET.host+"],
+  },
+  "43b019b77bebb79c1c4a60f59c5015b3a815c85f": {
+    path: "scripts/tests/v1-owner-admin-bootstrap-safety.test.mjs", index: 749, length: 67,
+    fragmentParts: ["postgresql://fawri_owner:", "kept-secret", "@'+V1_OWNER_ADMIN_TARGET.host+'"],
+  },
+  "6a10a26fda03cd9ff19cecd90360532ef046f375": {
+    path: "scripts/tests/v1-production-postowner-rls-backup-safety.test.mjs", index: 651, length: 72,
+    fragmentParts: ["postgresql://fawri_owner:", "exampleSecret", "@'+POSTOWNER_TARGET.endpoint_host+"],
+  },
+  "9f97b048b00e462e161d248a282e7185072cfc14": {
+    path: "scripts/tests/v1-production-postschema-backup-safety.test.mjs", index: 699, length: 43,
+    fragmentParts: ["postgresql://fawri_owner:", "opaqueSecret123", "@'+"],
+  },
+});
+
+export function isKnownHistoricalV1SyntheticOwnerUrlFixture(
+  text, finding, objectPath, objectId,
+) {
+  if (finding.rule !== "credential-url") return false;
+  const fixture = HISTORICAL_V1_SYNTHETIC_OWNER_URLS[objectId];
+  return !!fixture &&
+    normalizeRepositoryPath(objectPath) === fixture.path &&
+    finding.index === fixture.index &&
+    finding.length === fixture.length &&
+    String(text).slice(finding.index, finding.index + finding.length) ===
+      fixture.fragmentParts.join("");
+}
+
 function scanHistory(root) {
   const output = execFileSync("git", ["rev-list", "--objects", "--all"], {
     cwd: root,
@@ -511,7 +551,8 @@ function scanHistory(root) {
         isKnownHistoricalField002IllustrativeUrl(objectText, finding, objectPath, objectId) ||
         isKnownHistoricalField002SyntheticBuilderFixture(objectText, finding, objectPath, objectId) ||
         isKnownHistoricalField002AuthConfigFixture(objectText, finding, objectPath, objectId) ||
-        isKnownHistoricalIsolatedNeonDumpFixture(objectText, finding, objectPath, objectId)
+        isKnownHistoricalIsolatedNeonDumpFixture(objectText, finding, objectPath, objectId) ||
+        isKnownHistoricalV1SyntheticOwnerUrlFixture(objectText, finding, objectPath, objectId)
       ) continue;
       findings.push({
         blob: objectId,
