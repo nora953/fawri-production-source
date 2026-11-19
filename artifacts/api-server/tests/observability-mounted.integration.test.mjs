@@ -130,6 +130,7 @@ async function readJson(url, init) {
 
 const expectedReadyChecks = [
   { name: "postgresql_authority", status: "up" },
+  { name: "signup_otp_delivery_configuration", status: "up" },
   { name: "production_release_configuration", status: "up" },
 ];
 
@@ -193,13 +194,17 @@ test("real app readiness fails closed when PostgreSQL authority is unavailable",
     const readiness = await readJson(`${base}/ops/readiness`);
     assert.equal(readiness.response.status, 503);
     assert.equal(readiness.body.status, "not_ready");
-    assert.equal(readiness.body.checks.length, 2);
+    assert.equal(readiness.body.checks.length, expectedReadyChecks.length);
     assert.equal(readiness.body.checks[0].name, "postgresql_authority");
     assert.equal(readiness.body.checks[0].status, "down");
     assert.ok(["dependency_unavailable", "timeout"].includes(readiness.body.checks[0].error_code));
     assert.deepEqual(
       { name: readiness.body.checks[1].name, status: readiness.body.checks[1].status },
       expectedReadyChecks[1],
+    );
+    assert.deepEqual(
+      { name: readiness.body.checks[2].name, status: readiness.body.checks[2].status },
+      expectedReadyChecks[2],
     );
     assert.equal(JSON.stringify(readiness.body).includes(unavailableUrl.toString()), false);
   } finally {
