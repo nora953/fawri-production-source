@@ -18,6 +18,12 @@ test("trial evidence requires DB-verified phone and prior no-trial state", () =>
   assert.match(src, /row\.trial_started_at/);
   assert.match(src, /TRIAL_ALREADY_USED/);
   assert.match(src, /TRIAL_TRUSTED_PHONE_VERIFICATION_REQUIRED/);
+  // A legacy verified flag alone is never accepted as WhatsApp provenance.
+  assert.match(src, /row\.trial_wa_proof_hash !== evidenceHash/);
+  assert.match(src, /row\.trial_wa_proof_verified_at < row\.phone_verified_at/);
+  assert.match(src, /row\.trial_wa_proof_challenge_id/);
+  assert.match(src, /TRIAL_WHATSAPP_AUTH_PROVENANCE_REQUIRED/);
+  assert.match(src, /a\.trial_wa_proof_hash/);
   assert.match(src, /withAuthenticationTransaction\(async client =>/);
   assert.match(src, /FOR UPDATE OF a,m/);
   assert.match(src, /ON CONFLICT \(evidence_hash\) DO NOTHING RETURNING claim_id/);
@@ -38,4 +44,18 @@ test("held evidence tables deny direct access by tenants, operators and public",
   assert.match(sql, /REVOKE ALL ON TABLE public\.merchant_trial_evidence FROM PUBLIC/);
   assert.match(sql, /GRANT SELECT,INSERT ON public\.merchant_trial_evidence TO fawri_auth_issuer/);
   assert.match(sql, /merchant_trial_claim_approval_check/);
+});
+
+test("held WhatsApp-only proof source never backfills legacy verification flags", () => {
+  const sql = readFileSync(new URL("../../../lib/db/first-commercial/held/v1_trial_whatsapp_proof_source.sql", import.meta.url), "utf8");
+  assert.match(sql, /HELD \/ REVIEW REQUIRED/);
+  assert.match(sql, /NOT IN DRIZZLE LEDGER/);
+  assert.match(sql, /session_user <> 'fawri_owner'/);
+  assert.match(sql, /ADD COLUMN trial_wa_proof_hash text/);
+  assert.match(sql, /ADD COLUMN trial_wa_proof_verified_at timestamptz/);
+  assert.match(sql, /ADD COLUMN trial_wa_proof_challenge_id text/);
+  assert.match(sql, /trial_wa_proof_challenge_id IS NOT NULL/);
+  assert.match(sql, /CREATE UNIQUE INDEX accounts_trial_wa_proof_challenge_unique/);
+  assert.doesNotMatch(sql, /UPDATE public\.accounts\s+SET/);
+  assert.doesNotMatch(sql, /DEFAULT\s+true/i);
 });
