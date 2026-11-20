@@ -116,6 +116,19 @@ export async function admitPendingGoogleMerchant(input: Registration): Promise<G
         input.requestedPlan !== "diamond") {
       throw new Error("GOOGLE_MERCHANT_PLAN_INVALID");
     }
+    // Legal text revision comes only from reviewed deployment configuration.
+    // A new merchant cannot be admitted if these immutable published policies
+    // and the HELD consent schema have not been approved and provisioned.
+    // Existing linked merchants are not blocked by changed policy versions;
+    // an independent re-consent flow must handle future material revisions.
+    const legalVersionPattern = /^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$/;
+    const termsVersion = String(process.env.FAWRI_V1_TERMS_VERSION || "");
+    const privacyVersion = String(process.env.FAWRI_V1_PRIVACY_VERSION || "");
+    if (!legalVersionPattern.test(termsVersion) ||
+        !legalVersionPattern.test(privacyVersion)) {
+      throw new Error("GOOGLE_MERCHANT_LEGAL_VERSION_NOT_READY");
+    }
+
     // Never infer an international merchant's location as Iraq.
     const region = normalizeMerchantRegionalProfile({
       country_code: input.countryCode,
@@ -137,15 +150,17 @@ export async function admitPendingGoogleMerchant(input: Registration): Promise<G
       "INSERT INTO public.merchants (" +
       "id, account_id, profile_kind, owner_name, store_name, activity_type, " +
       "country_code, timezone, currency_code, status, account_status, " +
-      "onboarding_status, trial_status, signup_source, requested_plan" +
+      "onboarding_status, trial_status, signup_source, requested_plan, " +
+      "google_signup_terms_version, google_signup_privacy_version, google_signup_consented_at" +
       ") VALUES (" +
       "$1, $1, 'merchant', $2, $3, $4, $5, $6, $7, " +
       "'pending_activation', 'pending_review', 'pending_review', " +
-      "'ineligible', 'direct', $8)",
+      "'ineligible', 'direct', $8, $9, $10, now())",
       [
         accountId, ownerName, storeName, activityType,
         region.country_code, region.timezone, region.currency_code,
         input.requestedPlan ?? null,
+        termsVersion, privacyVersion,
       ],
     );
     // No session, no OTP, no subscription, no free trial is granted.
