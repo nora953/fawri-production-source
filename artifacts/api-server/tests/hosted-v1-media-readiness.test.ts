@@ -5,6 +5,8 @@ import path from "node:path";
 import test from "node:test";
 import {
   assertHostedV1CatalogMediaMount,
+  assertHostedV1CatalogMediaIoReady,
+  assertCatalogMediaIoRoundTrip,
   createHostedV1CatalogMediaReadinessCheck,
   ensureSafeMountedMediaDataDirectory,
   mountedWritableFilesystemPresent,
@@ -128,6 +130,38 @@ test("first-start directory creation never follows existing symlinks outside mou
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("startup disk I/O probe writes, fsyncs, reads and cleans only its temporary file", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "fawri-g3-io-"));
+  try {
+    const marker = path.join(root, "merchant-existing.jpg");
+    fs.writeFileSync(marker, "preserved-merchant-image", { mode: 0o600 });
+    const before = fs.readdirSync(root);
+    assert.doesNotThrow(() => assertCatalogMediaIoRoundTrip(root));
+    assert.deepEqual(fs.readdirSync(root), before);
+    assert.equal(fs.readFileSync(marker, "utf8"), "preserved-merchant-image");
+    // Existing files cannot accidentally be overwritten by probe creation.
+    assert.equal(fs.statSync(marker).isFile(), true);
+    assert.throws(
+      () => assertCatalogMediaIoRoundTrip(path.join(root, "missing")),
+      { code: "V1_HOSTED_CATALOG_MEDIA_IO_NOT_READY" },
+    );
+    assert.deepEqual(fs.readdirSync(root), before);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("I/O proof cannot bypass production mount admission", () => {
+  assert.throws(() => assertHostedV1CatalogMediaIoReady({
+    ...base, FAWRI_DATA_DIR: "/tmp/ephemeral",
+  }), { code: "V1_HOSTED_CATALOG_MEDIA_MOUNT_NOT_READY" });
+  // Staging/test never perform a mounted Render disk write probe.
+  assert.doesNotThrow(() => assertHostedV1CatalogMediaIoReady({
+    ...base, NODE_ENV: "test", FAWRI_DEPLOYMENT_MODE: "staging",
+    FAWRI_DATA_DIR: "/nonexistent/missing/directory",
+  }));
 });
 
 test("non-commercial/test runtimes are not made dependent on Render mountinfo", () => {
