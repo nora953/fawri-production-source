@@ -4,6 +4,8 @@ import test from 'node:test';
 
 const client = readFileSync(new URL('../src/lib/googleMerchantSignup.ts', import.meta.url), 'utf8');
 const signup = readFileSync(new URL('../src/pages/SignupPage.tsx', import.meta.url), 'utf8');
+const login = readFileSync(new URL('../src/pages/LoginPage.tsx', import.meta.url), 'utf8');
+const admission = readFileSync(new URL('../../api-server/src/services/googleMerchantAdmissionAuthority.ts', import.meta.url), 'utf8');
 const server = readFileSync(new URL('../../api-server/src/routes/auth-google-merchant-routes.ts', import.meta.url), 'utf8');
 
 test('Google signup client is build-time opt-in and uses only official GIS script', () => {
@@ -39,4 +41,20 @@ test('Google signup UX is separately gated and retains normal password-OTP signu
   assert.match(signup, /fetch\('\/api\/auth\/signup'/);
   assert.match(signup, /savePendingSignupChallenge\(challenge\)/);
   assert.match(signup, /disabled=\{loading \|\| !isFormReady\}/);
+});
+
+test('returning Google merchant login is gated, uses nonce flow, and cannot create a store', () => {
+  assert.match(client, /export function prepareGoogleMerchantLogin/);
+  assert.match(client, /prepareGoogleMerchantIdentity\(container, undefined, 'signin_with'/);
+  assert.match(client, /if \(!profile && account\.created\)/);
+  assert.match(login, /googleMerchantSignupBuildReady\(\) &&/);
+  assert.match(login, /prepareGoogleMerchantLogin/);
+  assert.match(login, /setSession\(account\.account\.id\)/);
+  assert.match(login, /merchant_profile\.accountStatus === 'approved'/);
+  assert.match(admission, /a\.google_issuer = \$1 AND a\.google_subject = \$2/);
+  const lookup = admission.indexOf('if (existing[0])');
+  const requiredProfile = admission.indexOf('const ownerName = validatedText(input.ownerName, 160)');
+  assert.ok(lookup >= 0 && requiredProfile > lookup);
+  assert.match(admission, /created: false, trialActivated: false/);
+  assert.match(admission, /created: true, trialActivated: false/);
 });
