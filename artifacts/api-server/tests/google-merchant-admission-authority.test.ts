@@ -83,3 +83,30 @@ test("new Google merchant requires explicit server-side legal consent, but linke
   assert.match(route, /agreeTerms: req.body.agree_terms/);
   assert.match(route, /confirmLegal: req.body.confirm_legal/);
 });
+
+test("new Google merchant persists approved legal revisions transactionally, returning merchant never rewrites", () => {
+  const source = readFileSync(
+    new URL("../src/services/googleMerchantAdmissionAuthority.ts", import.meta.url), "utf8",
+  );
+  const sql = readFileSync(
+    new URL("../../../lib/db/first-commercial/held/v1_google_merchant_legal_consent_source.sql", import.meta.url), "utf8",
+  );
+  const existing = source.indexOf("if (existing[0])");
+  const versions = source.indexOf("FAWRI_V1_TERMS_VERSION");
+  const insert = source.indexOf("INSERT INTO public.merchants");
+  assert.ok(existing >= 0 && versions > existing && insert > versions);
+  assert.match(source, /GOOGLE_MERCHANT_LEGAL_VERSION_NOT_READY/);
+  assert.match(source, /google_signup_terms_version, google_signup_privacy_version, google_signup_consented_at/);
+  assert.match(source, /'ineligible', 'direct', \$8, \$9, \$10, now\(\)/);
+  assert.match(source, /termsVersion, privacyVersion/);
+  assert.match(source, /withAuthenticationTransaction\(async client =>/);
+  assert.match(sql, /HELD \/ REVIEW REQUIRED \/ NOT IN DRIZZLE LEDGER/);
+  assert.match(sql, /CREATE TRIGGER merchants_google_signup_consent_immutable_guard/);
+  assert.match(sql, /CHECK \(/);
+  assert.match(sql, /google_signup_terms_version IS NULL/);
+  assert.match(sql, /google_signup_privacy_version IS NOT NULL/);
+  assert.match(sql, /GOOGLE_SIGNUP_CONSENT_IMMUTABLE/);
+  assert.doesNotMatch(sql, /UPDATE public\.merchants\s+SET/);
+  assert.doesNotMatch(sql, /DEFAULT\s+(true|now\(\))/i);
+  assert.equal(sql.split("COMMIT;").length, 2);
+});
