@@ -46,7 +46,8 @@ test("V1 hosted media readiness admits only exact writable persistent disk", () 
   ));
   assert.equal(seen, 1);
   assert.equal(mountedWritableFilesystemPresent(good, MOUNT), true);
-  assert.equal(mountedWritableFilesystemPresent(good, "/"), true);
+  // Container root is overlay and must NOT be accepted as durable storage.
+  assert.equal(mountedWritableFilesystemPresent(good, "/"), false);
   assert.equal(mountedWritableFilesystemPresent(good, "/var/data/fawri"), false);
   assert.equal(createHostedV1CatalogMediaReadinessCheck().name, "hosted_catalog_media_mount");
 });
