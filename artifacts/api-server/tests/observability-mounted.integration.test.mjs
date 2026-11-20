@@ -131,6 +131,8 @@ async function readJson(url, init) {
 const expectedReadyChecks = [
   { name: "postgresql_authority", status: "up" },
   { name: "signup_otp_delivery_configuration", status: "up" },
+  // G3 adds the mount-only check without weakening PostgreSQL or OTP gates.
+  { name: "hosted_catalog_media_mount", status: "up" },
   { name: "production_release_configuration", status: "up" },
 ];
 
@@ -202,10 +204,12 @@ test("real app readiness fails closed when PostgreSQL authority is unavailable",
       { name: readiness.body.checks[1].name, status: readiness.body.checks[1].status },
       expectedReadyChecks[1],
     );
-    assert.deepEqual(
-      { name: readiness.body.checks[2].name, status: readiness.body.checks[2].status },
-      expectedReadyChecks[2],
-    );
+    for (let index = 2; index < expectedReadyChecks.length; index += 1) {
+      assert.deepEqual(
+        { name: readiness.body.checks[index].name, status: readiness.body.checks[index].status },
+        expectedReadyChecks[index],
+      );
+    }
     assert.equal(JSON.stringify(readiness.body).includes(unavailableUrl.toString()), false);
   } finally {
     await server.stop();
