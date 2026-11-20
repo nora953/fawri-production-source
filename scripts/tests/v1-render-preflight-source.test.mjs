@@ -37,3 +37,20 @@ test('no automatic paid deploy and no public app entry until review',()=>{
  assert.match(yaml,/FAWRI_META_CUTOVER_READY\s+value: "0"/);
  assert.match(yaml,/FAWRI_DATA_DIR\s+value: \/var\/data\/fawri/);
 });
+
+test('G3 Render health must require PostgreSQL and actual mounted catalog media',()=>{
+ const app=fs.readFileSync(path.join(root,'artifacts/api-server/src/app.ts'),'utf8');
+ const entry=fs.readFileSync(path.join(root,'artifacts/api-server/src/index.ts'),'utf8');
+ const mountCheck=fs.readFileSync(path.join(root,
+  'artifacts/api-server/src/services/hostedV1CatalogMediaReadiness.ts'),'utf8');
+ assert.match(yaml,/healthCheckPath: \/ops\/readiness/);
+ assert.doesNotMatch(yaml,/healthCheckPath: \/healthz/);
+ assert.match(yaml,/mountPath: \/var\/data/);
+ assert.match(yaml,/- key: FAWRI_PERSISTENT_MEDIA_MOUNT_PATH\s+value: \/var\/data/);
+ assert.match(app,/createPostgresAuthorityReadinessCheck\(\)/);
+ assert.match(app,/createHostedV1CatalogMediaReadinessCheck\(\)/);
+ assert.match(entry,/assertProductionRuntimeConfiguration\(process\.env\);[\s\S]*?assertHostedV1CatalogMediaMount\(process\.env\);[\s\S]*?startupStage = "database_rls"/);
+ assert.match(mountCheck,/\/proc\/self\/mountinfo/);
+ assert.match(mountCheck,/mountedWritableFilesystemPresent\(probe\.readMountInfo\(\), mount\)/);
+ assert.match(mountCheck,/FAWRI_PERSISTENT_MEDIA_MOUNT_PATH/);
+});
