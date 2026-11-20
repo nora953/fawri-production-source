@@ -61,8 +61,11 @@ services:
       # in the container layer. Startup refuses missing/unwritable mounts.
       - key: FAWRI_PERSISTENT_MEDIA_MOUNT_PATH
         value: /var/data
+      # Keep the required merchant media-deletion retry worker active.
+      # The deferred Meta webhook worker is separately disabled by the
+      # MANUAL_COMMERCE and META_CUTOVER_READY guards in index.ts.
       - key: FAWRI_DISABLE_JOB_WORKERS
-        value: "1"
+        value: "0"
       - key: FAWRI_META_CUTOVER_READY
         value: "0"
       - key: FAWRI_META_REPLY_TRANSPORT
