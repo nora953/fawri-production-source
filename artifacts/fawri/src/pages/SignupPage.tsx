@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { GOOGLE_MERCHANT_AUTH_COPY } from '@/lib/translations/features/pages/GoogleMerchantAuth';
 import { useI18n } from '@/lib/i18n';
 import { Link, useLocation } from 'wouter';
 import { clearMerchantTabSession, getMerchants, saveMerchants, setSession } from '@/lib/store';
@@ -195,32 +196,7 @@ export default function SignupPage() {
     !!formData.country_code && !!formData.currency_code &&
     !!formData.activity_type && (!isOther || !!formData.custom_activity.trim()) &&
     formData.agree_terms && formData.confirm_legal;
-  const googleCopy = {
-    ar: {
-      title: 'التسجيل بحساب Google',
-      start: 'متابعة باستخدام Google',
-      restart: 'إعادة محاولة Google',
-      choose: 'اختر حساب Google لإكمال التسجيل.',
-      pending: 'الهوية موثّقة، لكن التجربة المجانية والاشتراك يحتاجان موافقة منفصلة.',
-      error: 'تعذر إكمال التسجيل عبر Google. حاول مرة أخرى.',
-    },
-    en: {
-      title: 'Sign up with Google',
-      start: 'Continue with Google',
-      restart: 'Retry Google sign-up',
-      choose: 'Choose your Google account to finish sign-up.',
-      pending: 'Identity is verified; trial and subscription require separate approval.',
-      error: 'Google sign-up could not be completed. Try again.',
-    },
-    ku: {
-      title: 'تۆمارکردن بە Google',
-      start: 'بە Google بەردەوام بە',
-      restart: 'دووبارە هەوڵدان بە Google',
-      choose: 'هەژماری Google هەڵبژێرە بۆ تەواوکردنی تۆمارکردن.',
-      pending: 'ناسنامە پشتڕاست دەکرێتەوە؛ تاقیکردنەوە و بەشداریکردن پێویستیان بە پەسەندکردنی جیاوازە.',
-      error: 'تۆمارکردن بە Google سەرکەوتوو نەبوو. دووبارە هەوڵبدەوە.',
-    },
-  }[lang];
+  const googleCopy = GOOGLE_MERCHANT_AUTH_COPY[lang].signup;
 
   const handleGoogleSignup = async () => {
     if (!googleMerchantSignupBuildReady() || !googleProfileReady ||
