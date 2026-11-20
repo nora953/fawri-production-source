@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { reserveVerifiedPhoneForTrialReview } from "../src/services/trialEvidenceReservationAuthority";
+import { whatsappTrialProofSourceReady, recordAcceptedSignupWhatsAppTemplate } from "../src/services/postgresMerchantAuthSecurityAuthority";
 
 test("trial evidence reservation fails closed and cannot grant an initial free trial", async t => {
   const key = "FAWRI_TRIAL_EVIDENCE_LEDGER_ENABLED";
@@ -58,4 +59,51 @@ test("held WhatsApp-only proof source never backfills legacy verification flags"
   assert.match(sql, /CREATE UNIQUE INDEX accounts_trial_wa_proof_challenge_unique/);
   assert.doesNotMatch(sql, /UPDATE public\.accounts\s+SET/);
   assert.doesNotMatch(sql, /DEFAULT\s+true/i);
+});
+
+test("WhatsApp-only trial proof cannot be enabled by legacy authentication flags", async t => {
+  const key = "FAWRI_WHATSAPP_TRIAL_PROOF_SOURCE_ENABLED";
+  const before = process.env[key];
+  t.after(() => { if (before === undefined) delete process.env[key]; else process.env[key] = before; });
+  delete process.env[key];
+  assert.equal(whatsappTrialProofSourceReady(), false);
+  await assert.rejects(
+    recordAcceptedSignupWhatsAppTemplate({
+      challengeId: "11111111-1111-4111-8111-111111111111",
+      target: "+15550000001",
+      providerReceipt: {
+        messageId: "wamid.synthetic-test",
+        templateName: "test",
+        templateLanguage: "en_US",
+      },
+    }), /TRIAL_WHATSAPP_PROOF_NOT_READY/,
+  );
+});
+
+test("trusted signup proof requires an accepted provider receipt AND atomic redemption", () => {
+  const src = readFileSync(new URL("../src/services/postgresMerchantAuthSecurityAuthority.ts", import.meta.url), "utf8");
+  const issuer = readFileSync(new URL("../src/routes/auth-route-common.ts", import.meta.url), "utf8");
+  assert.match(src, /recordAcceptedSignupWhatsAppTemplate/);
+  assert.match(src, /wa_auth_message_id_hash/);
+  assert.match(src, /whatsappTrialDigest\("trial-wa-provider-message:v1"/);
+  assert.match(src, /row\.purpose !== "signup"/);
+  assert.match(src, /challenge\.account_id/);
+  assert.match(src, /challenge\.wa_auth_accepted_at/);
+  assert.match(src, /trial_wa_proof_challenge_id=\$5/);
+  assert.match(src, /trial_wa_proof_hash=\$4/);
+  assert.match(src, /withAuthenticationTransaction\(async \(client\) =>/);
+  assert.match(issuer, /deliverAuthOtpWithProviderReceipt/);
+  assert.match(issuer, /recordAcceptedSignupWhatsAppTemplate/);
+  assert.match(issuer, /revokeMerchantOtpChallengeAuthoritative\(issued\.challengeId\)/);
+});
+
+test("held OTP receipt SQL blocks partial and duplicate provider acceptance without legacy backfill", () => {
+  const sql = readFileSync(new URL("../../../lib/db/first-commercial/held/v1_trial_whatsapp_otp_receipt_source.sql", import.meta.url), "utf8");
+  assert.match(sql, /HELD \/ REVIEW REQUIRED/);
+  assert.match(sql, /NOT IN DRIZZLE LEDGER/);
+  assert.match(sql, /ADD COLUMN wa_auth_message_id_hash text/);
+  assert.match(sql, /ADD COLUMN wa_auth_accepted_at timestamptz/);
+  assert.match(sql, /auth_otp_wa_receipt_complete/);
+  assert.match(sql, /CREATE UNIQUE INDEX auth_otp_wa_message_id_unique/);
+  assert.doesNotMatch(sql, /UPDATE public\.auth_otp_challenges\s+SET/);
 });
