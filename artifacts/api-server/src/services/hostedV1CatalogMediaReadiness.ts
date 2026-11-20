@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { manualCommercialRelease } from "./manualCommercialRelease";
@@ -121,6 +122,56 @@ export function assertHostedV1CatalogMediaMount(
         !canonicalData.startsWith(canonicalMount + path.sep)) deny();
   } catch {
     deny();
+  }
+}
+
+/**
+ * G3 startup-only writable-disk proof. lstat/access and mountinfo alone do
+ * not prove that actual writes, fsync and reads work. This probe creates its
+ * own unpredictable temporary file under the already admitted data directory,
+ * verifies the exact bytes and removes only that file. It never reads or
+ * changes catalog images, customer records or the cleanup journal.
+ *
+ * Do not invoke this from the periodic /readyz endpoint: write at startup
+ * only, not on each Render health probe.
+ */
+export function assertHostedV1CatalogMediaIoReady(
+  env: NodeJS.ProcessEnv = process.env,
+): void {
+  if (!productionReleaseGateRequired(env) || !manualCommercialRelease(env)) return;
+  const directory = path.resolve(String(env.FAWRI_DATA_DIR || "").trim());
+  const probePath = path.join(directory,
+    `.fawri-g3-media-probe-${process.pid}-${crypto.randomUUID()}`);
+  const proof = crypto.randomBytes(32);
+  let fileDescriptor: number | undefined;
+  let created = false;
+  try {
+    // Open with exclusive creation and 0600 permissions: never replace a
+    // pre-existing file or a symlink, including on unexpected probe collision.
+    fileDescriptor = fs.openSync(probePath, "wx", 0o600);
+    created = true;
+    const written = fs.writeSync(fileDescriptor, proof);
+    if (written !== proof.length) throw new Error("MEDIA_PROBE_SHORT_WRITE");
+    fs.fsyncSync(fileDescriptor);
+    fs.closeSync(fileDescriptor);
+    fileDescriptor = undefined;
+    const readBack = fs.readFileSync(probePath);
+    if (readBack.length !== proof.length ||
+        !crypto.timingSafeEqual(proof, readBack)) throw new Error("MEDIA_PROBE_MISMATCH");
+    fs.rmSync(probePath);
+    created = false;
+  } catch {
+    throw Object.assign(new Error("hosted catalog media disk I/O unavailable"), {
+      code: "V1_HOSTED_CATALOG_MEDIA_IO_NOT_READY",
+    });
+  } finally {
+    if (fileDescriptor !== undefined) {
+      try { fs.closeSync(fileDescriptor); } catch { /* admission already failed */ }
+    }
+    if (created) {
+      try { fs.rmSync(probePath, { force: true }); } catch { /* no unrelated path is removed */ }
+    }
+    proof.fill(0);
   }
 }
 
