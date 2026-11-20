@@ -112,6 +112,23 @@ function invalidManifest(): never {
   });
 }
 
+function validCleanupEntry(value: unknown): value is CleanupEntry {
+  if (!value || typeof value !== "object") return false;
+  const entry = value as Record<string, unknown>;
+  if (typeof entry.storage_provider !== "string" || !entry.storage_provider.trim()) return false;
+  switch (entry.kind) {
+    case "catalog_object":
+    case "support_object":
+      return typeof entry.storage_key === "string" && entry.storage_key.length > 0;
+    case "catalog_merchant_prefix":
+      return true;
+    case "support_ticket_prefix":
+      return typeof entry.ticket_id === "string" && entry.ticket_id.length > 0;
+    default:
+      return false;
+  }
+}
+
 function readManifest(filePath: string): CleanupManifest | null {
   let raw: string;
   try {
@@ -130,7 +147,7 @@ function readManifest(filePath: string): CleanupManifest | null {
     parsed?.version !== 1 ||
     typeof parsed.merchant_id !== "string" || !parsed.merchant_id.trim() ||
     typeof parsed.deletion_request_id !== "string" || !parsed.deletion_request_id.trim() ||
-    !Array.isArray(parsed.entries) ||
+    !Array.isArray(parsed.entries) || !parsed.entries.every(validCleanupEntry) ||
     !["prepared", "pending", "complete"].includes(parsed.state) ||
     // A manifest under another merchant's hashed filename must never be
     // trusted for either tombstone verification or physical media removal.
