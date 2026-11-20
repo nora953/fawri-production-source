@@ -60,3 +60,16 @@ test('G3 Render health must require PostgreSQL and actual mounted catalog media'
  assert.match(mountCheck,/mountedWritableFilesystemPresent\(probe\.readMountInfo\(\), mount\)/);
  assert.match(mountCheck,/FAWRI_PERSISTENT_MEDIA_MOUNT_PATH/);
 });
+
+test('V1 merchant deletion retries stay enabled while Meta transport stays disabled',()=>{
+ const entry=fs.readFileSync(path.join(root,'artifacts/api-server/src/index.ts'),'utf8');
+ const cleanup=fs.readFileSync(path.join(root,
+  'artifacts/api-server/src/services/merchantPhysicalMediaCleanup.ts'),'utf8');
+ assert.match(yaml,/- key: FAWRI_DISABLE_JOB_WORKERS\s+value: "0"/);
+ assert.match(yaml,/- key: FAWRI_META_CUTOVER_READY\s+value: "0"/);
+ assert.match(yaml,/- key: FAWRI_META_REPLY_TRANSPORT\s+value: disabled/);
+ assert.match(entry,/if \(!workersExplicitlyDisabled\) \{[\s\S]*?startMerchantPhysicalMediaCleanupReconciler\(\)/);
+ assert.match(entry,/const metaCutoverReady = !manualCommercialRelease\(\) && process\.env\.FAWRI_META_CUTOVER_READY === "1"/);
+ assert.match(entry,/if \(!workersExplicitlyDisabled && metaCutoverReady\)/);
+ assert.match(cleanup,/if \(!manualCommercialRelease\(\)\) \{\s+await reconcileOrphanSupportImagesPostgres\(\)/);
+});
