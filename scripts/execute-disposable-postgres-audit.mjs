@@ -42,6 +42,7 @@ suites['channels-runtime'] = ['merchant-channels-postgres-http.integration.test.
 suites['variant-runtime'] = ['catalog-variant-signature-postgres.integration.test.ts'];
 suites['inventory-runtime'] = ['location-inventory-authority-postgres.integration.test.ts'];
 suites['media-runtime'] = ['merchant-deletion-physical-media-postgres.integration.test.ts'];
+suites['media-runtime-manual'] = ['merchant-deletion-manual-v1-postgres.integration.test.ts'];
 suites.priority = [...suites['audit-boundary'], 'merchant-central-scope-postgres.integration.test.mjs', ...suites['foundation-runtime'], 'cashier-operator-login-concurrency-hardening.test.mjs', 'subscription-tenant-transaction-unit.test.mjs', 'billing-merchant-context-unit.test.mjs', 'operational-postgres-transaction-lifecycle.test.ts', 'failed-setup-cleanup-postgres.integration.test.mjs', ...suites.bootstrap, ...suites.http, ...suites.deletion, ...suites.meta, ...suites['meta-rls']];
 const selected = suites[process.argv[2]];
 assert.ok(selected, 'unknown audit suite');
