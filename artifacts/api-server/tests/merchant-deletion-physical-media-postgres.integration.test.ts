@@ -29,20 +29,15 @@ function suffix(): string {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 12);
 }
 
-for (const manualV1 of [false, true]) {
 test(
-  manualV1
-    ? "manual V1 irreversible deletion retires catalog media without requiring deferred Support SQL"
-    : "irreversible merchant deletion physically retires catalog and support media after the PostgreSQL tombstone commits",
+  "irreversible merchant deletion physically retires catalog and support media after the PostgreSQL tombstone commits",
   { skip: !DATABASE_URL },
   async (t) => {
     const dataRoot = fs.mkdtempSync(
       path.join(os.tmpdir(), "fawri-merchant-media-delete-"),
     );
-    const previousManual = process.env.FAWRI_V1_MANUAL_COMMERCE;
     Object.assign(process.env, {
       NODE_ENV: "test",
-      FAWRI_V1_MANUAL_COMMERCE: manualV1 ? "1" : "0",
       FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required",
       FAWRI_PASSWORD_SALT:
         "physical-media-deletion-test-password-salt-over-thirty-two-characters",
@@ -78,13 +73,8 @@ test(
     let merchantId = "";
 
     t.after(async () => {
-      try {
-        await runtime.dispose();
-      } finally {
-        if (previousManual === undefined) delete process.env.FAWRI_V1_MANUAL_COMMERCE;
-        else process.env.FAWRI_V1_MANUAL_COMMERCE = previousManual;
-        fs.rmSync(dataRoot, { recursive: true, force: true });
-      }
+      await runtime.dispose();
+      fs.rmSync(dataRoot, { recursive: true, force: true });
     });
 
     const collisions = await pool.query(
@@ -154,34 +144,29 @@ test(
     );
     assert.equal(fs.existsSync(catalogFile), true);
 
-    let supportFile: string | null = null;
-    // The first commercial release does not allow Support tickets/images.
-    // Preserve the old full-product regression separately in the same test.
-    if (!manualV1) {
-      await pool.query(
-        `INSERT INTO support_tickets (
-           id, merchant_id, subject, category, status, metadata,
-           created_at, updated_at
-         ) VALUES ($1, $2, $3, 'account', 'open', '{}'::jsonb, now(), now())`,
-        [ticketId, merchantId, `Physical media ticket ${proof}`],
-      );
-      const supportUpload = await supportImages.saveSupportImagePostgres({
-        ticketId,
-        buffer: imageBytes,
-        suppliedMime: "image/jpeg",
-        fileName: "proof.jpg",
-        senderType: "merchant",
-        senderAccountId: merchantId,
-        senderName: "Merchant",
-        merchantId,
-      });
-      supportFile = path.join(
-        dataRoot,
-        "support-images",
-        supportUpload.attachment.storage_key,
-      );
-      assert.equal(fs.existsSync(supportFile), true);
-    }
+    await pool.query(
+      `INSERT INTO support_tickets (
+         id, merchant_id, subject, category, status, metadata,
+         created_at, updated_at
+       ) VALUES ($1, $2, $3, 'account', 'open', '{}'::jsonb, now(), now())`,
+      [ticketId, merchantId, `Physical media ticket ${proof}`],
+    );
+    const supportUpload = await supportImages.saveSupportImagePostgres({
+      ticketId,
+      buffer: imageBytes,
+      suppliedMime: "image/jpeg",
+      fileName: "proof.jpg",
+      senderType: "merchant",
+      senderAccountId: merchantId,
+      senderName: "Merchant",
+      merchantId,
+    });
+    const supportFile = path.join(
+      dataRoot,
+      "support-images",
+      supportUpload.attachment.storage_key,
+    );
+    assert.equal(fs.existsSync(supportFile), true);
 
     await merchantManagement.updateMerchantStatusPostgres({
       merchantId,
@@ -205,20 +190,11 @@ test(
     assert.equal(deleted.ok, true);
 
     assert.equal(fs.existsSync(catalogFile), false);
-    if (!manualV1) {
-      assert.ok(supportFile, "the full profile must have created a Support image fixture");
-      assert.equal(fs.existsSync(supportFile), false);
-      assert.equal(
-        fs.existsSync(path.join(dataRoot, "support-images", ticketId)),
-        false,
-      );
-    } else {
-      assert.equal(
-        fs.existsSync(path.join(dataRoot, "support-images")),
-        false,
-        "manual V1 must not create or require deferred Support media",
-      );
-    }
+    assert.equal(fs.existsSync(supportFile), false);
+    assert.equal(
+      fs.existsSync(path.join(dataRoot, "support-images", ticketId)),
+      false,
+    );
 
     const catalogReferences = await pool.query(
       "SELECT id FROM catalog_image_references WHERE merchant_id = $1",
@@ -269,4 +245,3 @@ test(
     assert.deepEqual(retried, { status: "complete", remaining: 0 });
   },
 );
-}
