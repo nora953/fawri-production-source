@@ -1,6 +1,8 @@
 import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import { authSecurityStore } from "./authSecurityStore";
+import type { AcceptedWhatsAppAuthTemplate } from "./authOtpDelivery";
+import { productionOtpDeliveryConfigurationReady } from "./authOtpDelivery";
 import {
   AuthSecurityStoreError,
   type OtpPurpose,
@@ -62,6 +64,8 @@ type OtpRow = {
   max_attempts: number;
   used_at: Date | null;
   revoked_at: Date | null;
+  wa_auth_message_id_hash?: string | null;
+  wa_auth_accepted_at?: Date | null;
 };
 
 async function lockAuthSecurityKeys(
@@ -218,6 +222,73 @@ export async function issueMerchantOtpChallengeAuthoritative(input: {
   });
 }
 
+
+/**
+ * Opt-in source-only WhatsApp trial provenance. No production migration/flag
+ * is authorized. Only the trusted sender may submit its provider API receipt,
+ * and only redemption of the same DB-bound signup OTP may write phone proof.
+ * Provider acceptance alone is never OTP verification.
+ */
+export function whatsappTrialProofSourceReady(): boolean {
+  return process.env.FAWRI_WHATSAPP_TRIAL_PROOF_SOURCE_ENABLED === "1" &&
+    process.env.FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY === "required" &&
+    operationalPostgresAuthorityRequired() &&
+    productionOtpDeliveryConfigurationReady() &&
+    Buffer.byteLength(String(process.env.FAWRI_TRIAL_EVIDENCE_HMAC_SECRET || ""), "utf8") >= 32;
+}
+
+function whatsappTrialDigest(scope: string, value: string): string {
+  const secret = String(process.env.FAWRI_TRIAL_EVIDENCE_HMAC_SECRET || "");
+  if (!whatsappTrialProofSourceReady()) throw new Error("TRIAL_WHATSAPP_PROOF_NOT_READY");
+  return crypto.createHmac("sha256", secret).update(scope + ":" + value).digest("base64url");
+}
+
+/** Records only the accepted-template API message ID fingerprint, never OTP content. */
+export async function recordAcceptedSignupWhatsAppTemplate(input: {
+  challengeId: string;
+  target: string;
+  providerReceipt: AcceptedWhatsAppAuthTemplate;
+}): Promise<void> {
+  if (!whatsappTrialProofSourceReady()) throw new Error("TRIAL_WHATSAPP_PROOF_NOT_READY");
+  const receipt = input?.providerReceipt;
+  if (!receipt || typeof receipt.messageId !== "string" ||
+      !/^wamid\\.[A-Za-z0-9._+\\/=-]{8,500}$/.test(receipt.messageId) ||
+      receipt.templateName !== process.env.WHATSAPP_AUTH_TEMPLATE_NAME ||
+      receipt.templateLanguage !== process.env.WHATSAPP_AUTH_TEMPLATE_LANGUAGE) {
+    throw new Error("TRIAL_WHATSAPP_PROVIDER_RECEIPT_INVALID");
+  }
+  const messageHash = whatsappTrialDigest("trial-wa-provider-message:v1", receipt.messageId);
+  await withAuthenticationTransaction(async client => {
+    const checked = await client.query<{
+      id: string; account_id: string | null; target_hash: string;
+      purpose: string; used_at: Date | null; revoked_at: Date | null;
+      expires_at: Date; wa_auth_message_id_hash: string | null; phone: string;
+      state: string;
+    }>(
+      "SELECT c.id,c.account_id,c.target_hash,c.purpose::text AS purpose," +
+      "c.used_at,c.revoked_at,c.expires_at,c.wa_auth_message_id_hash,a.phone,a.state " +
+      "FROM public.auth_otp_challenges c JOIN public.accounts a " +
+      "ON a.id=c.account_id AND a.kind='merchant' " +
+      "WHERE c.id=$1 FOR UPDATE OF c,a",
+      [input.challengeId],
+    );
+    const row=checked.rows[0];
+    if (!row || row.purpose !== "signup" || row.phone !== input.target ||
+        row.state !== "active" || row.target_hash !== fingerprint("otp-target", input.target) ||
+        row.used_at || row.revoked_at || row.expires_at.getTime() <= Date.now() ||
+        row.wa_auth_message_id_hash) {
+      throw new Error("TRIAL_WHATSAPP_PROVIDER_RECEIPT_INVALID");
+    }
+    const recorded=await client.query<{id:string}>(
+      "UPDATE public.auth_otp_challenges " +
+      "SET wa_auth_message_id_hash=$2,wa_auth_accepted_at=now() " +
+      "WHERE id=$1 AND wa_auth_message_id_hash IS NULL RETURNING id",
+      [row.id,messageHash],
+    );
+    if (recorded.rows.length !== 1) throw new Error("TRIAL_WHATSAPP_PROVIDER_RECEIPT_INVALID");
+  });
+}
+
 export async function verifyMerchantOtpChallengeAuthoritative(input: {
   challengeId: string;
   target: string;
@@ -225,17 +296,26 @@ export async function verifyMerchantOtpChallengeAuthoritative(input: {
   code: string;
   ip: string;
 }): Promise<"verified" | "invalid" | "expired" | "used" | "locked"> {
+  const provenanceRequired = process.env.FAWRI_WHATSAPP_TRIAL_PROOF_SOURCE_ENABLED === "1" &&
+    input.purpose === "signup";
+  if (provenanceRequired && !whatsappTrialProofSourceReady()) {
+    throw new Error("TRIAL_WHATSAPP_PROOF_NOT_READY");
+  }
   if (!operationalPostgresAuthorityRequired()) {
     return authSecurityStore.verifyOtpChallenge(input);
   }
   return withAuthenticationTransaction(async (client) => {
     const result = await client.query<OtpRow>(
-      `SELECT id, account_id, target_hash, code_hash, ip_hash,
-              purpose::text AS purpose, created_at, expires_at, resend_after,
-              attempts, max_attempts, used_at, revoked_at
-         FROM auth_otp_challenges
-        WHERE id = $1
-        FOR UPDATE`,
+      provenanceRequired
+        ? `SELECT id, account_id, target_hash, code_hash, ip_hash,
+                  purpose::text AS purpose, created_at, expires_at, resend_after,
+                  attempts, max_attempts, used_at, revoked_at,
+                  wa_auth_message_id_hash, wa_auth_accepted_at
+             FROM auth_otp_challenges WHERE id=$1 FOR UPDATE`
+        : `SELECT id, account_id, target_hash, code_hash, ip_hash,
+                  purpose::text AS purpose, created_at, expires_at, resend_after,
+                  attempts, max_attempts, used_at, revoked_at
+             FROM auth_otp_challenges WHERE id=$1 FOR UPDATE`,
       [input.challengeId],
     );
     const challenge = result.rows[0];
@@ -255,6 +335,24 @@ export async function verifyMerchantOtpChallengeAuthoritative(input: {
     if (challenge.attempts >= challenge.max_attempts) {
       return "locked" as const;
     }
+    if (provenanceRequired &&
+        (!challenge.account_id || !challenge.wa_auth_message_id_hash ||
+         !(challenge.wa_auth_accepted_at instanceof Date) ||
+         challenge.wa_auth_accepted_at.getTime() < challenge.created_at.getTime() ||
+         challenge.wa_auth_accepted_at.getTime() > now.getTime())) {
+      return "invalid" as const;
+    }
+    // Lock the specific account before consuming the OTP. Reassigning a
+    // phone or a challenge to another tenant cannot mint trial proof.
+    if (provenanceRequired) {
+      const binding = await client.query<{id:string}>(
+        "SELECT id FROM public.accounts " +
+        "WHERE id=$1 AND kind='merchant' AND state='active' AND phone=$2 " +
+        "FOR UPDATE",
+        [challenge.account_id,input.target],
+      );
+      if (binding.rows.length !== 1) return "invalid" as const;
+    }
     const nextAttempts = challenge.attempts + 1;
     const valid = safeEqual(
       challenge.code_hash,
@@ -273,6 +371,18 @@ export async function verifyMerchantOtpChallengeAuthoritative(input: {
         WHERE id = $1`,
       [challenge.id, nextAttempts, now],
     );
+    if (provenanceRequired) {
+      const proofHash=whatsappTrialDigest("trial-evidence:verified-phone:v1", input.target);
+      const updated=await client.query<{id:string}>(
+        "UPDATE public.accounts SET phone_verified=true,phone_verified_at=$3," +
+        "trial_wa_proof_hash=$4,trial_wa_proof_verified_at=$3," +
+        "trial_wa_proof_challenge_id=$5,updated_at=$3 " +
+        "WHERE id=$1 AND kind='merchant' AND state='active' AND phone=$2 " +
+        "RETURNING id",
+        [challenge.account_id,input.target,now,proofHash,challenge.id],
+      );
+      if (updated.rows.length !== 1) throw new Error("TRIAL_WHATSAPP_PROOF_ACCOUNT_CHANGED");
+    }
     return "verified" as const;
   });
 }
