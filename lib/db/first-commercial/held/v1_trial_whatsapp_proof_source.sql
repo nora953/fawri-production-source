@@ -47,43 +47,11 @@ ALTER TABLE public.accounts
       AND trial_wa_proof_challenge_id IS NULL)
     OR
     (trial_wa_proof_hash IS NOT NULL
-      AND trial_wa_proof_hash ~ '^[A-Za-z0-9_-]{43}
-       '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')
-  );
-CREATE UNIQUE INDEX accounts_trial_wa_proof_challenge_unique
-  ON public.accounts(trial_wa_proof_challenge_id)
-  WHERE trial_wa_proof_challenge_id IS NOT NULL;
-
-COMMENT ON COLUMN public.accounts.trial_wa_proof_hash IS
-  'Only a trusted WhatsApp Authentication OTP redemption may populate this keyed current-phone HMAC; legacy phone_verified is insufficient.';
-COMMENT ON COLUMN public.accounts.trial_wa_proof_verified_at IS
-  'Trusted WhatsApp Authentication OTP challenge redemption time; NULL for legacy verification.';
-COMMENT ON COLUMN public.accounts.trial_wa_proof_challenge_id IS
-  'Consumed and unique trusted WhatsApp Authentication challenge ID, never OTP material.';
-
-DO $trial_wa_proof_postimage$
-BEGIN
-  IF (SELECT count(*) FROM information_schema.columns
-      WHERE table_schema='public' AND table_name='accounts'
-        AND column_name IN ('trial_wa_proof_hash',
-                            'trial_wa_proof_verified_at',
-                            'trial_wa_proof_challenge_id')) <> 3
-     OR NOT EXISTS (
-       SELECT 1 FROM pg_catalog.pg_constraint
-       WHERE conname='account_trial_wa_proof_complete'
-         AND conrelid='public.accounts'::regclass
-     )
-     OR has_table_privilege('fawri_restricted_runtime','public.accounts','UPDATE')
-     OR has_table_privilege('fawri_operator_issuer','public.accounts','UPDATE')
-  THEN RAISE EXCEPTION 'TRIAL_WHATSAPP_PROOF_POSTIMAGE_NOT_ACCEPTED'; END IF;
-END;
-$trial_wa_proof_postimage$;
-COMMIT;
-
+      AND trial_wa_proof_hash ~ '^[A-Za-z0-9_-]{43}$'
       AND trial_wa_proof_verified_at IS NOT NULL
       AND trial_wa_proof_challenge_id IS NOT NULL
       AND trial_wa_proof_challenge_id ~
-       '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')
+        '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')
   );
 CREATE UNIQUE INDEX accounts_trial_wa_proof_challenge_unique
   ON public.accounts(trial_wa_proof_challenge_id)
