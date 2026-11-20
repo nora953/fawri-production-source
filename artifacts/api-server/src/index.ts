@@ -5,6 +5,7 @@ import type { DurableJobWorker } from "./services/durableJobQueue";
 import type { EarlyWarningIncidentMonitor } from "./services/earlyWarningIncidentMonitor";
 import type { MerchantPhysicalMediaCleanupReconciler } from "./services/merchantPhysicalMediaCleanup";
 import { assertProductionRuntimeConfiguration, productionReleaseGateRequired } from "./services/productionReleaseReadiness";
+import { assertHostedV1CatalogMediaMount } from "./services/hostedV1CatalogMediaReadiness";
 import { assertProductionOwnerAdminReady } from "./services/postgresOwnerAdminProvisioning";
 import { assertProductionCashierStreamStorageReady } from "./services/cashierStreamStorageReadiness";
 import { assertProductionDatabaseRlsReady } from "./services/postgresRuntimeRlsSecurity";
