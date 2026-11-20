@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { authSecurityStore } from "./authSecurityStore";
 import type { AcceptedWhatsAppAuthTemplate } from "./authOtpDelivery";
 import { productionOtpDeliveryConfigurationReady } from "./authOtpDelivery";
+import { isE164Phone } from "./authAccountRepository";
 import {
   AuthSecurityStoreError,
   type OtpPurpose,
@@ -97,12 +98,21 @@ export async function issueMerchantOtpChallengeAuthoritative(input: {
   target: string;
   purpose: OtpPurpose;
   ip: string;
+  /** Server-derived Google merchant session account only, never user JSON. */
+  googleMerchantAccountId?: string;
 }): Promise<{
   challengeId: string;
   code: string;
   expiresAt: string;
   retryAfterSeconds: number;
 }> {
+  if (input.googleMerchantAccountId) {
+    if (!googlePhoneClaimSourceReady() || input.purpose !== "signup" ||
+        !isE164Phone(input.target) ||
+        !/^merchant-[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.googleMerchantAccountId)) {
+      throw new Error("GOOGLE_PHONE_CLAIM_NOT_READY");
+    }
+  }
   if (!operationalPostgresAuthorityRequired()) {
     return authSecurityStore.issueOtpChallenge(input);
   }
@@ -115,7 +125,28 @@ export async function issueMerchantOtpChallengeAuthoritative(input: {
     await lockAuthSecurityKeys(client, [
       `otp-target:${targetHash}:${input.purpose}`,
       `otp-ip:${ipHash}`,
+      ...(input.googleMerchantAccountId ? [`otp-google-merchant:${input.googleMerchantAccountId}`] : []),
     ]);
+    if (input.googleMerchantAccountId) {
+      const googleAccount = await client.query<{ id: string }>(
+        "SELECT a.id FROM public.accounts a JOIN public.merchants m " +
+        "ON m.id=a.id AND m.account_id=a.id " +
+        "WHERE a.id=$1 AND a.kind='merchant' AND a.state='active' " +
+        "AND a.phone IS NULL AND a.phone_verified=false " +
+        "AND a.google_issuer='https://accounts.google.com' " +
+        "AND a.google_subject IS NOT NULL " +
+        "AND m.account_status IN ('pending_review','approved') FOR UPDATE OF a",
+        [input.googleMerchantAccountId],
+      );
+      if (googleAccount.rows.length !== 1) throw new Error("GOOGLE_PHONE_ACCOUNT_NOT_ELIGIBLE");
+      // No Google account may reserve a verified/claimed phone belonging to
+      // another merchant or administrator; the final unique index arbitrates races.
+      const taken = await client.query<{ id: string }>(
+        "SELECT id FROM public.accounts WHERE phone=$1 LIMIT 1 FOR UPDATE",
+        [input.target],
+      );
+      if (taken.rows.length) throw new Error("GOOGLE_PHONE_ALREADY_CLAIMED");
+    }
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
     const targetRecent = await client.query<{
@@ -193,7 +224,8 @@ export async function issueMerchantOtpChallengeAuthoritative(input: {
       input.purpose === "admin_device_verification" || input.purpose === "admin_recovery"
         ? "admin"
         : "merchant";
-    const accountId = await accountIdForPhone(client, input.target, accountKind);
+    const accountId = input.googleMerchantAccountId ||
+      await accountIdForPhone(client, input.target, accountKind);
     await client.query(
       `INSERT INTO auth_otp_challenges
         (id, account_id, target_hash, code_hash, ip_hash, purpose,
@@ -229,6 +261,14 @@ export async function issueMerchantOtpChallengeAuthoritative(input: {
  * and only redemption of the same DB-bound signup OTP may write phone proof.
  * Provider acceptance alone is never OTP verification.
  */
+/** Extra opt-in for phone-to-Google binding. Never implies trial activation. */
+export function googlePhoneClaimSourceReady(): boolean {
+  return process.env.FAWRI_GOOGLE_PHONE_CLAIM_ENABLED === "1" &&
+    process.env.FAWRI_GOOGLE_OIDC_HTTP_READY === "1" &&
+    process.env.FAWRI_GOOGLE_MERCHANT_ADMISSION_ENABLED === "1" &&
+    whatsappTrialProofSourceReady();
+}
+
 export function whatsappTrialProofSourceReady(): boolean {
   return process.env.FAWRI_WHATSAPP_TRIAL_PROOF_SOURCE_ENABLED === "1" &&
     process.env.FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY === "required" &&
@@ -264,18 +304,24 @@ export async function recordAcceptedSignupWhatsAppTemplate(input: {
     const checked = await client.query<{
       id: string; account_id: string | null; target_hash: string;
       purpose: string; used_at: Date | null; revoked_at: Date | null;
-      expires_at: Date; wa_auth_message_id_hash: string | null; phone: string;
+      expires_at: Date; wa_auth_message_id_hash: string | null; phone: string | null;
+      google_issuer: string | null; google_subject: string | null;
       state: string;
     }>(
       "SELECT c.id,c.account_id,c.target_hash,c.purpose::text AS purpose," +
-      "c.used_at,c.revoked_at,c.expires_at,c.wa_auth_message_id_hash,a.phone,a.state " +
+      "c.used_at,c.revoked_at,c.expires_at,c.wa_auth_message_id_hash," +
+      "a.phone,a.state,a.google_issuer,a.google_subject " +
       "FROM public.auth_otp_challenges c JOIN public.accounts a " +
       "ON a.id=c.account_id AND a.kind='merchant' " +
       "WHERE c.id=$1 FOR UPDATE OF c,a",
       [input.challengeId],
     );
     const row=checked.rows[0];
-    if (!row || row.purpose !== "signup" || row.phone !== input.target ||
+    const googleUnbound = Boolean(row && googlePhoneClaimSourceReady() &&
+      row.phone === null && row.google_issuer === "https://accounts.google.com" &&
+      row.google_subject);
+    if (!row || row.purpose !== "signup" ||
+        (row.phone !== input.target && !googleUnbound) ||
         row.state !== "active" || row.target_hash !== fingerprint("otp-target", input.target) ||
         row.used_at || row.revoked_at || row.expires_at.getTime() <= Date.now() ||
         row.wa_auth_message_id_hash) {
@@ -297,7 +343,13 @@ export async function verifyMerchantOtpChallengeAuthoritative(input: {
   purpose: OtpPurpose;
   code: string;
   ip: string;
+  /** Only from verified Google merchant session in the dedicated route. */
+  expectedGoogleAccountId?: string;
 }): Promise<"verified" | "invalid" | "expired" | "used" | "locked"> {
+  if (input.expectedGoogleAccountId && (!googlePhoneClaimSourceReady() ||
+      input.purpose !== "signup" || !isE164Phone(input.target))) {
+    throw new Error("GOOGLE_PHONE_CLAIM_NOT_READY");
+  }
   const provenanceRequired = process.env.FAWRI_WHATSAPP_TRIAL_PROOF_SOURCE_ENABLED === "1" &&
     input.purpose === "signup";
   if (provenanceRequired && !whatsappTrialProofSourceReady()) {
@@ -346,14 +398,33 @@ export async function verifyMerchantOtpChallengeAuthoritative(input: {
     }
     // Lock the specific account before consuming the OTP. Reassigning a
     // phone or a challenge to another tenant cannot mint trial proof.
+    let googleUnbound = false;
     if (provenanceRequired) {
-      const binding = await client.query<{id:string}>(
-        "SELECT id FROM public.accounts " +
-        "WHERE id=$1 AND kind='merchant' AND state='active' AND phone=$2 " +
-        "FOR UPDATE",
-        [challenge.account_id,input.target],
+      const binding = await client.query<{
+        id: string; phone: string | null;
+        google_issuer: string | null; google_subject: string | null;
+      }>(
+        "SELECT id,phone,google_issuer,google_subject FROM public.accounts " +
+        "WHERE id=$1 AND kind='merchant' AND state='active' FOR UPDATE",
+        [challenge.account_id],
       );
-      if (binding.rows.length !== 1) return "invalid" as const;
+      const current = binding.rows[0];
+      googleUnbound = Boolean(input.expectedGoogleAccountId &&
+        input.expectedGoogleAccountId === challenge.account_id &&
+        current?.phone === null &&
+        current.google_issuer === "https://accounts.google.com" &&
+        current.google_subject);
+      if (!current || (!googleUnbound &&
+          (current.phone !== input.target || Boolean(input.expectedGoogleAccountId)))) {
+        return "invalid" as const;
+      }
+      if (googleUnbound) {
+        const taken = await client.query<{id:string}>(
+          "SELECT id FROM public.accounts WHERE phone=$1 LIMIT 1 FOR UPDATE",
+          [input.target],
+        );
+        if (taken.rows.length) return "invalid" as const;
+      }
     }
     const nextAttempts = challenge.attempts + 1;
     const valid = safeEqual(
@@ -376,10 +447,16 @@ export async function verifyMerchantOtpChallengeAuthoritative(input: {
     if (provenanceRequired) {
       const proofHash=whatsappTrialDigest("trial-evidence:verified-phone:v1", input.target);
       const updated=await client.query<{id:string}>(
-        "UPDATE public.accounts SET phone_verified=true,phone_verified_at=$3," +
+        "UPDATE public.accounts SET " +
+        (googleUnbound ? "phone=$2," : "") +
+        "phone_verified=true,phone_verified_at=$3," +
         "trial_wa_proof_hash=$4,trial_wa_proof_verified_at=$3," +
         "trial_wa_proof_challenge_id=$5,updated_at=$3 " +
-        "WHERE id=$1 AND kind='merchant' AND state='active' AND phone=$2 " +
+        "WHERE id=$1 AND kind='merchant' AND state='active' AND " +
+        (googleUnbound
+          ? "phone IS NULL AND google_issuer='https://accounts.google.com' " +
+            "AND google_subject IS NOT NULL "
+          : "phone=$2 ") +
         "RETURNING id",
         [challenge.account_id,input.target,now,proofHash,challenge.id],
       );
