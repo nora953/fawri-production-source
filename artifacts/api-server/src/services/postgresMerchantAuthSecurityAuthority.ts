@@ -290,8 +290,13 @@ export async function recordAcceptedSignupWhatsAppTemplate(input: {
   challengeId: string;
   target: string;
   providerReceipt: AcceptedWhatsAppAuthTemplate;
+  /** Verified merchant session ID, only for an unbound Google phone claim. */
+  googleMerchantAccountId?: string;
 }): Promise<void> {
-  if (!whatsappTrialProofSourceReady()) throw new Error("TRIAL_WHATSAPP_PROOF_NOT_READY");
+  if (!whatsappTrialProofSourceReady() ||
+      (input.googleMerchantAccountId && !googlePhoneClaimSourceReady())) {
+    throw new Error("TRIAL_WHATSAPP_PROOF_NOT_READY");
+  }
   const receipt = input?.providerReceipt;
   if (!receipt || typeof receipt.messageId !== "string" ||
       !/^wamid\.[A-Za-z0-9._+\/=-]{8,500}$/.test(receipt.messageId) ||
@@ -301,6 +306,16 @@ export async function recordAcceptedSignupWhatsAppTemplate(input: {
   }
   const messageHash = whatsappTrialDigest("trial-wa-provider-message:v1", receipt.messageId);
   await withAuthenticationTransaction(async client => {
+    if (input.googleMerchantAccountId) {
+      // Match issue/verify account->challenge row lock order on a Google
+      // merchant to avoid deadlocks with concurrent resend or redemption.
+      const account = await client.query<{id:string}>(
+        "SELECT id FROM public.accounts WHERE id=$1 AND kind='merchant' " +
+        "AND state='active' FOR UPDATE",
+        [input.googleMerchantAccountId],
+      );
+      if (account.rows.length !== 1) throw new Error("TRIAL_WHATSAPP_PROVIDER_RECEIPT_INVALID");
+    }
     const checked = await client.query<{
       id: string; account_id: string | null; target_hash: string;
       purpose: string; used_at: Date | null; revoked_at: Date | null;
@@ -321,6 +336,7 @@ export async function recordAcceptedSignupWhatsAppTemplate(input: {
       row.phone === null && row.google_issuer === "https://accounts.google.com" &&
       row.google_subject);
     if (!row || row.purpose !== "signup" ||
+        (input.googleMerchantAccountId && row.account_id !== input.googleMerchantAccountId) ||
         (row.phone !== input.target && !googleUnbound) ||
         row.state !== "active" || row.target_hash !== fingerprint("otp-target", input.target) ||
         row.used_at || row.revoked_at || row.expires_at.getTime() <= Date.now() ||
