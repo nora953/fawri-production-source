@@ -3,6 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { getFawriDataDir } from "../lib/dataPaths";
+import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
+import { productionReleaseGateRequired } from "./productionReleaseReadiness";
 import { logger } from "../lib/logger";
 import {
   catalogMediaStorageProviderName,
@@ -271,19 +273,26 @@ async function captureCleanupManifest(input: {
 
 async function deletionIsCommitted(merchantId: string): Promise<boolean> {
   if (!operationalPostgresAuthorityRequired()) return false;
-  const pool = await operationalDatabasePool();
-  const rows = await operationalQueryRows<{
-    account_state: string;
-    retention_status: string | null;
-  }>(
-    pool,
-    `SELECT a.state::text AS account_state, m.retention_status
+  const query = `SELECT a.state::text AS account_state, m.retention_status
        FROM merchants m
        JOIN accounts a ON a.id = m.account_id AND a.kind = 'merchant'
       WHERE m.id = $1
-      LIMIT 1`,
-    [merchantId],
-  );
+      LIMIT 1`;
+  type DeletionTombstone = {
+    account_state: string;
+    retention_status: string | null;
+  };
+  // First-commercial restricted tenant LOGIN intentionally has NO SELECT on
+  // public.merchants/accounts. It cannot verify a post-delete tombstone.
+  // Use the existing, separately authenticated issuer (already granted narrow
+  // accounts/merchants SELECT) for this internal admin deletion-only decision,
+  // with a bound merchant ID and a full trusted issuer lease. No tenant role
+  // escalation or broad application grants are introduced.
+  const rows = productionReleaseGateRequired()
+    ? await withAuthenticationTransaction(client =>
+        operationalQueryRows<DeletionTombstone>(client, query, [merchantId]))
+    : await operationalQueryRows<DeletionTombstone>(
+        await operationalDatabasePool(), query, [merchantId]);
   return (
     rows[0]?.account_state === "closed" &&
     rows[0]?.retention_status === "deleted"
