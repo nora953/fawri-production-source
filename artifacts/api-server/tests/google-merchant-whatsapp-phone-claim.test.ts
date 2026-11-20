@@ -33,6 +33,8 @@ test("pending Google phone endpoints only allow POST and do not enable commerce"
   assert.match(routes, /isGoogleMerchantIdentityLinked\(accountId\)/);
   assert.match(routes, /googleMerchantHttpReady\(\) \|\| !googlePhoneClaimSourceReady\(\)/);
   assert.match(routes, /googleMerchantAccountId: accountId/);
+  assert.match(issuer, /input.googleMerchantAccountId && row.account_id !== input.googleMerchantAccountId/);
+  assert.match(issuer, /googleMerchantAccountId\?: string/);
   assert.match(routes, /expectedGoogleAccountId: accountId/);
   assert.doesNotMatch(routes, /googleMerchantAccountId: req.body/);
   assert.doesNotMatch(routes, /expectedGoogleAccountId: req.body/);
