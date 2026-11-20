@@ -100,8 +100,8 @@ jobs:
           pnpm --filter @workspace/api-server exec tsx --test ./tests/auth-security-store.test.ts
           pnpm --filter @workspace/api-server exec tsx --test ./tests/auth-cutover-contract.test.mjs
 
-      - name: Run merchant Auth cutover in attested offline PostgreSQL
-        run: bash scripts/run-isolated-postgres-audit.sh auth-cutover
+      - name: Run merchant Auth cutover through pinned attested offline PostgreSQL suite
+        run: bash scripts/run-isolated-postgres-audit.sh auth-contract
 
       - name: Type-check Fawri frontend
         run: pnpm --filter @workspace/fawri run typecheck
