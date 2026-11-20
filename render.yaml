@@ -13,9 +13,11 @@ services:
     dockerfilePath: ./Dockerfile.staging
     dockerContext: .
     autoDeployTrigger: off
-    # /healthz is only liveness; readiness fails if PG authority, WhatsApp
-    # delivery config or the real mounted persistent media directory is lost.
-    healthCheckPath: /ops/readiness
+    # /healthz is liveness only. /readyz verifies all three database
+    # authorities, production config and actual persistent-media mount.
+    # G4 WhatsApp configuration remains a separate /ops/readiness gate;
+    # it must not prevent the earlier G3 infrastructure acceptance.
+    healthCheckPath: /readyz
     maintenanceMode:
       enabled: true
     disk:
