@@ -43,8 +43,14 @@ test('G3 Render health must require PostgreSQL and actual mounted catalog media'
  const entry=fs.readFileSync(path.join(root,'artifacts/api-server/src/index.ts'),'utf8');
  const mountCheck=fs.readFileSync(path.join(root,
   'artifacts/api-server/src/services/hostedV1CatalogMediaReadiness.ts'),'utf8');
- assert.match(yaml,/healthCheckPath: \/ops\/readiness/);
+ assert.match(yaml,/healthCheckPath: \/readyz/);
  assert.doesNotMatch(yaml,/healthCheckPath: \/healthz/);
+ assert.match(app,/app.get\("\/readyz", async/);
+ assert.match(app,/createReadinessSnapshot\(\[/);
+ assert.match(app,/withAuthenticationTransaction\(async client/);
+ assert.match(app,/withOperatorDirectoryTransaction\(async client/);
+ // G4 provider proof remains independently required in the existing /ops gate.
+ assert.match(app,/createProductionOtpReadinessCheck\(\)/);
  assert.match(yaml,/mountPath: \/var\/data/);
  assert.match(yaml,/- key: FAWRI_PERSISTENT_MEDIA_MOUNT_PATH\s+value: \/var\/data/);
  assert.match(app,/createPostgresAuthorityReadinessCheck\(\)/);
