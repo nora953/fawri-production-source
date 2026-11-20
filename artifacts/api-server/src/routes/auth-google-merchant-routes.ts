@@ -239,7 +239,7 @@ router.post("/google/phone/verify", requireSecureMerchantSession, async (req, re
   if (!googleOriginAllowed(req) || !req.is("application/json") ||
       !accountId || !isE164Phone(phone) ||
       !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(challengeId) ||
-      !/^\\d{6}$/.test(code) ||
+      !/^\d{6}$/.test(code) ||
       !await isGoogleMerchantIdentityLinked(accountId)) {
     sendAuthError(res, 403, "GOOGLE_PHONE_FORBIDDEN", "WhatsApp phone verification is forbidden");
     return;
