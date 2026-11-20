@@ -5,7 +5,7 @@ import type { DurableJobWorker } from "./services/durableJobQueue";
 import type { EarlyWarningIncidentMonitor } from "./services/earlyWarningIncidentMonitor";
 import type { MerchantPhysicalMediaCleanupReconciler } from "./services/merchantPhysicalMediaCleanup";
 import { assertProductionRuntimeConfiguration, productionReleaseGateRequired } from "./services/productionReleaseReadiness";
-import { assertHostedV1CatalogMediaMount } from "./services/hostedV1CatalogMediaReadiness";
+import { assertHostedV1CatalogMediaMount, assertHostedV1CatalogMediaIoReady } from "./services/hostedV1CatalogMediaReadiness";
 import { assertProductionOwnerAdminReady } from "./services/postgresOwnerAdminProvisioning";
 import { assertProductionCashierStreamStorageReady } from "./services/cashierStreamStorageReadiness";
 import { assertProductionDatabaseRlsReady } from "./services/postgresRuntimeRlsSecurity";
@@ -62,6 +62,9 @@ async function main(): Promise<void> {
   // Source-only G3 guard: never admit first-commercial traffic when the
   // media directory is not backed by the exact mounted persistent disk.
   assertHostedV1CatalogMediaMount(process.env);
+  // Before any listener/merchant writes, prove the admitted disk can
+  // actually persist and read an exclusive temporary file via fsync.
+  assertHostedV1CatalogMediaIoReady(process.env);
   startupStage = "database_rls";
   await assertProductionDatabaseRlsReady(process.env);
   // FIELD002: readiness-only checks do not prevent ingress when a host
