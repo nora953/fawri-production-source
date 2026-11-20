@@ -59,6 +59,9 @@ async function main(): Promise<void> {
   // Production fails closed before any provider bootstrap, listener, worker,
   // or application traffic. Staging/development must opt out explicitly.
   assertProductionRuntimeConfiguration(process.env);
+  // Source-only G3 guard: never admit first-commercial traffic when the
+  // media directory is not backed by the exact mounted persistent disk.
+  assertHostedV1CatalogMediaMount(process.env);
   startupStage = "database_rls";
   await assertProductionDatabaseRlsReady(process.env);
   // FIELD002: readiness-only checks do not prevent ingress when a host
