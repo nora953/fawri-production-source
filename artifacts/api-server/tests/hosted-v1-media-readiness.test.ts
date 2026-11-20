@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 import {
   assertHostedV1CatalogMediaMount,
   createHostedV1CatalogMediaReadinessCheck,
+  ensureSafeMountedMediaDataDirectory,
   mountedWritableFilesystemPresent,
 } from "../src/services/hostedV1CatalogMediaReadiness";
 
@@ -92,6 +96,38 @@ test("ephemeral mount types and symlink redirects are rejected", () => {
       return location === MOUNT ? "/other/volume" : location;
     },
   }), { code: "V1_HOSTED_CATALOG_MEDIA_MOUNT_NOT_READY" });
+});
+
+test("first-start directory creation never follows existing symlinks outside mounted disk", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "fawri-g3-mount-"));
+  const mount = path.join(root, "mount");
+  const outside = path.join(root, "outside");
+  try {
+    fs.mkdirSync(mount);
+    fs.mkdirSync(outside);
+    const child = path.join(mount, "new", "media");
+    assert.doesNotThrow(() => ensureSafeMountedMediaDataDirectory(child, mount));
+    assert.ok(fs.statSync(child).isDirectory());
+    assert.equal(fs.statSync(child).mode & 0o777, 0o700);
+
+    const alias = path.join(mount, "alias");
+    fs.symlinkSync(outside, alias, "dir");
+    assert.throws(
+      () => ensureSafeMountedMediaDataDirectory(path.join(alias, "must-not-exist"), mount),
+      /MEDIA_DIR_ALIAS/,
+    );
+    assert.equal(fs.existsSync(path.join(outside, "must-not-exist")), false);
+
+    const aliasMount = path.join(root, "alias-mount");
+    fs.symlinkSync(mount, aliasMount, "dir");
+    assert.throws(
+      () => ensureSafeMountedMediaDataDirectory(path.join(aliasMount, "other"), aliasMount),
+      /MEDIA_MOUNT_ALIAS/,
+    );
+    assert.equal(fs.existsSync(path.join(mount, "other")), false);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("non-commercial/test runtimes are not made dependent on Render mountinfo", () => {
