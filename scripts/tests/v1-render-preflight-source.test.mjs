@@ -73,3 +73,18 @@ test('V1 merchant deletion retries stay enabled while Meta transport stays disab
  assert.match(entry,/if \(!workersExplicitlyDisabled && metaCutoverReady\)/);
  assert.match(cleanup,/if \(!manualCommercialRelease\(\)\) \{\s+await reconcileOrphanSupportImagesPostgres\(\)/);
 });
+
+test('G3 actual write/fsync/read acceptance runs once before listener, never on each Render health poll',()=>{
+ const entry=fs.readFileSync(path.join(root,'artifacts/api-server/src/index.ts'),'utf8');
+ const app=fs.readFileSync(path.join(root,'artifacts/api-server/src/app.ts'),'utf8');
+ const mount=fs.readFileSync(path.join(root,
+  'artifacts/api-server/src/services/hostedV1CatalogMediaReadiness.ts'),'utf8');
+ assert.match(entry,/assertHostedV1CatalogMediaMount\(process\.env\);[\s\S]*?assertHostedV1CatalogMediaIoReady\(process\.env\);[\s\S]*?startupStage = "database_rls"/);
+ assert.match(mount,/fs\.openSync\(probePath, "wx", 0o600\)/);
+ assert.match(mount,/fs\.writeSync\(fileDescriptor, proof\)/);
+ assert.match(mount,/fs\.fsyncSync\(fileDescriptor\)/);
+ assert.match(mount,/fs\.readFileSync\(probePath\)/);
+ assert.match(mount,/crypto\.timingSafeEqual\(proof, readBack\)/);
+ assert.match(mount,/fs\.rmSync\(probePath/);
+ assert.doesNotMatch(app,/assertHostedV1CatalogMediaIoReady/);
+});
