@@ -12,20 +12,52 @@ import type { ReadinessCheck } from "../observability/types";
  */
 type MediaMountProbe = {
   readMountInfo: () => string;
-  assertReadableWritableDirectory: (dataDir: string) => void;
+  assertReadableWritableDirectory: (dataDir: string, mountPath: string) => void;
   realPath?: (file: string) => string;
 };
+
+/**
+ * The mount itself is inspected before creating a missing child. Never use a
+ * recursive mkdir: it follows an existing symlink to an ephemeral or foreign
+ * path before the caller's final canonical-path check can reject that path.
+ */
+export function ensureSafeMountedMediaDataDirectory(dir: string, mount: string): void {
+  const mountStat = fs.lstatSync(mount);
+  if (!mountStat.isDirectory() || mountStat.isSymbolicLink() ||
+      fs.realpathSync(mount) !== mount) throw new Error("MEDIA_MOUNT_ALIAS");
+
+  const relative = path.relative(mount, dir);
+  if (!relative || relative === ".." || relative.startsWith(".." + path.sep) ||
+      path.isAbsolute(relative)) throw new Error("MEDIA_DIR_OUTSIDE_MOUNT");
+
+  let current = mount;
+  for (const part of relative.split(path.sep)) {
+    if (!part || part === "." || part === "..") throw new Error("MEDIA_DIR_INVALID");
+    current = path.join(current, part);
+    try {
+      const entry = fs.lstatSync(current);
+      if (!entry.isDirectory() || entry.isSymbolicLink()) throw new Error("MEDIA_DIR_ALIAS");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code !== "ENOENT") throw error;
+      try {
+        fs.mkdirSync(current, { mode: 0o700 });
+      } catch (mkdirError) {
+        // Concurrent first startup may create the same child. Reinspect it
+        // rather than trusting a successful or failed mkdir.
+        if ((mkdirError as NodeJS.ErrnoException)?.code !== "EEXIST") throw mkdirError;
+      }
+      const created = fs.lstatSync(current);
+      if (!created.isDirectory() || created.isSymbolicLink()) throw new Error("MEDIA_DIR_ALIAS");
+    }
+  }
+  if (fs.realpathSync(dir) !== dir) throw new Error("MEDIA_DIR_REDIRECT");
+  fs.accessSync(dir, fs.constants.R_OK | fs.constants.W_OK);
+}
 
 const defaultProbe: MediaMountProbe = {
   readMountInfo: () => fs.readFileSync("/proc/self/mountinfo", "utf8"),
   realPath: (file) => fs.realpathSync(file),
-  assertReadableWritableDirectory: (dir) => {
-    // On a fresh Render disk the child directory does not yet exist.
-    // Only create it AFTER verifying the real persistent parent mount.
-    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-    if (!fs.statSync(dir).isDirectory()) throw new Error("NOT_DIRECTORY");
-    fs.accessSync(dir, fs.constants.R_OK | fs.constants.W_OK);
-  },
+  assertReadableWritableDirectory: ensureSafeMountedMediaDataDirectory,
 };
 
 const MOUNT_ESCAPE = /\\(040|011|012|134)/g;
@@ -79,7 +111,7 @@ export function assertHostedV1CatalogMediaMount(
   if (String(env.FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER || "").toLowerCase() !== "filesystem") deny();
   try {
     if (!mountedWritableFilesystemPresent(probe.readMountInfo(), mount)) deny();
-    probe.assertReadableWritableDirectory(directory);
+    probe.assertReadableWritableDirectory(directory, mount);
     // A symlink can redirect the /var/data/fawri path to the ephemeral
     // overlay (or some other tenant's directory). Resolve both after making
     // the child; refuse any path outside the physical persistent mount.
