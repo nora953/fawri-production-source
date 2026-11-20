@@ -69,6 +69,7 @@ import {
 import { logger } from "./lib/logger";
 import { hasAdminPermission } from "./services/authPolicy";
 import { createProductionOtpReadinessCheck } from "./services/authOtpDelivery";
+import { createHostedV1CatalogMediaReadinessCheck } from "./services/hostedV1CatalogMediaReadiness";
 import {
   refreshMerchantRetentionPolicy,
   startMerchantRetentionPolicyScheduler,
