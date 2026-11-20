@@ -210,6 +210,7 @@ router.post("/google/phone/begin", requireSecureMerchantSession, async (req, res
     }
     await recordAcceptedSignupWhatsAppTemplate({
       challengeId, target: phone, providerReceipt: delivery.providerReceipt,
+      googleMerchantAccountId: accountId,
     });
     res.status(202).json({
       ok: true,
