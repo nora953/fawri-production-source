@@ -37,7 +37,7 @@ type GoogleIdentityApi = {
     type: 'standard';
     theme: 'outline';
     size: 'large';
-    text: 'signup_with';
+    text: 'signup_with' | 'signin_with';
     width: number;
   }): void;
   cancel(): void;
@@ -144,9 +144,10 @@ function accountFrom(value: unknown): GoogleSignupResult {
  * Calling renderButton never automatically grants a trial or opens a session.
  * Returns a disposer to prevent late callbacks from changing a departed page.
  */
-export async function prepareGoogleMerchantSignup(
+async function prepareGoogleMerchantIdentity(
   container: HTMLElement,
-  profile: GoogleSignupProfile,
+  profile: GoogleSignupProfile | undefined,
+  buttonText: 'signup_with' | 'signin_with',
   onSuccess: (account: GoogleSignupResult) => void,
   onFailure: () => void,
 ): Promise<() => void> {
@@ -178,7 +179,11 @@ export async function prepareGoogleMerchantSignup(
             id_token: token,
             ...profile,
           });
-          if (active) onSuccess(accountFrom(result));
+          const account = accountFrom(result);
+          // A login-only request must NEVER create a merchant without a
+          // completed registration profile, even if a future backend regresses.
+          if (!profile && account.created) throw new Error('GOOGLE_LOGIN_NOT_LINKED');
+          if (active) onSuccess(account);
         } catch {
           if (active) onFailure();
         }
@@ -190,7 +195,7 @@ export async function prepareGoogleMerchantSignup(
     type: 'standard',
     theme: 'outline',
     size: 'large',
-    text: 'signup_with',
+    text: buttonText,
     width: Math.min(300, Math.max(200, container.clientWidth || 300)),
   });
   return () => {
@@ -198,4 +203,23 @@ export async function prepareGoogleMerchantSignup(
     container.replaceChildren();
     api.cancel();
   };
+}
+
+/** New account: a complete profile and explicit legal consent are required in UI. */
+export function prepareGoogleMerchantSignup(
+  container: HTMLElement,
+  profile: GoogleSignupProfile,
+  onSuccess: (account: GoogleSignupResult) => void,
+  onFailure: () => void,
+): Promise<() => void> {
+  return prepareGoogleMerchantIdentity(container, profile, 'signup_with', onSuccess, onFailure);
+}
+
+/** Returning account only. Missing Google subjects must not create merchants. */
+export function prepareGoogleMerchantLogin(
+  container: HTMLElement,
+  onSuccess: (account: GoogleSignupResult) => void,
+  onFailure: () => void,
+): Promise<() => void> {
+  return prepareGoogleMerchantIdentity(container, undefined, 'signin_with', onSuccess, onFailure);
 }
