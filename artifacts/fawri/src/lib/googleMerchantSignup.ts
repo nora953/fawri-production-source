@@ -13,6 +13,8 @@ export type GoogleSignupProfile = Readonly<{
   currency_code: string;
   timezone: string;
   language: 'ar' | 'en' | 'ku';
+  agree_terms: true;
+  confirm_legal: true;
   requested_plan?: 'silver' | 'gold' | 'diamond';
 }>;
 
