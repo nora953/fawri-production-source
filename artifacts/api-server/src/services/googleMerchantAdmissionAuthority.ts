@@ -8,8 +8,8 @@ import { operationalPostgresAuthorityRequired, operationalQueryRows } from "./op
 import type { RequestedPlan } from "./authAccountRepository";
 
 /**
- * Source-only Google merchant account admission; NOT mounted on an API route.
- * A future route MUST consume a single-use server-issued OIDC nonce and
+ * Google merchant admission, mounted behind explicit default-OFF HTTP gates.
+ * The calling route MUST consume a single-use server-issued OIDC nonce and
  * enforce CSRF, origin, rate limits and fraud checks before invoking this.
  * A Google ID token is an account credential, NOT a free-trial entitlement.
  * Requires a separately approved HELD PG18 migration on the target database.
@@ -19,13 +19,15 @@ type Registration = Readonly<{
   expectedNonce: string;
   challengeId: string;
   csrfProofFromCookie: string;
-  ownerName: string;
-  storeName: string;
-  activityType: string;
-  countryCode: string;
+  // Optional only for an ALREADY linked merchant returning to sign in.
+  // An unrecognized Google subject must still supply the entire profile.
+  ownerName?: string;
+  storeName?: string;
+  activityType?: string;
+  countryCode?: string;
   timezone?: string;
   currencyCode?: string;
-  language: "ar" | "en" | "ku";
+  language?: "ar" | "en" | "ku";
   requestedPlan?: RequestedPlan;
 }>;
 
@@ -54,26 +56,6 @@ export async function admitPendingGoogleMerchant(input: Registration): Promise<G
       process.env.FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY !== "required") disabled();
   const clientId = String(process.env.FAWRI_GOOGLE_OAUTH_CLIENT_ID || "");
   if (!clientId || !input || !input.expectedNonce) disabled();
-
-  const ownerName = validatedText(input.ownerName, 160);
-  const storeName = validatedText(input.storeName, 160);
-  const activityType = validatedText(input.activityType, 120);
-  if (!["ar", "en", "ku"].includes(input.language)) {
-    throw new Error("GOOGLE_MERCHANT_PROFILE_INVALID");
-  }
-  if (input.requestedPlan !== undefined &&
-      input.requestedPlan !== "silver" &&
-      input.requestedPlan !== "gold" &&
-      input.requestedPlan !== "diamond") {
-    throw new Error("GOOGLE_MERCHANT_PLAN_INVALID");
-  }
-
-  // International merchant admission never silently defaults to Iraq.
-  const region = normalizeMerchantRegionalProfile({
-    country_code: input.countryCode,
-    timezone: input.timezone,
-    currency_code: input.currencyCode,
-  });
 
   // Client-submitted email and sub are NEVER accepted here. The future route
   // MUST pass csrfProofFromCookie from an HttpOnly cookie, not the request body.
@@ -107,8 +89,31 @@ export async function admitPendingGoogleMerchant(input: Registration): Promise<G
           existing[0].status === "suspended") {
         throw new Error("GOOGLE_MERCHANT_ACCOUNT_UNAVAILABLE");
       }
+      // Returning merchants must not need to re-enter or overwrite store
+      // details. Only the signed and nonce-bound Google subject is authority.
       return { accountId: existing[0].id, created: false, trialActivated: false };
     }
+
+    // A Google subject not yet linked to Fawri is NOT a login. Reject a
+    // profile-less request BEFORE any insert, trial or session could occur.
+    const ownerName = validatedText(input.ownerName, 160);
+    const storeName = validatedText(input.storeName, 160);
+    const activityType = validatedText(input.activityType, 120);
+    if (input.language !== "ar" && input.language !== "en" && input.language !== "ku") {
+      throw new Error("GOOGLE_MERCHANT_PROFILE_INVALID");
+    }
+    if (input.requestedPlan !== undefined &&
+        input.requestedPlan !== "silver" &&
+        input.requestedPlan !== "gold" &&
+        input.requestedPlan !== "diamond") {
+      throw new Error("GOOGLE_MERCHANT_PLAN_INVALID");
+    }
+    // Never infer an international merchant's location as Iraq.
+    const region = normalizeMerchantRegionalProfile({
+      country_code: input.countryCode,
+      timezone: input.timezone,
+      currency_code: input.currencyCode,
+    });
 
     const accountId = "merchant-" + crypto.randomUUID();
     // Original accounts.password_hash NOT NULL: use a strong random unusable
