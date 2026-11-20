@@ -244,6 +244,9 @@ export default function SignupPage() {
         currency_code: formData.currency_code,
         timezone,
         language: lang,
+        // The backend independently enforces both requirements for new users.
+        agree_terms: true,
+        confirm_legal: true,
         ...(requestedPlan ? { requested_plan: requestedPlan } : {}),
       };
       const dispose = await prepareGoogleMerchantSignup(
