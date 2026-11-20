@@ -13,10 +13,12 @@ import type { ReadinessCheck } from "../observability/types";
 type MediaMountProbe = {
   readMountInfo: () => string;
   assertReadableWritableDirectory: (dataDir: string) => void;
+  realPath?: (file: string) => string;
 };
 
 const defaultProbe: MediaMountProbe = {
   readMountInfo: () => fs.readFileSync("/proc/self/mountinfo", "utf8"),
+  realPath: (file) => fs.realpathSync(file),
   assertReadableWritableDirectory: (dir) => {
     // On a fresh Render disk the child directory does not yet exist.
     // Only create it AFTER verifying the real persistent parent mount.
@@ -41,8 +43,16 @@ export function mountedWritableFilesystemPresent(mountInfo: string, mountPath: s
     const pre = segments[0].trim().split(/\s+/);
     // Linux mountinfo: field 5 = mount point, field 6 = mount options.
     if (pre.length < 6) continue;
+    // An explicitly mounted overlay or memory-only filesystem is not
+    // persistent catalog storage even if it advertises read/write access.
+    const fsType = segments[1].trim().split(/\s+/)[0];
+    const volatileTypes = new Set([
+      "overlay", "tmpfs", "ramfs", "devtmpfs", "squashfs", "proc",
+      "sysfs", "devpts", "cgroup", "cgroup2", "autofs",
+    ]);
     if (decodeMountPoint(pre[4]) === mountPath &&
-        pre[5].split(",").includes("rw")) return true;
+        pre[5].split(",").includes("rw") &&
+        fsType && !volatileTypes.has(fsType)) return true;
   }
   return false;
 }
@@ -70,6 +80,13 @@ export function assertHostedV1CatalogMediaMount(
   try {
     if (!mountedWritableFilesystemPresent(probe.readMountInfo(), mount)) deny();
     probe.assertReadableWritableDirectory(directory);
+    // A symlink can redirect the /var/data/fawri path to the ephemeral
+    // overlay (or some other tenant's directory). Resolve both after making
+    // the child; refuse any path outside the physical persistent mount.
+    const canonicalMount = (probe.realPath ?? defaultProbe.realPath!)(mount);
+    const canonicalData = (probe.realPath ?? defaultProbe.realPath!)(directory);
+    if (canonicalMount !== mount || canonicalData !== directory ||
+        !canonicalData.startsWith(canonicalMount + path.sep)) deny();
   } catch {
     deny();
   }
