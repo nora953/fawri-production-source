@@ -25,6 +25,7 @@ const base = {
 function probe(mountInfo: string, dirSeen?: (dir: string) => void) {
   return {
     readMountInfo: () => mountInfo,
+    realPath: (location: string) => location,
     assertReadableWritableDirectory(dir: string) {
       assert.equal(dir, DATA_DIR);
       dirSeen?.(dir);
@@ -66,7 +67,29 @@ test("ephemeral container path and missing mount are never accepted", () => {
 test("reported mount is insufficient if the directory is not accessible", () => {
   assert.throws(() => assertHostedV1CatalogMediaMount(base, {
     readMountInfo: () => good,
+    realPath: (location: string) => location,
     assertReadableWritableDirectory() { throw new Error("EACCES"); },
+  }), { code: "V1_HOSTED_CATALOG_MEDIA_MOUNT_NOT_READY" });
+});
+
+test("ephemeral mount types and symlink redirects are rejected", () => {
+  for (const fsType of ["overlay", "tmpfs", "ramfs", "squashfs"]) {
+    rejects(base, "65 52 8:17 / /var/data rw,relatime - " +
+      fsType + " /dev/disk rw");
+  }
+  assert.throws(() => assertHostedV1CatalogMediaMount(base, {
+    readMountInfo: () => good,
+    assertReadableWritableDirectory() {},
+    realPath(location: string) {
+      return location === DATA_DIR ? "/tmp/redirected" : location;
+    },
+  }), { code: "V1_HOSTED_CATALOG_MEDIA_MOUNT_NOT_READY" });
+  assert.throws(() => assertHostedV1CatalogMediaMount(base, {
+    readMountInfo: () => good,
+    assertReadableWritableDirectory() {},
+    realPath(location: string) {
+      return location === MOUNT ? "/other/volume" : location;
+    },
   }), { code: "V1_HOSTED_CATALOG_MEDIA_MOUNT_NOT_READY" });
 });
 
