@@ -29,6 +29,7 @@ import {
   validateInternationalPhone,
 } from '@/lib/internationalPhone';
 import { MERCHANT_REGION_BY_COUNTRY } from '@/lib/merchantRegions';
+import { googleMerchantSignupBuildReady, prepareGoogleMerchantLogin } from '@/lib/googleMerchantSignup';
 
 type OwnerDeviceChallenge = {
   phone: string;
@@ -102,6 +103,14 @@ export default function LoginPage() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [googlePrepared, setGooglePrepared] = useState(false);
+  const googleButtonHost = React.useRef<HTMLDivElement>(null);
+  const googleDispose = React.useRef<(() => void) | null>(null);
+  React.useEffect(() => () => {
+    googleDispose.current?.();
+    googleDispose.current = null;
+  }, []);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [policyTab, setPolicyTab] = useState<PolicyTab>('privacy');
@@ -113,6 +122,64 @@ export default function LoginPage() {
   const commonCopy = COMMON_UI_COPY[lang];
   const selectedRegion = MERCHANT_REGION_BY_COUNTRY.get(countryCode)
     || MERCHANT_REGION_BY_COUNTRY.get('IQ');
+
+  const googleCopy = {
+    ar: { title: 'الدخول بحساب Google', start: 'الدخول بواسطة Google',
+      retry: 'إعادة محاولة Google', choose: 'اختر حساب Google المرتبط بمتجرك.',
+      note: 'لديك متجر مسجل بحساب Google؟ ادخل من هنا. الحسابات الجديدة تُنشأ من صفحة التسجيل.',
+      error: 'تعذر تسجيل الدخول بحساب Google، أو الحساب غير مسجل بعد.' },
+    en: { title: 'Sign in with Google', start: 'Continue with Google',
+      retry: 'Retry Google sign-in', choose: 'Choose the Google account linked to your store.',
+      note: 'For existing Google-linked merchants only. New merchants must sign up first.',
+      error: 'Google sign-in failed or this Google account is not registered.' },
+    ku: { title: 'چوونەژوورەوە بە Google', start: 'بە Google بچۆ ژوورەوە',
+      retry: 'دووبارە هەوڵدان بە Google', choose: 'هەژماری Google پەیوەست بە دووکانەکەت هەڵبژێرە.',
+      note: 'تەنیا بۆ بازرگانانی تۆمارکراو؛ هەژماری نوێ لە پەڕەی تۆمارکردن دروست بکە.',
+      error: 'چوونەژوورەوە بە Google سەرکەوتوو نەبوو یان هەژمارەکە تۆمار نەکراوە.' },
+  }[lang];
+
+  const handleGoogleLogin = async () => {
+    if (!googleMerchantSignupBuildReady() || googleBusy || !googleButtonHost.current) return;
+    googleDispose.current?.();
+    googleDispose.current = null;
+    setGoogleBusy(true);
+    setGooglePrepared(false);
+    try {
+      const dispose = await prepareGoogleMerchantLogin(
+        googleButtonHost.current,
+        (account) => {
+          googleDispose.current?.();
+          googleDispose.current = null;
+          void (async () => {
+            await secureAdminLogout();
+            clearMerchantTabSession();
+            cacheMerchantLocally(account.merchant);
+            setSession(account.account.id);
+            setGooglePrepared(false);
+            setLocation(account.merchant_profile.accountStatus === 'approved'
+              ? '/dashboard' : '/pending');
+          })().catch(() => {
+            toast.error(googleCopy.error);
+            setGooglePrepared(false);
+          });
+        },
+        () => {
+          googleDispose.current?.();
+          googleDispose.current = null;
+          setGooglePrepared(false);
+          toast.error(googleCopy.error);
+        },
+      );
+      googleDispose.current = dispose;
+      setGooglePrepared(true);
+    } catch {
+      googleDispose.current?.();
+      googleDispose.current = null;
+      toast.error(googleCopy.error);
+    } finally {
+      setGoogleBusy(false);
+    }
+  };
 
   const showAuthError = (result: any) => {
     if (result?.code === 'ADMIN_DEVICE_APPROVAL_REQUIRED') {
@@ -437,6 +504,20 @@ export default function LoginPage() {
               >
                 {loading ? '...' : t.login}
               </Button>
+
+              {googleMerchantSignupBuildReady() && (
+                <section className="space-y-3 border-t pt-5" aria-label={googleCopy.title} data-testid="google-merchant-login">
+                  <p className="text-sm font-semibold">{googleCopy.title}</p>
+                  <Button type="button" variant="outline" className="h-12 w-full rounded-xl"
+                    disabled={loading || googleBusy} onClick={handleGoogleLogin}
+                    data-testid="button-prepare-google-login">
+                    {googleBusy ? '...' : googlePrepared ? googleCopy.retry : googleCopy.start}
+                  </Button>
+                  <div ref={googleButtonHost} className="flex justify-center" data-testid="google-login-identity-button" />
+                  {googlePrepared && <p className="text-xs text-muted-foreground">{googleCopy.choose}</p>}
+                  <p className="text-xs text-muted-foreground">{googleCopy.note}</p>
+                </section>
+              )}
 
               <div className="mt-6 text-center text-sm text-muted-foreground">
                 {t.no_account}{' '}
