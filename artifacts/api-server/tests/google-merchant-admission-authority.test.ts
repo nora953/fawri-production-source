@@ -51,3 +51,19 @@ test("Google account admission is subject-scoped, pending only, never an automat
   assert.doesNotMatch(source, /issueSession\(/);
   assert.doesNotMatch(source, /INSERT INTO public\.subscriptions/);
 });
+
+test("returning Google merchant needs only signed subject, never a new-store profile", () => {
+  const source = readFileSync(
+    new URL("../src/services/googleMerchantAdmissionAuthority.ts", import.meta.url), "utf8",
+  );
+  const existing = source.indexOf("if (existing[0])");
+  const profileValidation = source.indexOf("const ownerName = validatedText(input.ownerName, 160)");
+  const profileInsert = source.indexOf("INSERT INTO public.accounts");
+  assert.ok(existing >= 0 && profileValidation > existing && profileInsert > profileValidation);
+  assert.match(source, /return \{ accountId: existing\[0\]\.id, created: false, trialActivated: false \}/);
+  assert.match(source, /if \(input\.language !== "ar" && input\.language !== "en" && input\.language !== "ku"\)/);
+  assert.match(source, /GOOGLE_MERCHANT_PROFILE_INVALID/);
+  assert.match(source, /if \(!consumed\) throw new Error\("GOOGLE_OIDC_CHALLENGE_INVALID"\)/);
+  // Browser input must never link a subject by user-submitted email.
+  assert.doesNotMatch(source, /WHERE.*email\s*=/);
+});
