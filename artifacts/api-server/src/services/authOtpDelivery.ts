@@ -5,6 +5,15 @@ export type OtpDeliveryResult =
   | { ok: true }
   | { ok: false; code: string; message: string };
 
+/** Issued by the trusted delivery adapter only. Not a delivery/receipt webhook. */
+export type AcceptedWhatsAppAuthTemplate = Readonly<{
+  messageId: string;
+  templateName: string;
+  templateLanguage: string;
+}>;
+export type TrackedOtpDeliveryResult = OtpDeliveryResult |
+  { ok: true; providerReceipt: AcceptedWhatsAppAuthTemplate };
+
 
 /** A configuration preflight, NOT proof that a real OTP was delivered. */
 export function productionOtpDeliveryConfigurationReady(
@@ -77,11 +86,14 @@ function authenticationTemplate(code: string) {
   };
 }
 
-export async function deliverAuthOtp(
+/** Internal sender result for binding a challenge to a provider-accepted template.
+ * A successful API response is NOT proof of delivery, nor an OTP redemption.
+ */
+export async function deliverAuthOtpWithProviderReceipt(
   phone: string,
   code: string,
   purpose: OtpPurpose,
-): Promise<OtpDeliveryResult> {
+): Promise<TrackedOtpDeliveryResult> {
   if (
     (developmentDeliveryAllowed() &&
       process.env.AUTH_ALLOW_DEV_OTP_BYPASS === "true") ||
@@ -146,7 +158,11 @@ export async function deliverAuthOtp(
         !messages[0].id.startsWith("wamid.")) {
       return { ok: false, code: "OTP_DELIVERY_FAILED", message: "Unable to deliver the verification code" };
     }
-    return { ok: true };
+    return { ok: true, providerReceipt: {
+      messageId: messages[0].id,
+      templateName: String(process.env.WHATSAPP_AUTH_TEMPLATE_NAME || "").trim(),
+      templateLanguage: String(process.env.WHATSAPP_AUTH_TEMPLATE_LANGUAGE || "").trim(),
+    } };
   } catch {
     return {
       ok: false,
@@ -154,4 +170,14 @@ export async function deliverAuthOtp(
       message: "Unable to deliver the verification code",
     };
   }
+}
+
+/** Existing callers never receive the provider receipt or expose it in HTTP. */
+export async function deliverAuthOtp(
+  phone: string,
+  code: string,
+  purpose: OtpPurpose,
+): Promise<OtpDeliveryResult> {
+  const result = await deliverAuthOtpWithProviderReceipt(phone, code, purpose);
+  return result.ok ? { ok: true } : result;
 }
