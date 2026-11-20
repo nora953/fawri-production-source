@@ -18,6 +18,28 @@ BEGIN
        WHERE c.conrelid='public.accounts'::regclass
          AND c.conname='accounts_active_phone_required_check'
      )
+     -- Google-only merchants must be admitted before owning a phone.
+     -- A still-NOT-NULL phone column makes that flow impossible.
+     OR NOT EXISTS (
+       SELECT 1 FROM pg_catalog.pg_attribute a
+       WHERE a.attrelid='public.accounts'::regclass
+         AND a.attname='phone' AND NOT a.attnotnull AND NOT a.attisdropped
+     )
+     -- The subsequent WhatsApp claim UPDATE relies on whole-table uniqueness
+     -- to arbitrate simultaneous claims from different Google identities.
+     -- A partial, invalid or multi-column index is NOT sufficient.
+     OR NOT EXISTS (
+       SELECT 1 FROM pg_catalog.pg_index i
+       JOIN pg_catalog.pg_attribute a
+         ON a.attrelid=i.indrelid AND a.attnum=i.indkey[0]
+       JOIN pg_catalog.pg_class idx ON idx.oid=i.indexrelid
+       WHERE i.indrelid='public.accounts'::regclass
+         AND idx.relname='accounts_phone_unique'
+         AND a.attname='phone' AND NOT a.attisdropped
+         AND i.indisunique AND i.indisvalid AND i.indisready
+         AND i.indnkeyatts=1 AND i.indpred IS NULL
+         AND i.indexprs IS NULL
+     )
      OR EXISTS (
        SELECT 1 FROM pg_catalog.pg_attribute a
        WHERE a.attrelid='public.accounts'::regclass AND NOT a.attisdropped
@@ -105,6 +127,18 @@ BEGIN
        SELECT 1 FROM pg_catalog.pg_indexes
        WHERE schemaname='public' AND tablename='accounts'
          AND indexname='accounts_google_identity_unique_idx'
+     )
+     OR NOT EXISTS (
+       SELECT 1 FROM pg_catalog.pg_index i
+       JOIN pg_catalog.pg_attribute a
+         ON a.attrelid=i.indrelid AND a.attnum=i.indkey[0]
+       JOIN pg_catalog.pg_class idx ON idx.oid=i.indexrelid
+       WHERE i.indrelid='public.accounts'::regclass
+         AND idx.relname='accounts_phone_unique'
+         AND a.attname='phone' AND NOT a.attisdropped
+         AND i.indisunique AND i.indisvalid AND i.indisready
+         AND i.indnkeyatts=1 AND i.indpred IS NULL
+         AND i.indexprs IS NULL
      )
      OR NOT has_table_privilege('fawri_auth_issuer','public.accounts','INSERT')
      OR NOT has_table_privilege('fawri_auth_issuer','public.accounts','UPDATE')
