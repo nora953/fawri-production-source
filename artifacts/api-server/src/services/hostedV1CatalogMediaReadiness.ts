@@ -135,14 +135,9 @@ export function assertHostedV1CatalogMediaMount(
  * Do not invoke this from the periodic /readyz endpoint: write at startup
  * only, not on each Render health probe.
  */
-export function assertHostedV1CatalogMediaIoReady(
-  env: NodeJS.ProcessEnv = process.env,
-): void {
-  if (!productionReleaseGateRequired(env) || !manualCommercialRelease(env)) return;
-  // Do not write even a temporary probe until the actual persistent mount,
-  // every path segment and filesystem identity have passed admission.
-  assertHostedV1CatalogMediaMount(env);
-  const directory = path.resolve(String(env.FAWRI_DATA_DIR || "").trim());
+export function assertCatalogMediaIoRoundTrip(directory: string): void {
+  // Caller validates the mounted, symlink-free directory before invocation.
+  // This lower-level helper is also exercised against a disposable directory.
   const probePath = path.join(directory,
     `.fawri-g3-media-probe-${process.pid}-${crypto.randomUUID()}`);
   const proof = crypto.randomBytes(32);
@@ -176,6 +171,16 @@ export function assertHostedV1CatalogMediaIoReady(
     }
     proof.fill(0);
   }
+}
+
+export function assertHostedV1CatalogMediaIoReady(
+  env: NodeJS.ProcessEnv = process.env,
+): void {
+  if (!productionReleaseGateRequired(env) || !manualCommercialRelease(env)) return;
+  // No temporary write is allowed before the persistent mount, path segments
+  // and canonical filesystem identity have passed admission.
+  assertHostedV1CatalogMediaMount(env);
+  assertCatalogMediaIoRoundTrip(path.resolve(String(env.FAWRI_DATA_DIR || "").trim()));
 }
 
 export function createHostedV1CatalogMediaReadinessCheck(): ReadinessCheck {
