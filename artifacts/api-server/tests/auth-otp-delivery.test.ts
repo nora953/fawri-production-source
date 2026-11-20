@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test, { type TestContext } from "node:test";
-import { deliverAuthOtp, createProductionOtpReadinessCheck, productionOtpDeliveryConfigurationReady } from "../src/services/authOtpDelivery";
+import { deliverAuthOtp, deliverAuthOtpWithProviderReceipt, createProductionOtpReadinessCheck, productionOtpDeliveryConfigurationReady } from "../src/services/authOtpDelivery";
 import type { OtpPurpose } from "../src/services/authSecurityTypes";
 
 function configure(
@@ -232,4 +232,36 @@ test("malformed code and recipient are rejected before external send", async t =
     assert.equal(result.ok, false);
   }
   assert.deepEqual(recipients, []);
+});
+
+test("trusted sender preserves provider message acceptance only for internal challenge binding", async t => {
+  const { recipients } = configure(t);
+  const tracked = await deliverAuthOtpWithProviderReceipt("+15550000001", "123456", "signup");
+  assert.equal(tracked.ok, true);
+  assert.equal("providerReceipt" in tracked, true);
+  if (tracked.ok && "providerReceipt" in tracked) {
+    assert.deepEqual(tracked.providerReceipt, {
+      messageId: "wamid.synthetic-test",
+      templateName: "fawri_otp_copy_code",
+      templateLanguage: "en_US",
+    });
+  }
+  assert.deepEqual(recipients, ["15550000001"]);
+});
+
+test("development OTP bypass cannot produce a trusted WhatsApp provider receipt", async t => {
+  const { recipients } = configure(t, { NODE_ENV: "test" });
+  const result = await deliverAuthOtpWithProviderReceipt("+15550000001", "123456", "signup");
+  assert.deepEqual(result, { ok: true });
+  assert.deepEqual(recipients, []);
+});
+
+test("provider 2xx without message ID cannot mint trusted provider receipt", async t => {
+  const { recipients } = configure(t, {},
+    new Response(JSON.stringify({ messages: [] }), {
+      status: 200, headers: { "Content-Type": "application/json" },
+    }));
+  const result = await deliverAuthOtpWithProviderReceipt("+15550000001", "123456", "signup");
+  assert.equal(result.ok, false);
+  assert.deepEqual(recipients, ["15550000001"]);
 });
