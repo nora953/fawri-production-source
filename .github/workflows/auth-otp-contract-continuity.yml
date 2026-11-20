@@ -6,6 +6,12 @@ on:
       - "artifacts/fawri/src/pages/SignupPage.tsx"
       - "artifacts/fawri/src/pages/OTPPage.tsx"
       - "artifacts/fawri/src/pages/LoginPage.tsx"
+      - "artifacts/fawri/src/pages/PendingPage.tsx"
+      - "artifacts/fawri/src/components/GoogleMerchantPhoneVerification.tsx"
+      - "artifacts/fawri/src/lib/translations/features/pages/GooglePhoneVerification.ts"
+      - "artifacts/api-server/src/services/postgresMerchantAuthSecurityAuthority.ts"
+      - "artifacts/api-server/src/services/authPolicy.ts"
+      - "artifacts/api-server/tests/google-merchant-whatsapp-phone-claim.test.ts"
       - "artifacts/fawri/src/lib/googleMerchantSignup.ts"
       - "artifacts/fawri/tests/google-merchant-signup-contract.test.mjs"
       - "artifacts/api-server/src/routes/auth-google-merchant-routes.ts"
@@ -73,7 +79,7 @@ jobs:
       - name: Prove Google merchant identity stays default-off and subject-scoped
         run: |
           node --test artifacts/fawri/tests/google-merchant-signup-contract.test.mjs
-          pnpm --filter @workspace/api-server exec tsx --test ./tests/google-merchant-admission-authority.test.ts ./tests/google-merchant-http-readiness.test.ts
+          pnpm --filter @workspace/api-server exec tsx --test ./tests/google-merchant-admission-authority.test.ts ./tests/google-merchant-http-readiness.test.ts ./tests/google-merchant-whatsapp-phone-claim.test.ts
 
       - name: Run Auth v2 security store tests
         run: pnpm --filter @workspace/api-server exec tsx --test ./tests/auth-security-store.test.ts
