@@ -473,7 +473,10 @@ export async function reconcilePendingMerchantPhysicalMediaCleanups(
       continue;
     }
     if (!manifest || manifest.state === "complete") continue;
-    if (validAttempted >= batchLimit) break;
+    // Finish scanning filenames for malformed intents even when the valid
+    // retry budget is full; otherwise bad files later in the directory stay
+    // invisible and never produce an operator warning.
+    if (validAttempted >= batchLimit) continue;
     inspected += 1;
     validAttempted += 1;
     const result = await reconcileMerchantPhysicalMediaCleanup(
