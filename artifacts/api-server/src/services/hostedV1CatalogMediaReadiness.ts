@@ -139,6 +139,9 @@ export function assertHostedV1CatalogMediaIoReady(
   env: NodeJS.ProcessEnv = process.env,
 ): void {
   if (!productionReleaseGateRequired(env) || !manualCommercialRelease(env)) return;
+  // Do not write even a temporary probe until the actual persistent mount,
+  // every path segment and filesystem identity have passed admission.
+  assertHostedV1CatalogMediaMount(env);
   const directory = path.resolve(String(env.FAWRI_DATA_DIR || "").trim());
   const probePath = path.join(directory,
     `.fawri-g3-media-probe-${process.pid}-${crypto.randomUUID()}`);
