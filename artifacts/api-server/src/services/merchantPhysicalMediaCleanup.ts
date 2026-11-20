@@ -173,50 +173,56 @@ async function captureCleanupManifest(input: {
     );
   }
 
-  const [merchantRows, catalogRows, supportRows, ticketRows] = await withMerchantOperationalTransaction(
-    input.merchantId,
-    async (client) => [
-    await operationalQueryRows<{
-      merchant_status: string;
-      account_state: string;
-    }>(
-      client,
-      `SELECT m.status::text AS merchant_status, a.state::text AS account_state
+  type MerchantStateRow = { merchant_status: string; account_state: string };
+  type CatalogRow = { storage_key: string };
+  type SupportRow = { storage_provider: string; storage_key: string };
+  type TicketRow = { id: string };
+  const merchantSql = `SELECT m.status::text AS merchant_status, a.state::text AS account_state
          FROM merchants m
          JOIN accounts a ON a.id = m.account_id AND a.kind = 'merchant'
         WHERE m.id = $1
-        LIMIT 1`,
-      [input.merchantId],
-    ),
-    await operationalQueryRows<{ storage_key: string }>(
-      client,
-      `SELECT storage_key
+        LIMIT 1`;
+  const catalogSql = `SELECT storage_key
          FROM catalog_image_references
         WHERE merchant_id = $1 AND storage_key IS NOT NULL
-        ORDER BY id`,
-      [input.merchantId],
-    ),
-    await operationalQueryRows<{
-      storage_provider: string;
-      storage_key: string;
-    }>(
-      client,
-      `SELECT storage_provider, storage_key
-         FROM support_attachments
-        WHERE merchant_id = $1 AND deleted_at IS NULL
-        ORDER BY id`,
-      [input.merchantId],
-    ),
-    await operationalQueryRows<{ id: string }>(
-      client,
-      `SELECT id
-         FROM support_tickets
-        WHERE merchant_id = $1
-        ORDER BY id`,
-      [input.merchantId],
-    ),
-    ] as const,
-  );
+        ORDER BY id`;
+
+  // Manual V1 has no in-app Support. The restricted tenant role is deliberately
+  // unable to SELECT public.accounts/merchants or the deferred Support tables.
+  // Read the suspended merchant status via the trusted authentication issuer,
+  // and only catalog references via a tenant-scoped SQL transaction. Do NOT
+  // grant the tenant LOGIN access to global identity or Support tables.
+  //
+  // The full-product non-manual path retains its existing single-transaction
+  // capture semantics and must be separately reviewed before it is activated.
+  const [merchantRows, catalogRows, supportRows, ticketRows] =
+    manualCommercialRelease()
+      ? await (async () => {
+          const identity = await withAuthenticationTransaction(client =>
+            operationalQueryRows<MerchantStateRow>(client, merchantSql, [input.merchantId]));
+          const catalog = await withMerchantOperationalTransaction(
+            input.merchantId,
+            client => operationalQueryRows<CatalogRow>(client, catalogSql, [input.merchantId]),
+          );
+          return [identity, catalog, [] as SupportRow[], [] as TicketRow[]] as const;
+        })()
+      : await withMerchantOperationalTransaction(input.merchantId, async client => [
+          await operationalQueryRows<MerchantStateRow>(client, merchantSql, [input.merchantId]),
+          await operationalQueryRows<CatalogRow>(client, catalogSql, [input.merchantId]),
+          await operationalQueryRows<SupportRow>(
+            client,
+            `SELECT storage_provider, storage_key
+               FROM support_attachments
+              WHERE merchant_id = $1 AND deleted_at IS NULL
+              ORDER BY id`,
+            [input.merchantId],
+          ),
+          await operationalQueryRows<TicketRow>(
+            client,
+            `SELECT id FROM support_tickets WHERE merchant_id = $1 ORDER BY id`,
+            [input.merchantId],
+          ),
+        ] as const);
 
   const merchant = merchantRows[0];
   if (!merchant || merchant.account_state === "closed") {
