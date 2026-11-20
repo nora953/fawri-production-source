@@ -306,6 +306,7 @@ app.use(
     readinessChecks: [
       createPostgresAuthorityReadinessCheck(),
       createProductionOtpReadinessCheck(),
+      createHostedV1CatalogMediaReadinessCheck(),
       {
         name: "production_release_configuration",
         check() {
