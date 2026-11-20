@@ -113,3 +113,19 @@ test("irreversible merchant deletion owns durable post-commit physical media ret
     "runtime startup must retry persisted cleanup work instead of silently forgetting failed physical deletion",
   );
 });
+
+test("V1 restricted tenant cannot read deleted-merchant tombstones; cleanup uses trusted auth issuer", () => {
+  const coordinator = source("src/services/merchantPhysicalMediaCleanup.ts");
+  const tenantGrants = fs.readFileSync(path.resolve(apiRoot,
+    "../../lib/db/first-commercial/held/v1_tenant_online_commerce_grants.sql"), "utf8");
+  const authGrants = fs.readFileSync(path.resolve(apiRoot,
+    "../../lib/db/first-commercial/held/v1_authentication_core_grants.sql"), "utf8");
+
+  assert.match(tenantGrants, /No SELECT\/UPDATE on merchants is granted to the tenant LOGIN/);
+  assert.match(authGrants, /GRANT SELECT, INSERT, UPDATE, DELETE ON\s+public\.accounts,/);
+  assert.match(authGrants, /GRANT SELECT, INSERT, UPDATE ON\s+public\.merchants,/);
+  assert.match(coordinator, /const rows = productionReleaseGateRequired\(\)\s+\? await withAuthenticationTransaction\(client =>\s+operationalQueryRows<DeletionTombstone>\(client, query, \[merchantId\]\)\)/);
+  assert.match(coordinator, /WHERE m\.id = \$1\s+LIMIT 1/);
+  assert.match(coordinator, /rows\[0\]\?\.account_state === "closed"/);
+  assert.match(coordinator, /rows\[0\]\?\.retention_status === "deleted"/);
+});
