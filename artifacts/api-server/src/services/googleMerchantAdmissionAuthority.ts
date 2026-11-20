@@ -29,6 +29,8 @@ type Registration = Readonly<{
   currencyCode?: string;
   language?: "ar" | "en" | "ku";
   requestedPlan?: RequestedPlan;
+  agreeTerms?: boolean;
+  confirmLegal?: boolean;
 }>;
 
 export type GoogleMerchantAdmission = Readonly<{
@@ -94,6 +96,12 @@ export async function admitPendingGoogleMerchant(input: Registration): Promise<G
       return { accountId: existing[0].id, created: false, trialActivated: false };
     }
 
+    // Client-side checkboxes are insufficient: first-time merchant admission
+    // requires explicit consent asserted again at this trusted server boundary.
+    // Separate, durable policy-version evidence remains a production gate.
+    if (input.agreeTerms !== true || input.confirmLegal !== true) {
+      throw new Error("GOOGLE_MERCHANT_LEGAL_CONSENT_REQUIRED");
+    }
     // A Google subject not yet linked to Fawri is NOT a login. Reject a
     // profile-less request BEFORE any insert, trial or session could occur.
     const ownerName = validatedText(input.ownerName, 160);
