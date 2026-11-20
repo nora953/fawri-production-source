@@ -1,6 +1,7 @@
 import { COMMON_UI_COPY } from '@/lib/translations/commonUi';
 import { LOGIN_PAGE_SECURITY_TEXT } from '@/lib/translations/features/pages/LoginPage';
 import React, { useState } from 'react';
+import { GOOGLE_MERCHANT_AUTH_COPY } from '@/lib/translations/features/pages/GoogleMerchantAuth';
 import { useI18n } from '@/lib/i18n';
 import { Link, useLocation } from 'wouter';
 import {
@@ -123,20 +124,7 @@ export default function LoginPage() {
   const selectedRegion = MERCHANT_REGION_BY_COUNTRY.get(countryCode)
     || MERCHANT_REGION_BY_COUNTRY.get('IQ');
 
-  const googleCopy = {
-    ar: { title: 'الدخول بحساب Google', start: 'الدخول بواسطة Google',
-      retry: 'إعادة محاولة Google', choose: 'اختر حساب Google المرتبط بمتجرك.',
-      note: 'لديك متجر مسجل بحساب Google؟ ادخل من هنا. الحسابات الجديدة تُنشأ من صفحة التسجيل.',
-      error: 'تعذر تسجيل الدخول بحساب Google، أو الحساب غير مسجل بعد.' },
-    en: { title: 'Sign in with Google', start: 'Continue with Google',
-      retry: 'Retry Google sign-in', choose: 'Choose the Google account linked to your store.',
-      note: 'For existing Google-linked merchants only. New merchants must sign up first.',
-      error: 'Google sign-in failed or this Google account is not registered.' },
-    ku: { title: 'چوونەژوورەوە بە Google', start: 'بە Google بچۆ ژوورەوە',
-      retry: 'دووبارە هەوڵدان بە Google', choose: 'هەژماری Google پەیوەست بە دووکانەکەت هەڵبژێرە.',
-      note: 'تەنیا بۆ بازرگانانی تۆمارکراو؛ هەژماری نوێ لە پەڕەی تۆمارکردن دروست بکە.',
-      error: 'چوونەژوورەوە بە Google سەرکەوتوو نەبوو یان هەژمارەکە تۆمار نەکراوە.' },
-  }[lang];
+  const googleCopy = GOOGLE_MERCHANT_AUTH_COPY[lang].login;
 
   const handleGoogleLogin = async () => {
     if (!googleMerchantSignupBuildReady() || googleBusy || !googleButtonHost.current) return;
