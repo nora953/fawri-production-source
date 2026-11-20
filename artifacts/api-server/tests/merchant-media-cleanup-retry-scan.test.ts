@@ -43,4 +43,54 @@ test("completed media manifests cannot exhaust the pending retry batch", async (
   const { reconcilePendingMerchantPhysicalMediaCleanups } = await import("../src/services/merchantPhysicalMediaCleanup");
   assert.deepEqual(await reconcilePendingMerchantPhysicalMediaCleanups(1), { inspected: 1, pending: 1 });
   assert.equal(query.mock.callCount(), 1, "the prepared manifest must reach the database commit check");
+
+  // A bad file must remain discoverable, never masquerade as missing/complete,
+  // and must not stop another merchant's valid pending cleanup from retrying.
+  const malformedMerchant = "media-manifest-malformed";
+  const swappedMerchant = "media-manifest-swapped";
+  const invalidEntryMerchant = "media-manifest-invalid-entry";
+  const hashedName = (merchant: string) =>
+    crypto.createHash("sha256").update(merchant).digest("hex") + ".json";
+  const malformedPath = path.join(directory, hashedName(malformedMerchant));
+  const swappedPath = path.join(directory, hashedName(swappedMerchant));
+  const invalidEntryPath = path.join(directory, hashedName(invalidEntryMerchant));
+  fs.writeFileSync(malformedPath, "{broken json");
+  const validShape = {
+    version: 1,
+    deletion_request_id: "synthetic-deletion",
+    state: "prepared",
+    attempts: 0,
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+  };
+  fs.writeFileSync(swappedPath, JSON.stringify({
+    ...validShape,
+    merchant_id: entries[1].merchant, // must not match the filename
+    entries: [],
+  }));
+  fs.writeFileSync(invalidEntryPath, JSON.stringify({
+    ...validShape,
+    merchant_id: invalidEntryMerchant,
+    entries: [{ kind: "support_ticket_prefix", storage_provider: "filesystem", ticket_id: "" }],
+  }));
+  const before = query.mock.callCount();
+  assert.deepEqual(
+    await reconcilePendingMerchantPhysicalMediaCleanups(1),
+    { inspected: 4, pending: 4 },
+    "corrupted manifests remain pending while one valid merchant still retries",
+  );
+  assert.equal(query.mock.callCount(), before + 1, "valid retry capacity must remain available");
+  for (const [merchant, filePath] of [
+    [malformedMerchant, malformedPath],
+    [swappedMerchant, swappedPath],
+    [invalidEntryMerchant, invalidEntryPath],
+  ] as const) {
+    assert.ok(fs.existsSync(filePath), "corrupt manifest must not be discarded");
+    const { reconcileMerchantPhysicalMediaCleanup } =
+      await import("../src/services/merchantPhysicalMediaCleanup");
+    await assert.rejects(
+      () => reconcileMerchantPhysicalMediaCleanup(merchant),
+      { code: "PHYSICAL_MEDIA_CLEANUP_MANIFEST_INVALID" },
+    );
+  }
 });
