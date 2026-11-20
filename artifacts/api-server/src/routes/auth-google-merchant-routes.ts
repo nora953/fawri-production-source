@@ -1,4 +1,13 @@
 import { Router, type Request } from "express";
+import { isE164Phone, normalizePhone } from "../services/authAccountRepository";
+import {
+  googlePhoneClaimSourceReady,
+  issueMerchantOtpChallengeAuthoritative,
+  recordAcceptedSignupWhatsAppTemplate,
+  revokeMerchantOtpChallengeAuthoritative,
+  verifyMerchantOtpChallengeAuthoritative,
+} from "../services/postgresMerchantAuthSecurityAuthority";
+import { deliverAuthOtpWithProviderReceipt } from "../services/authOtpDelivery";
 import { admitPendingGoogleMerchant } from "../services/googleMerchantAdmissionAuthority";
 import { issueGoogleOidcChallenge } from "../services/googleOidcChallengeAuthority";
 import { isGoogleMerchantIdentityLinked } from "../services/googleMerchantIdentityAssurance";
@@ -6,6 +15,7 @@ import { findMerchantByIdAuthoritative } from "../services/postgresMerchantAccou
 import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
 import {
   ADMIN_SESSION_COOKIE, MERCHANT_SESSION_COOKIE,
+  getAuthContext, requireSecureMerchantSession,
   requestDeviceId, requestDeviceLabel, requestIp, sendAuthError,
   setAuthSessionCookie,
 } from "../middleware/authSession";
@@ -150,6 +160,110 @@ router.post("/google/complete", async (req, res) => {
     // No Google token, nonce, cookie, subject, DB query, or private authority
     // diagnostic is ever reflected to the user.
     res.status(401).json(rejectUnauthorized());
+  }
+});
+
+/**
+ * The FIRST trusted phone is claimed by Google-owned merchant only after an
+ * approved WhatsApp Authentication template and correct six-digit OTP.
+ * No SMS, no auto-trial, no pre-verification account.phone reservation.
+ * Requires an existing valid Google merchant HttpOnly session, scoped origin,
+ * and separately approved default-OFF production flags and HELD migrations.
+ */
+function googlePhoneSessionAccount(res: import("express").Response): string | null {
+  const context = getAuthContext(res);
+  if (!context?.merchantProfile || context.account.kind !== "merchant" ||
+      context.account.otpVerified ||
+      context.account.phone ||
+      context.merchantProfile.tenantId !== context.account.id ||
+      !["pending_review", "approved"].includes(context.merchantProfile.accountStatus)) {
+    return null;
+  }
+  return context.account.id;
+}
+
+router.post("/google/phone/begin", requireSecureMerchantSession, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!googleMerchantHttpReady() || !googlePhoneClaimSourceReady()) {
+    sendAuthError(res, 404, "GOOGLE_PHONE_DISABLED", "WhatsApp phone verification is not available");
+    return;
+  }
+  const accountId = googlePhoneSessionAccount(res);
+  const phone = normalizePhone(req.body?.phone);
+  if (!googleOriginAllowed(req) || !req.is("application/json") ||
+      !accountId || !isE164Phone(phone) ||
+      !await isGoogleMerchantIdentityLinked(accountId)) {
+    sendAuthError(res, 403, "GOOGLE_PHONE_FORBIDDEN", "WhatsApp phone verification is forbidden");
+    return;
+  }
+  let challengeId = "";
+  try {
+    const issued = await issueMerchantOtpChallengeAuthoritative({
+      target: phone, purpose: "signup", ip: requestIp(req),
+      // NEVER from req.body; only validated account session.
+      googleMerchantAccountId: accountId,
+    });
+    challengeId = issued.challengeId;
+    const delivery = await deliverAuthOtpWithProviderReceipt(phone, issued.code, "signup");
+    if (!delivery.ok || !("providerReceipt" in delivery) || !delivery.providerReceipt) {
+      throw new Error("GOOGLE_PHONE_PROVIDER_RECEIPT_MISSING");
+    }
+    await recordAcceptedSignupWhatsAppTemplate({
+      challengeId, target: phone, providerReceipt: delivery.providerReceipt,
+    });
+    res.status(202).json({
+      ok: true,
+      challenge_id: challengeId,
+      expires_at: issued.expiresAt,
+      retry_after_seconds: issued.retryAfterSeconds,
+    });
+  } catch {
+    if (challengeId) {
+      try { await revokeMerchantOtpChallengeAuthoritative(challengeId); } catch {}
+    }
+    sendAuthError(res, 503, "GOOGLE_PHONE_OTP_UNAVAILABLE",
+      "Unable to begin WhatsApp verification");
+  }
+});
+
+router.post("/google/phone/verify", requireSecureMerchantSession, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!googleMerchantHttpReady() || !googlePhoneClaimSourceReady()) {
+    sendAuthError(res, 404, "GOOGLE_PHONE_DISABLED", "WhatsApp phone verification is not available");
+    return;
+  }
+  const accountId = googlePhoneSessionAccount(res);
+  const phone = normalizePhone(req.body?.phone);
+  const challengeId = String(req.body?.challenge_id || "");
+  const code = String(req.body?.code || "");
+  if (!googleOriginAllowed(req) || !req.is("application/json") ||
+      !accountId || !isE164Phone(phone) ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(challengeId) ||
+      !/^\\d{6}$/.test(code) ||
+      !await isGoogleMerchantIdentityLinked(accountId)) {
+    sendAuthError(res, 403, "GOOGLE_PHONE_FORBIDDEN", "WhatsApp phone verification is forbidden");
+    return;
+  }
+  try {
+    const status = await verifyMerchantOtpChallengeAuthoritative({
+      challengeId, target: phone, purpose: "signup", code, ip: requestIp(req),
+      expectedGoogleAccountId: accountId,
+    });
+    if (status !== "verified") {
+      sendAuthError(res, 400, "OTP_INVALID", "verification code is invalid or expired");
+      return;
+    }
+    const updated = await findMerchantByIdAuthoritative(accountId);
+    if (!updated?.merchantProfile || !updated.account.otpVerified ||
+        updated.account.phone !== phone) {
+      sendAuthError(res, 409, "ACCOUNT_STATE_CHANGED", "account state changed");
+      return;
+    }
+    res.json({ ok: true, trial_activated: false, ...payload(updated) });
+  } catch {
+    // A unique-phone conflict or concurrent claim fails closed with no proof.
+    sendAuthError(res, 409, "GOOGLE_PHONE_CLAIM_UNAVAILABLE",
+      "WhatsApp phone verification could not be completed");
   }
 });
 
