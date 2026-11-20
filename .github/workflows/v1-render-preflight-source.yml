@@ -5,6 +5,10 @@ on:
       - Dockerfile.staging
       - render.yaml
       - scripts/tests/v1-render-preflight-source.test.mjs
+      - artifacts/api-server/src/services/hostedV1CatalogMediaReadiness.ts
+      - artifacts/api-server/tests/hosted-v1-media-readiness.test.ts
+      - artifacts/api-server/src/app.ts
+      - artifacts/api-server/src/index.ts
       - .github/workflows/v1-render-preflight-source.yml
   push:
     branches:
@@ -13,6 +17,10 @@ on:
       - Dockerfile.staging
       - render.yaml
       - scripts/tests/v1-render-preflight-source.test.mjs
+      - artifacts/api-server/src/services/hostedV1CatalogMediaReadiness.ts
+      - artifacts/api-server/tests/hosted-v1-media-readiness.test.ts
+      - artifacts/api-server/src/app.ts
+      - artifacts/api-server/src/index.ts
       - .github/workflows/v1-render-preflight-source.yml
 permissions:
   contents: read
@@ -20,10 +28,22 @@ jobs:
   check-no-deploy:
     if: github.repository == 'nora953/fawri-production-source'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
       - name: Verify manual-only build, persistent salt, no public deploy and source manifest
         run: node --test scripts/tests/v1-render-preflight-source.test.mjs
+      - name: Use Node 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install locked dependencies without scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Verify hosted disk preflight with mocked mountinfo and no hosted access
+        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/hosted-v1-media-readiness.test.ts
+      - name: Typecheck API after hosted disk readiness wiring
+        run: pnpm --filter @workspace/api-server run typecheck
