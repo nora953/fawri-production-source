@@ -10,6 +10,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import GoogleMerchantPhoneVerification from '@/components/GoogleMerchantPhoneVerification';
 import { useI18n } from '@/lib/i18n';
 import { clearMerchantTabSession } from '@/lib/store';
 import { secureMerchantLogout } from '@/lib/authClientCutover';
@@ -179,6 +180,8 @@ export default function PendingPage() {
         <p className="mb-8 leading-relaxed text-muted-foreground">
           {viewConfig.body}
         </p>
+
+        {view === 'pending_review' && <GoogleMerchantPhoneVerification />}
 
         <Button
           type="button"
