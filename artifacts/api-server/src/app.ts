@@ -70,6 +70,9 @@ import { logger } from "./lib/logger";
 import { hasAdminPermission } from "./services/authPolicy";
 import { createProductionOtpReadinessCheck } from "./services/authOtpDelivery";
 import { createHostedV1CatalogMediaReadinessCheck } from "./services/hostedV1CatalogMediaReadiness";
+import { withAuthenticationTransaction } from "./services/authenticationPostgresAuthority";
+import { withOperatorDirectoryTransaction } from "./services/operatorDirectoryPostgresAuthority";
+import { createReadinessSnapshot } from "./observability/readiness";
 import {
   refreshMerchantRetentionPolicy,
   startMerchantRetentionPolicyScheduler,
@@ -297,6 +300,49 @@ app.use(enforceFirstCommercialPosCutover);
 app.use(enforceManualCommercialCutover);
 app.get("/healthz", (_req, res) => {
   res.status(200).json({ ok: true, service: "fawri" });
+});
+// Render's G3 infrastructure gate is intentionally distinct from the wider
+// /ops/readiness release gate. WhatsApp delivery belongs to G4 and must stay
+// independently blocked there; G3 checks actual SQL authorities and disk.
+app.get("/readyz", async (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  try {
+    const snapshot = await createReadinessSnapshot([
+      createPostgresAuthorityReadinessCheck(),
+      createHostedV1CatalogMediaReadinessCheck(),
+      {
+        name: "production_release_configuration",
+        check() { assertProductionRuntimeConfiguration(process.env); },
+      },
+      {
+        name: "authentication_sql",
+        timeoutMs: 3_000,
+        async check() {
+          await withAuthenticationTransaction(async client => {
+            const row = await client.query<{ healthy: number }>(
+              "SELECT 1::integer AS healthy",
+            );
+            if (row.rows[0]?.healthy !== 1) throw new Error("AUTH_SQL_NOT_READY");
+          });
+        },
+      },
+      {
+        name: "operator_sql",
+        timeoutMs: 3_000,
+        async check() {
+          await withOperatorDirectoryTransaction(async client => {
+            const row = await client.query<{ healthy: number }>(
+              "SELECT 1::integer AS healthy",
+            );
+            if (row.rows[0]?.healthy !== 1) throw new Error("OPERATOR_SQL_NOT_READY");
+          });
+        },
+      },
+    ]);
+    res.status(snapshot.status === "ready" ? 200 : 503).json(snapshot);
+  } catch {
+    res.status(503).json({ status: "not_ready", checks: [] });
+  }
 });
 app.use(
   "/ops",
