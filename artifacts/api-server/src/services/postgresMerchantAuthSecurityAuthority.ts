@@ -233,6 +233,8 @@ export function whatsappTrialProofSourceReady(): boolean {
   return process.env.FAWRI_WHATSAPP_TRIAL_PROOF_SOURCE_ENABLED === "1" &&
     process.env.FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY === "required" &&
     operationalPostgresAuthorityRequired() &&
+    process.env.NODE_ENV === "production" &&
+    process.env.FAWRI_DEPLOYMENT_MODE !== "staging" &&
     productionOtpDeliveryConfigurationReady() &&
     Buffer.byteLength(String(process.env.FAWRI_TRIAL_EVIDENCE_HMAC_SECRET || ""), "utf8") >= 32;
 }
@@ -252,9 +254,9 @@ export async function recordAcceptedSignupWhatsAppTemplate(input: {
   if (!whatsappTrialProofSourceReady()) throw new Error("TRIAL_WHATSAPP_PROOF_NOT_READY");
   const receipt = input?.providerReceipt;
   if (!receipt || typeof receipt.messageId !== "string" ||
-      !/^wamid\\.[A-Za-z0-9._+\\/=-]{8,500}$/.test(receipt.messageId) ||
-      receipt.templateName !== process.env.WHATSAPP_AUTH_TEMPLATE_NAME ||
-      receipt.templateLanguage !== process.env.WHATSAPP_AUTH_TEMPLATE_LANGUAGE) {
+      !/^wamid\.[A-Za-z0-9._+\/=-]{8,500}$/.test(receipt.messageId) ||
+      receipt.templateName !== String(process.env.WHATSAPP_AUTH_TEMPLATE_NAME || "").trim() ||
+      receipt.templateLanguage !== String(process.env.WHATSAPP_AUTH_TEMPLATE_LANGUAGE || "").trim()) {
     throw new Error("TRIAL_WHATSAPP_PROVIDER_RECEIPT_INVALID");
   }
   const messageHash = whatsappTrialDigest("trial-wa-provider-message:v1", receipt.messageId);
