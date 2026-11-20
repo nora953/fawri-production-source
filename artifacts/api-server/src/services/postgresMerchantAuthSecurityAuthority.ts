@@ -359,6 +359,16 @@ export async function verifyMerchantOtpChallengeAuthoritative(input: {
     return authSecurityStore.verifyOtpChallenge(input);
   }
   return withAuthenticationTransaction(async (client) => {
+    // Google issuance locks the merchant before touching OTP challenges.
+    // Match that lock order on redemption to avoid begin/verify deadlocks.
+    if (input.expectedGoogleAccountId) {
+      const owner = await client.query<{id:string}>(
+        "SELECT id FROM public.accounts WHERE id=$1 AND kind='merchant' " +
+        "AND state='active' FOR UPDATE",
+        [input.expectedGoogleAccountId],
+      );
+      if (owner.rows.length !== 1) return "invalid" as const;
+    }
     const result = await client.query<OtpRow>(
       provenanceRequired
         ? `SELECT id, account_id, target_hash, code_hash, ip_hash,
