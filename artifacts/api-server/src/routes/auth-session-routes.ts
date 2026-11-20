@@ -159,7 +159,15 @@ router.get("/lifecycle", async (req, res) => {
   const googleIdentityAllowed = account?.merchantProfile && !account.account.otpVerified
     ? await isGoogleMerchantIdentityLinked(account.account.id)
     : false;
-  if (!account?.merchantProfile || !account.account.enabled ||
+  // Rejected/suspended merchants may inspect only their own lifecycle
+  // decision with a still-valid session. This endpoint grants no commerce
+  // permissions and never restores an invalid/revoked session. Operational
+  // routes continue to reject these merchants via secure auth middleware.
+  const statusOnlyAccount = account?.merchantProfile &&
+    (account.merchantProfile.accountStatus === "rejected" ||
+     account.merchantProfile.accountStatus === "suspended");
+  if (!account?.merchantProfile ||
+      (!account.account.enabled && !statusOnlyAccount) ||
       (!account.account.otpVerified && !googleIdentityAllowed)) {
     await authPostgresSessionAuthority.revokeSession(
       token,
