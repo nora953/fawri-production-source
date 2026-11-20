@@ -100,3 +100,6 @@ jobs:
 
       - name: Prove catalog and support files are retired after irreversible deletion
         run: bash scripts/run-isolated-postgres-audit.sh media-runtime
+
+      - name: Prove manual V1 catalog-only deletion with a fresh isolated PostgreSQL process
+        run: bash scripts/run-isolated-postgres-audit.sh media-runtime-manual
