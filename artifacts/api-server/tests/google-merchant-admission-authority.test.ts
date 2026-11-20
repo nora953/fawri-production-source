@@ -67,3 +67,19 @@ test("returning Google merchant needs only signed subject, never a new-store pro
   // Browser input must never link a subject by user-submitted email.
   assert.doesNotMatch(source, /WHERE.*email\s*=/);
 });
+
+test("new Google merchant requires explicit server-side legal consent, but linked merchant can return", () => {
+  const service = readFileSync(
+    new URL("../src/services/googleMerchantAdmissionAuthority.ts", import.meta.url), "utf8",
+  );
+  const route = readFileSync(
+    new URL("../src/routes/auth-google-merchant-routes.ts", import.meta.url), "utf8",
+  );
+  const existing = service.indexOf("if (existing[0])");
+  const consent = service.indexOf("input.agreeTerms !== true || input.confirmLegal !== true");
+  const inserted = service.indexOf("INSERT INTO public.accounts");
+  assert.ok(existing >= 0 && consent > existing && inserted > consent);
+  assert.match(service, /GOOGLE_MERCHANT_LEGAL_CONSENT_REQUIRED/);
+  assert.match(route, /agreeTerms: req.body.agree_terms/);
+  assert.match(route, /confirmLegal: req.body.confirm_legal/);
+});
