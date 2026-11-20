@@ -51,7 +51,7 @@ test("Google WhatsApp is accepted by provider before proof and claimed only afte
   assert.match(issuer, /a.phone IS NULL AND a.phone_verified=false/);
   assert.match(issuer, /googleUnbound = Boolean\(input.expectedGoogleAccountId/);
   assert.match(issuer, /input.expectedGoogleAccountId === challenge.account_id/);
-  assert.match(issuer, /"phone=$2," : ""/);
+  assert.match(issuer, /"phone=\$2," : ""/);
   assert.match(issuer, /trial_wa_proof_challenge_id=\$5/);
   assert.match(issuer, /"SELECT id FROM public.accounts WHERE phone=\$1 LIMIT 1 FOR UPDATE"/);
   assert.match(issuer, /return "invalid" as const/);
