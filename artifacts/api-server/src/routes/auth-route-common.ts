@@ -8,8 +8,9 @@ import {
 import {
   issueMerchantOtpChallengeAuthoritative,
   revokeMerchantOtpChallengeAuthoritative,
+  recordAcceptedSignupWhatsAppTemplate,
 } from "../services/postgresMerchantAuthSecurityAuthority";
-import { deliverAuthOtp, stagingOtpBypassAllowed } from "../services/authOtpDelivery";
+import { deliverAuthOtpWithProviderReceipt, stagingOtpBypassAllowed } from "../services/authOtpDelivery";
 import { getAuthContext, requestIp, sendAuthError } from "../middleware/authSession";
 
 function legacySafeProfile(account: AuthAccount) {
@@ -98,10 +99,31 @@ export async function issueOtp(req: Request, target: string, purpose: OtpPurpose
     purpose,
     ip: requestIp(req),
   });
-  const delivery = await deliverAuthOtp(target, issued.code, purpose);
+  const delivery = await deliverAuthOtpWithProviderReceipt(target, issued.code, purpose);
   if (!delivery.ok) {
     await revokeMerchantOtpChallengeAuthoritative(issued.challengeId);
     throw new AuthSecurityStoreError(delivery.code, delivery.message);
+  }
+  // A provider acceptance response is NOT proof of delivery. Only a
+  // subsequent successful redemption of this exact account-bound challenge
+  // writes a trusted WhatsApp phone proof in the same DB transaction.
+  if (purpose === "signup" &&
+      process.env.FAWRI_WHATSAPP_TRIAL_PROOF_SOURCE_ENABLED === "1") {
+    try {
+      if (!("providerReceipt" in delivery) || !delivery.providerReceipt) {
+        throw new Error("TRIAL_WHATSAPP_PROVIDER_RECEIPT_REQUIRED");
+      }
+      await recordAcceptedSignupWhatsAppTemplate({
+        challengeId: issued.challengeId,
+        target,
+        providerReceipt: delivery.providerReceipt,
+      });
+    } catch {
+      await revokeMerchantOtpChallengeAuthoritative(issued.challengeId);
+      throw new AuthSecurityStoreError(
+        "OTP_DELIVERY_FAILED", "Unable to verify WhatsApp authentication delivery",
+      );
+    }
   }
   return issued;
 }
