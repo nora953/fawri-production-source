@@ -105,23 +105,40 @@ function writeManifest(manifest: CleanupManifest): void {
   fs.renameSync(temporary, target);
 }
 
+function invalidManifest(): never {
+  // Never include the manifest body or merchant identity in logs/exceptions.
+  throw Object.assign(new Error("merchant media cleanup manifest invalid"), {
+    code: "PHYSICAL_MEDIA_CLEANUP_MANIFEST_INVALID",
+  });
+}
+
 function readManifest(filePath: string): CleanupManifest | null {
+  let raw: string;
   try {
-    const parsed = JSON.parse(fs.readFileSync(filePath, "utf8")) as CleanupManifest;
-    if (
-      parsed?.version !== 1 ||
-      !parsed.merchant_id ||
-      !parsed.deletion_request_id ||
-      !Array.isArray(parsed.entries) ||
-      !["prepared", "pending", "complete"].includes(parsed.state)
-    ) {
-      return null;
-    }
-    return parsed;
+    raw = fs.readFileSync(filePath, "utf8");
   } catch (error) {
     if ((error as NodeJS.ErrnoException)?.code === "ENOENT") return null;
-    return null;
+    return invalidManifest();
   }
+  let parsed: CleanupManifest;
+  try {
+    parsed = JSON.parse(raw) as CleanupManifest;
+  } catch {
+    return invalidManifest();
+  }
+  if (
+    parsed?.version !== 1 ||
+    typeof parsed.merchant_id !== "string" || !parsed.merchant_id.trim() ||
+    typeof parsed.deletion_request_id !== "string" || !parsed.deletion_request_id.trim() ||
+    !Array.isArray(parsed.entries) ||
+    !["prepared", "pending", "complete"].includes(parsed.state) ||
+    // A manifest under another merchant's hashed filename must never be
+    // trusted for either tombstone verification or physical media removal.
+    path.basename(filePath) !== manifestFileName(parsed.merchant_id)
+  ) {
+    return invalidManifest();
+  }
+  return parsed;
 }
 
 function safeErrorCode(error: unknown): string {
@@ -437,12 +454,28 @@ export async function reconcilePendingMerchantPhysicalMediaCleanups(
 
   let pending = 0;
   let inspected = 0;
+  let validAttempted = 0;
   const batchLimit = Math.max(1, Math.min(1000, limit));
   for (const name of names) {
-    const manifest = readManifest(path.join(cleanupRoot(), name));
+    let manifest: CleanupManifest | null;
+    try {
+      manifest = readManifest(path.join(cleanupRoot(), name));
+    } catch (error) {
+      // Never silently discard unreadable/corrupt deletion intents: doing so
+      // leaves private merchant images behind with no retry warning.
+      // Preserve the file for recovery and continue other valid manifests.
+      inspected += 1;
+      pending += 1;
+      logCleanupFailure(error, {
+        manifest_hash: name.slice(0, 16),
+        phase: "manifest_validation",
+      });
+      continue;
+    }
     if (!manifest || manifest.state === "complete") continue;
-    if (inspected >= batchLimit) break;
+    if (validAttempted >= batchLimit) break;
     inspected += 1;
+    validAttempted += 1;
     const result = await reconcileMerchantPhysicalMediaCleanup(
       manifest.merchant_id,
     ).catch((error) => {
