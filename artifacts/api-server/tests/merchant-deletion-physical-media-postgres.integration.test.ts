@@ -154,6 +154,7 @@ test(
     );
     assert.equal(fs.existsSync(catalogFile), true);
 
+    let supportFile: string | null = null;
     // The first commercial release does not allow Support tickets/images.
     // Preserve the old full-product regression separately in the same test.
     if (!manualV1) {
@@ -174,7 +175,7 @@ test(
         senderName: "Merchant",
         merchantId,
       });
-      const supportFile = path.join(
+      supportFile = path.join(
         dataRoot,
         "support-images",
         supportUpload.attachment.storage_key,
@@ -205,6 +206,8 @@ test(
 
     assert.equal(fs.existsSync(catalogFile), false);
     if (!manualV1) {
+      assert.ok(supportFile, "the full profile must have created a Support image fixture");
+      assert.equal(fs.existsSync(supportFile), false);
       assert.equal(
         fs.existsSync(path.join(dataRoot, "support-images", ticketId)),
         false,
