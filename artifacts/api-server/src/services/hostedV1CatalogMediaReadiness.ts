@@ -18,6 +18,9 @@ type MediaMountProbe = {
 const defaultProbe: MediaMountProbe = {
   readMountInfo: () => fs.readFileSync("/proc/self/mountinfo", "utf8"),
   assertReadableWritableDirectory: (dir) => {
+    // On a fresh Render disk the child directory does not yet exist.
+    // Only create it AFTER verifying the real persistent parent mount.
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
     if (!fs.statSync(dir).isDirectory()) throw new Error("NOT_DIRECTORY");
     fs.accessSync(dir, fs.constants.R_OK | fs.constants.W_OK);
   },
