@@ -7,6 +7,7 @@ on:
     paths:
       - "lib/db/first-commercial/held/v1_trial_evidence_ledger.sql"
       - "lib/db/first-commercial/held/v1_trial_whatsapp_proof_source.sql"
+      - "lib/db/first-commercial/held/v1_trial_whatsapp_otp_receipt_source.sql"
       - "lib/db/scripts/v1-trial-evidence-pg18.mjs"
       - ".github/workflows/v1-trial-evidence-pg18.yml"
 
