@@ -13,7 +13,9 @@ services:
     dockerfilePath: ./Dockerfile.staging
     dockerContext: .
     autoDeployTrigger: off
-    healthCheckPath: /healthz
+    # /healthz is only liveness; readiness fails if PG authority, WhatsApp
+    # delivery config or the real mounted persistent media directory is lost.
+    healthCheckPath: /ops/readiness
     maintenanceMode:
       enabled: true
     disk:
