@@ -121,6 +121,8 @@ router.post("/google/complete", async (req, res) => {
       currencyCode: req.body.currency_code,
       language: req.body.language,
       requestedPlan: req.body.requested_plan,
+      agreeTerms: req.body.agree_terms,
+      confirmLegal: req.body.confirm_legal,
     });
     const account = await findMerchantByIdAuthoritative(admitted.accountId);
     if (!account?.merchantProfile || !account.account.enabled ||
