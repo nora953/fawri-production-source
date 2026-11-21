@@ -20,7 +20,11 @@ const evidence = { browser: null, source: process.env.GITHUB_SHA || 'local', res
 let infrastructureError;
 async function waitFor(fn, limitMs = 15000, label = 'Browser prerequisite') {
   const until = Date.now() + limitMs;
-  while (Date.now() < until) { try { const v = await fn(); if (v) return v; } catch {} await delay(100); }
+  while (Date.now() < until) {
+    if (browser && browser.exitCode !== null) throw Error('Chrome exited before browser prerequisite completed');
+    try { const v = await fn(); if (v) return v; } catch {}
+    await delay(100);
+  }
   throw Error(label + ' timed out');
 }
 async function connect(url) {
@@ -47,7 +51,12 @@ async function evaluate(cdp, expression) {
 }
 async function check(name, fn) {
   try { const details = await fn(); evidence.results.push({ name, status: 'PASS', details }); }
-  catch (e) { evidence.results.push({ name, status: 'FAIL', error: e.message }); }
+  catch (e) {
+    evidence.results.push({ name, status: 'FAIL', error: e.message });
+    // A failed shared browser prerequisite invalidates every subsequent browser assertion.
+    // Fail closed immediately rather than outputting dozens of misleading timeouts.
+    if (String(e.message).startsWith('AdminPage prerequisite:')) throw e;
+  }
 }
 
 try {
@@ -127,12 +136,13 @@ try {
   unexpected.push({path:req.url,method:req.method});return send(404,{ok:false});
  }else if(req.url==='/bundle.js'){res.setHeader('Content-Type','application/javascript; charset=utf-8');res.end(bundle.outputFiles.find(x=>x.path.endsWith('.js')).text);}
  else if(req.url==='/style.css'){res.setHeader('Content-Type','text/css; charset=utf-8');res.end(styles);}
- else{res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/style.css"><div id="root"></div><script src="/bundle.js"></script>');}
+ else if(req.url==='/audit-debug.js'){res.setHeader('Content-Type','application/javascript; charset=utf-8');res.end("globalThis.auditErrors=[];addEventListener('error',e=>auditErrors.push(String(e.message).slice(0,160)));addEventListener('unhandledrejection',e=>auditErrors.push(String(e.reason).slice(0,160)));");}
+ else{res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/style.css"><div id="root"></div><script src="/audit-debug.js"></script><script src="/bundle.js"></script>');}
  });
  await new Promise(ok=>server.listen(0,'127.0.0.1',ok));const origin=`http://127.0.0.1:${server.address().port}`;
  browser=spawn(chromePath,['--headless=new','--no-sandbox','--disable-dev-shm-usage','--disable-background-networking','--disable-component-update','--disable-sync','--no-first-run','--no-default-browser-check','--remote-debugging-port=0','--remote-debugging-address=127.0.0.1','--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1',`--user-data-dir=${profile}`,'about:blank'],{stdio:['ignore','ignore','pipe'],detached:true});
  browser.stderr.on('data',()=>{});browser.on('error',e=>infrastructureError=e.message);
- const port=await waitFor(async()=>Number((await readFile(join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0]));
+ const port=await waitFor(async()=>Number((await readFile(join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0]),60000);
  evidence.browser=(await(await fetch(`http://127.0.0.1:${port}/json/version`)).json()).Browser;
 
  let sequence=0;
@@ -142,8 +152,14 @@ try {
   const target=await(await fetch(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(url)}`,{method:'PUT'})).json();
   const cdp=await connect(target.webSocketDebuggerUrl);await cdp('Runtime.enable');
   await cdp('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
-  await waitFor(()=>evaluate(cdp,'Boolean(globalThis.auditAdmin && document.querySelector(".admin-page-shell"))'));
-  await waitFor(()=>state.meCalls>0);return {cdp,state,target};
+  try {
+   await waitFor(()=>evaluate(cdp,'Boolean(globalThis.auditAdmin && document.querySelector(".admin-page-shell"))'),20000,'AdminPage shell mount');
+   await waitFor(()=>state.meCalls>0,20000,'AdminPage /me request');
+  } catch(error) {
+   const diagnostic=await evaluate(cdp,'({ready:document.readyState,scriptLoaded:Boolean(globalThis.auditAdmin),shellMounted:Boolean(document.querySelector(".admin-page-shell")),errors:(globalThis.auditErrors||[]).slice(0,3)})').catch(()=>({cdpUnavailable:true}));
+   throw Error('AdminPage prerequisite: '+error.message+'; meCalls='+state.meCalls+'; '+JSON.stringify(diagnostic));
+  }
+  return {cdp,state,target};
  }
  async function closed(t){await fetch(`http://127.0.0.1:${port}/json/close/${t.target.id}`);}
  const snapshot=c=>evaluate(c,`({support:Array.from(document.querySelectorAll('aside nav button')).some(b=>b.textContent.includes(auditAdmin.tab)),message:document.body.textContent.includes('AUDIT_PARENT_SUPPORT_MESSAGE'),reply:document.querySelectorAll('textarea').length,inspection:Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()===auditAdmin.requestInspection),noPermissions:document.body.textContent.includes(auditText.mainNoPermissionsTitle),path:location.pathname,active:document.querySelector('aside nav button[aria-current=page]')?.textContent})`);

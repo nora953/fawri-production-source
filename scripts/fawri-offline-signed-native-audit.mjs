@@ -22,7 +22,11 @@ const evidence = { browser: null, source: process.env.GITHUB_SHA || 'local', res
 let infrastructureError;
 async function waitFor(fn, limitMs = 15000) {
   const until = Date.now() + limitMs;
-  while (Date.now() < until) { try { const v = await fn(); if (v) return v; } catch {} await delay(100); }
+  while (Date.now() < until) {
+    if (browser && browser.exitCode !== null) throw Error('Chrome exited before browser prerequisite completed');
+    try { const v = await fn(); if (v) return v; } catch {}
+    await delay(100);
+  }
   throw Error('Browser prerequisite timed out');
 }
 async function connect(url) {
@@ -87,7 +91,7 @@ try {
   browser = spawn(chromePath, ['--headless=new', '--no-sandbox', '--disable-dev-shm-usage', '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', '--remote-debugging-address=127.0.0.1', '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1', `--user-data-dir=${profile}`, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'], detached: true });
   let launchError;
   browser.on('error', e => { launchError = e; }); browser.stderr.on('data', () => {});
-  const port = await waitFor(async () => { if (launchError) throw launchError; return Number((await readFile(join(profile, 'DevToolsActivePort'), 'utf8')).split('\n')[0]); });
+  const port = await waitFor(async () => { if (launchError) throw launchError; return Number((await readFile(join(profile, 'DevToolsActivePort'), 'utf8')).split('\n')[0]); }, 60000);
   evidence.browser = (await (await fetch(`http://127.0.0.1:${port}/json/version`)).json()).Browser;
   async function tab() {
     const target = await (await fetch(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(origin)}`, { method: 'PUT' })).json();
