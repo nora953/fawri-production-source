@@ -88,3 +88,19 @@ test('G3 actual write/fsync/read acceptance runs once before listener, never on 
  assert.match(mount,/fs\.rmSync\(probePath/);
  assert.doesNotMatch(app,/assertHostedV1CatalogMediaIoReady/);
 });
+
+
+test('G3 persistence canary is admitted on boot after mounted disk I/O, never on /readyz', () => {
+ const entry=fs.readFileSync(path.join(root,'artifacts/api-server/src/index.ts'),'utf8');
+ const app=fs.readFileSync(path.join(root,'artifacts/api-server/src/app.ts'),'utf8');
+ const mount=fs.readFileSync(path.join(root,
+  'artifacts/api-server/src/services/hostedV1CatalogMediaReadiness.ts'),'utf8');
+ assert.match(entry,/assertHostedV1CatalogMediaIoReady\(process\.env\);[\s\S]*?assertHostedV1CatalogMediaCanary\(process\.env\);[\s\S]*?startupStage = "database_rls"/);
+ assert.match(mount,/G3_CANARY_FILE = "\.fawri-g3-media-persistence-canary-v1\.json"/);
+ assert.match(mount,/fs\.openSync\(filename, "wx", 0o600\)/);
+ assert.match(mount,/fs\.fsyncSync\(fd\)/);
+ assert.match(mount,/return "seeded"/);
+ assert.match(mount,/return "verified"/);
+ assert.match(mount,/V1_HOSTED_CATALOG_MEDIA_CANARY_NOT_READY/);
+ assert.doesNotMatch(app,/assertHostedV1CatalogMediaCanary|assertCatalogMediaCanaryAcrossStarts/);
+});
