@@ -102,5 +102,7 @@ test('G3 persistence canary is admitted on boot after mounted disk I/O, never on
  assert.match(mount,/return "seeded"/);
  assert.match(mount,/return "verified"/);
  assert.match(mount,/V1_HOSTED_CATALOG_MEDIA_CANARY_NOT_READY/);
+ assert.match(mount,/FAWRI_G3_REQUIRE_EXISTING_CANARY === "1"/);
+ assert.match(mount,/if \(requireExisting\) canaryNotReady\(\)/);
  assert.doesNotMatch(app,/assertHostedV1CatalogMediaCanary|assertCatalogMediaCanaryAcrossStarts/);
 });
