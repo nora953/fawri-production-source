@@ -13,6 +13,18 @@ RUN corepack enable && corepack prepare pnpm@10.26.1 --activate
 COPY . .
 
 RUN pnpm install --frozen-lockfile
+
+# Render exposes service environment variables as Docker build arguments.
+# Explicitly admit ONLY these PUBLIC Vite Google values before compiling UI.
+# All default OFF; enabling also requires separately accepted schema/providers.
+# Never forward bearer tokens, DB URLs, WhatsApp secrets or ID tokens here.
+ARG VITE_FAWRI_GOOGLE_MERCHANT_SIGNUP=0
+ARG VITE_FAWRI_GOOGLE_PHONE_CLAIM=0
+ARG VITE_FAWRI_GOOGLE_OAUTH_CLIENT_ID=
+
+# A runtime-only toggle cannot change Vite's already-compiled UI.
+# Fail closed if the build has missing/mismatched public Google settings.
+RUN node -e 'const e=process.env;const signup=e.VITE_FAWRI_GOOGLE_MERCHANT_SIGNUP,phone=e.VITE_FAWRI_GOOGLE_PHONE_CLAIM,id=e.VITE_FAWRI_GOOGLE_OAUTH_CLIENT_ID||"";const valid=v=>v==="0"||v==="1";if(!valid(signup)||!valid(phone)||(phone==="1"&&signup!=="1")||(signup==="1"&&!/^[0-9]+-[a-z0-9-]+[.]apps[.]googleusercontent[.]com$/.test(id))){console.error("V1_GOOGLE_BUILD_CONFIGURATION_INVALID");process.exit(1)}'
 RUN pnpm --filter @workspace/fawri build \
  && pnpm --filter @workspace/api-server build
 

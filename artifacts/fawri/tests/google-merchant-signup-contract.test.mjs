@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const client = readFileSync(new URL('../src/lib/googleMerchantSignup.ts', import.meta.url), 'utf8');
@@ -57,4 +58,45 @@ test('returning Google merchant login is gated, uses nonce flow, and cannot crea
   assert.ok(lookup >= 0 && requiredProfile > lookup);
   assert.match(admission, /created: false, trialActivated: false/);
   assert.match(admission, /created: true, trialActivated: false/);
+});
+
+
+// Vite inlines VITE_ values when Docker builds the commercial frontend.
+// An environment-only runtime toggle on Render does not alter that bundle.
+test('Render Docker build passes Google-only PUBLIC flags to Vite and fails closed on unsafe combinations', () => {
+  const dockerfile = readFileSync(new URL('../../../Dockerfile.staging', import.meta.url), 'utf8');
+  const build = dockerfile.indexOf('RUN pnpm --filter @workspace/fawri build');
+  assert.ok(build > 0);
+  for (const arg of [
+    'ARG VITE_FAWRI_GOOGLE_MERCHANT_SIGNUP=0',
+    'ARG VITE_FAWRI_GOOGLE_PHONE_CLAIM=0',
+    'ARG VITE_FAWRI_GOOGLE_OAUTH_CLIENT_ID=',
+  ]) {
+    const location = dockerfile.indexOf(arg);
+    assert.ok(location > 0 && location < build, arg);
+  }
+  assert.doesNotMatch(dockerfile, /^ARG (WHATSAPP_ACCESS_TOKEN|DATABASE_URL|FAWRI_AUTH_DATABASE_URL)=/m);
+  const guard = /^RUN node -e '([^'\n]+)'$/m.exec(dockerfile)?.[1];
+  assert.ok(guard && dockerfile.indexOf('V1_GOOGLE_BUILD_CONFIGURATION_INVALID') < build);
+  for (const [signup, phone, clientId, accepted] of [
+    ['0', '0', '', true],
+    ['1', '0', '12345-fawri.apps.googleusercontent.com', true],
+    ['1', '1', '12345-fawri.apps.googleusercontent.com', true],
+    ['0', '1', '', false],
+    ['1', '0', '', false],
+    ['1', '0', 'invalid', false],
+    ['true', '0', '12345-fawri.apps.googleusercontent.com', false],
+    ['0', 'true', '', false],
+  ]) {
+    const result = spawnSync(process.execPath, ['-e', guard], {
+      encoding: 'utf8',
+      env: { ...process.env,
+        VITE_FAWRI_GOOGLE_MERCHANT_SIGNUP: signup,
+        VITE_FAWRI_GOOGLE_PHONE_CLAIM: phone,
+        VITE_FAWRI_GOOGLE_OAUTH_CLIENT_ID: clientId,
+      },
+    });
+    assert.equal(result.status === 0, accepted, signup + '/' + phone + '/' + clientId);
+    if (!accepted) assert.match(result.stderr, /V1_GOOGLE_BUILD_CONFIGURATION_INVALID/);
+  }
 });
