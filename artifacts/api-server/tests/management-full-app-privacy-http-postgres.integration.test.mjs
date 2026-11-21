@@ -1931,7 +1931,7 @@ test('full application management privacy preserves cutover ordering and current
     }
     async function image(url,who,expected){
       const r=await raw(url,who);assert.equal(r.status,200);assert.deepEqual(r.body,expected);
-      assert.equal(r.headers.get('content-type'),'image/png');assert.equal(r.headers.get('cache-control'),'private, max-age=300');
+      assert.equal(r.headers.get('content-type'),'image/png');assert.equal(r.headers.get('cache-control'),'private, no-store');
       assert.equal(r.headers.get('x-content-type-options'),'nosniff');assert.equal(r.headers.get('etag'),'"'+createHash('sha256').update(expected).digest('hex')+'"');
     }
     async function error(url,who,status,code){
