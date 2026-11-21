@@ -5,7 +5,7 @@ import type { DurableJobWorker } from "./services/durableJobQueue";
 import type { EarlyWarningIncidentMonitor } from "./services/earlyWarningIncidentMonitor";
 import type { MerchantPhysicalMediaCleanupReconciler } from "./services/merchantPhysicalMediaCleanup";
 import { assertProductionRuntimeConfiguration, productionReleaseGateRequired } from "./services/productionReleaseReadiness";
-import { assertHostedV1CatalogMediaMount, assertHostedV1CatalogMediaIoReady } from "./services/hostedV1CatalogMediaReadiness";
+import { assertHostedV1CatalogMediaMount, assertHostedV1CatalogMediaIoReady, assertHostedV1CatalogMediaCanary } from "./services/hostedV1CatalogMediaReadiness";
 import { assertProductionOwnerAdminReady } from "./services/postgresOwnerAdminProvisioning";
 import { assertProductionCashierStreamStorageReady } from "./services/cashierStreamStorageReadiness";
 import { assertProductionDatabaseRlsReady } from "./services/postgresRuntimeRlsSecurity";
@@ -65,6 +65,13 @@ async function main(): Promise<void> {
   // Before any listener/merchant writes, prove the admitted disk can
   // actually persist and read an exclusive temporary file via fsync.
   assertHostedV1CatalogMediaIoReady(process.env);
+  // A marker created on this first boot only seeds the proof. A later hosted
+  // restart must log "verified" for cross-start persistence acceptance.
+  // This never touches real catalog photos, merchant records or auth tokens.
+  const mediaCanary = assertHostedV1CatalogMediaCanary(process.env);
+  if (mediaCanary !== "skipped") {
+    logger.info({ canaryStatus: mediaCanary }, "G3 synthetic catalog media persistence canary");
+  }
   startupStage = "database_rls";
   await assertProductionDatabaseRlsReady(process.env);
   // FIELD002: readiness-only checks do not prevent ingress when a host
