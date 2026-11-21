@@ -1,5 +1,6 @@
 name: V1 production CURRENT_PREGO+POS-OFF pre-Google encrypted backup (OWNER ONESHOT)
 # One-shot owner authorization: source-only guarded export of exact current commercial pre-Google DB, no automatic live read.
+# 2026-11-22 requested one-shot run: existing owner variable + exact commit gate remain mandatory; no bypass.
 on:
   pull_request:
     paths:
