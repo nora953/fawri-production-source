@@ -68,10 +68,44 @@ function resolveStoragePath(storageKey: string): string {
 const filesystemProvider: CatalogMediaStorageProvider = {
   async put(storageKey, buffer) {
     const destination = resolveStoragePath(storageKey);
-    fs.mkdirSync(path.dirname(destination), { recursive: true });
-    const temporary = `${destination}.${process.pid}.${Date.now()}.tmp`;
-    fs.writeFileSync(temporary, buffer, { flag: "wx" });
-    fs.renameSync(temporary, destination);
+    const directory = path.dirname(destination);
+    // Catalog photos are private merchant data, not default-mode 0644 files.
+    // Do not acknowledge an uploaded image before both its bytes and the
+    // committed directory entry have been flushed to the mounted disk.
+    await fs.promises.mkdir(directory, { recursive: true, mode: 0o700 });
+    const temporary = `${destination}.${process.pid}.${crypto.randomUUID()}.tmp`;
+    let temporaryCreated = false;
+    let committed = false;
+    try {
+      const file = await fs.promises.open(temporary, "wx", 0o600);
+      temporaryCreated = true;
+      try {
+        await file.writeFile(buffer);
+        await file.sync();
+      } finally {
+        await file.close();
+      }
+      await fs.promises.rename(temporary, destination);
+      temporaryCreated = false;
+      committed = true;
+      const parent = await fs.promises.open(directory, "r");
+      try {
+        await parent.sync();
+      } finally {
+        await parent.close();
+      }
+    } catch (error) {
+      // A failed acknowledgement must not leave a newly created orphan
+      // object that is absent from the merchant's catalog reference ledger.
+      if (committed) {
+        await fs.promises.rm(destination, { force: true }).catch(() => {});
+      }
+      throw error;
+    } finally {
+      if (temporaryCreated) {
+        await fs.promises.rm(temporary, { force: true }).catch(() => {});
+      }
+    }
   },
   async read(storageKey) {
     const source = resolveStoragePath(storageKey);
