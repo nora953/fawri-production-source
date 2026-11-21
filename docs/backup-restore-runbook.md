@@ -61,6 +61,10 @@ Both backup and restore require `FAWRI_DISPOSABLE_OBJECT_ROOT`. Every source, ba
 
 The backup manifest contains relative object path, byte size, and SHA-256 only. Object contents are not copied into the manifest. Restore verifies every backup object before the target directory is replaced, then verifies every restored object again.
 
+**G5 recovery safety boundary (disposable drill only):** Before either tool removes/replaces any directory, it rejects source/output or backup/target paths that overlap in *either* direction. Both paths must remain inside a real, non-aliased disposable root; symlinked path components are rejected. Restore rejects manifest traversal, empty/dot segments, path duplicates, symlinked archive objects, invalid byte counts or SHA-256 records, and verifies the complete archive **before touching the target**. CI has negative regressions requiring that a pre-existing source/target marker survives each rejected attempt. These controls reduce the risk of erasing the only local source or following untrusted archive paths; they do not constitute an operational backup of the hosted Render disk.
+
+**Still missing for a commercial G5 PASS:** an independently stored, access-controlled and encrypted *actual* Render catalog-media backup paired with the matching Neon database checkpoint; an off-provider recovery drill on isolated infrastructure, with photo hashes, merchant authorization boundaries, and retention/expiry documented. Do not run these disposable-only CLIs against `/var/data`, Neon commercial, or real merchant assets.
+
 ## Restore evidence
 
 A successful workflow report proves:
