@@ -1,5 +1,7 @@
 # فوري — خطة الإطلاق الأولى الوحيدة المعتمدة | FAWRI First Commercial Launch
 
+> **G3 استمرارية القرص — إثبات مستضاف جديد 2026-11-21:** بعد تسجيل `canaryStatus=seeded` على الإصدار `4f80ca4c`، أُعيد نشر نفس كود التطبيق على Render بالإصدار [`816c98ab`](https://github.com/nora953/fawri-production-source/commit/816c98abb4ff889baaeb96293bafc53d5453ae13)، وانتهى النشر `live` في **14:51:43 UTC**. سجلت **الحاوية الجديدة** `canaryStatus=verified` عند 14:51:39 UTC؛ ثبت بقاء ملف اصطناعي سليم على القرص الدائم بعد استبدال الحاوية، مع نجاح `/readyz` مرتين. الصيانة **ON** والنشر التلقائي **OFF** وPR #550 **Draft**. **هذا يغلق شرط دوام الملف الاصطناعي فقط**؛ ما زالت تجربة صور المنتجات الفعلية وعزلها واستعادة قاعدة البيانات والصور المستقلة ومسار التاجرين Google/WhatsApp والطلبات موانع قبل GO. [الدليل المفصل](docs/final-audit/evidence/P0-V1-RENDER-G3-HOSTED-CHECKPOINT-20261121.md).
+
 **القرار:** اعتماد مالكة المشروع بتاريخ **2026-11-11**. **الحالة:** ACTIVE — SINGLE SOURCE OF EXECUTION PRIORITY.  
 **المستودع:** `nora953/fawri-production-source`، فرع العمل `fix/p0-provider-receipt-order-discovery-20261015`، طلب الدمج **#550 (DRAFT)**.  
 **الإطلاق:** **NO-GO** حتى تحقق شروط النسخة المختارة فعلياً وموافقة المالكة الصريحة على النشر.

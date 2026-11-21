@@ -1,5 +1,14 @@
 # FAWRI V1 — G3 Render hosted checkpoint, 2026-11-21 (Asia/Baghdad)
 
+## G3 hosted persistence canary VERIFIED across actual replacement — 2026-11-21
+
+- **Previous real container:** live [`4f80ca4c`](https://github.com/nora953/fawri-production-source/commit/4f80ca4c64bd2536e41ff62bcf5b8557b605079c), recorded `canaryStatus=seeded` at **2026-11-21 12:11:42 UTC** on persistent `/var/data/fawri`.
+- **New owner-continued bounded G3 redeploy:** Render deployment `dep-dc0qv2142hec73c8rlb0` from [`816c98abb4ff889baaeb96293bafc53d5453ae13`](https://github.com/nora953/fawri-production-source/commit/816c98abb4ff889baaeb96293bafc53d5453ae13), status **live**, completed **2026-11-21T14:51:43.448382Z**. Comparison of source SHAs confirms only the prior `PROGRESS.md` and this G3 evidence markdown changed; no runtime code changes.
+- **Critical new-container logs:** distinct hostname `srv-dbv0kvm8bjmc73av6fm0-5c49fd876-4wbfn`, `canaryStatus="verified"` at **2026-11-21T14:51:39.163314Z**; subsequent `Server listening` port 8080 and `dataDir=/var/data/fawri`; new `GET /readyz` **HTTP 200** twice at **14:51:42.515Z** and **14:51:42.554Z**. Renderer service readback: maintenance **enabled**, auto deploy **no**, `healthCheckPath=/readyz`, attached persistent disk **5GB** on `/var/data`.
+- **Meaning of PASS:** server-side `assertCatalogMediaCanaryAcrossStarts` verified the preexisting mode-restricted synthetic JSON marker and checksum after **actual host container replacement**; it cannot be reclassified as a fresh seed. This accepts only the **synthetic cross-redeploy mounted-disk persistence subcondition**.
+- **Mandatory separate acceptance still missing:** real merchant product image bytes and tenant authorization across restart/redeploy, physical deletion retry correctness, independent postmigration PostgreSQL + media export/restore, test two merchants via hosted Google/WhatsApp OTP and COD/manual subscription end to end, operational resilience/load checks and final signoff. No merchant orders or live customer records created, no Neon DDL/DML, environment/secret changes, maintenance-off or PR merge. **G3 PARTIAL, G4/G5 OPEN, NO-GO.**
+
+---
 ## Owner-authorized G3 controlled deploy — 2026-11-21 12:11 UTC
 
 **Authorization and boundary.** Project owner approved deploying a reviewed revision to existing Render V1 while keeping maintenance ON. Connector performed only `trigger_deploy` for the already-selected existing service with auto deploy OFF, `clearCache=false`; no PR merge, Neon SQL, environment-secret edit, maintenance-off or public commercial launch.
