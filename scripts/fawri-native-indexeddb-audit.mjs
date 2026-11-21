@@ -14,13 +14,18 @@ assert.ok(chromePath, 'Set FAWRI_AUDIT_CHROME to an installed Chrome/Chromium bi
 const requireApi = createRequire(resolve('artifacts/api-server/package.json'));
 const { build } = requireApi('esbuild');
 const profile = await mkdtemp(join(tmpdir(), 'fawri-native-idb-'));
-let browser, server;
+let browser, server, launchError;
 const sockets = [];
 const evidence = { browser: null, source: process.env.GITHUB_SHA || 'local', results: [] };
 let infrastructureError;
 async function waitFor(fn, limitMs = 15000) {
   const until = Date.now() + limitMs;
-  while (Date.now() < until) { try { const v = await fn(); if (v) return v; } catch {} await delay(100); }
+  while (Date.now() < until) {
+    if (launchError) throw Error('Chrome launch failed: ' + launchError.message);
+    if (browser && browser.exitCode !== null) throw Error('Chrome exited before browser prerequisite completed: ' + browser.exitCode);
+    try { const v = await fn(); if (v) return v; } catch {}
+    await delay(100);
+  }
   throw Error('Browser prerequisite timed out');
 }
 async function connect(url) {
@@ -63,11 +68,18 @@ try {
   });
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const origin = `http://127.0.0.1:${server.address().port}`;
-  browser = spawn(chromePath, ['--headless=new', '--no-sandbox', '--disable-dev-shm-usage', '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', '--remote-debugging-address=127.0.0.1', '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1', `--user-data-dir=${profile}`, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
-  let launchError;
+  browser = spawn(chromePath, ['--headless=new', '--no-sandbox', '--disable-dev-shm-usage', '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', '--remote-debugging-address=127.0.0.1', '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1', `--user-data-dir=${profile}`, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'], detached: true });
   browser.on('error', e => { launchError = e; });
-  browser.stderr.on('data', () => {});
-  const port = await waitFor(async () => { if (launchError) throw launchError; return Number((await readFile(join(profile, 'DevToolsActivePort'), 'utf8')).split('\n')[0]); });
+  let chromeStderr = '';
+  browser.stderr.on('data', chunk => { chromeStderr = (chromeStderr + String(chunk)).slice(-2048); });
+  // Allow realistic startup contention among parallel PR workflows without
+  // weakening or skipping any native IndexedDB assertions.
+  let port;
+  try {
+    port = await waitFor(async () => Number((await readFile(join(profile, 'DevToolsActivePort'), 'utf8')).split('\n')[0]), 60000);
+  } catch (error) {
+    throw Error('Native Chrome startup: ' + error.message + '; stderr_tail=' + chromeStderr.slice(-700));
+  }
   const version = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
   evidence.browser = version.Browser;
   async function tab() {
