@@ -7,6 +7,8 @@ import {
   assertHostedV1CatalogMediaMount,
   assertHostedV1CatalogMediaIoReady,
   assertCatalogMediaIoRoundTrip,
+  assertCatalogMediaCanaryAcrossStarts,
+  assertHostedV1CatalogMediaCanary,
   createHostedV1CatalogMediaReadinessCheck,
   ensureSafeMountedMediaDataDirectory,
   mountedWritableFilesystemPresent,
@@ -176,4 +178,80 @@ test("non-commercial/test runtimes are not made dependent on Render mountinfo", 
     ...base, FAWRI_V1_MANUAL_COMMERCE: "0", NODE_ENV: "development",
     FAWRI_DEPLOYMENT_MODE: "development",
   }, unavailable));
+});
+
+
+test("G3 synthetic canary seeds once and verifies identical durable bytes on next startup", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "fawri-g3-persist-"));
+  const sentinel = path.join(root, "real-merchant-image-must-not-change.jpg");
+  const canary = path.join(root, ".fawri-g3-media-persistence-canary-v1.json");
+  try {
+    fs.writeFileSync(sentinel, "untouched-existing-image");
+    assert.equal(assertCatalogMediaCanaryAcrossStarts(root), "seeded");
+    const original = fs.readFileSync(canary);
+    const stat = fs.statSync(canary);
+    assert.equal(stat.mode & 0o777, 0o600);
+    assert.equal(assertCatalogMediaCanaryAcrossStarts(root), "verified");
+    assert.deepEqual(fs.readFileSync(canary), original);
+    assert.equal(fs.readFileSync(sentinel, "utf8"), "untouched-existing-image");
+    assert.deepEqual(fs.readdirSync(root).sort(), [
+      ".fawri-g3-media-persistence-canary-v1.json",
+      "real-merchant-image-must-not-change.jpg",
+    ].sort());
+    // Simulate losing/corrupting the persisted marker. Never silently repair
+    // or overwrite it: this must block release until operator investigation.
+    fs.writeFileSync(canary, JSON.stringify({ version: 1, nonce: "a".repeat(64),
+      digest: "b".repeat(64) }) + "\n", { mode: 0o600 });
+    assert.throws(() => assertCatalogMediaCanaryAcrossStarts(root), {
+      code: "V1_HOSTED_CATALOG_MEDIA_CANARY_NOT_READY",
+    });
+    assert.equal(fs.readFileSync(sentinel, "utf8"), "untouched-existing-image");
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("G3 synthetic canary rejects symlinks and untrusted private modes", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "fawri-g3-persist-alias-"));
+  const outside = path.join(root, "outside");
+  const dir = path.join(root, "dir");
+  const marker = path.join(dir, ".fawri-g3-media-persistence-canary-v1.json");
+  try {
+    fs.mkdirSync(dir);
+    fs.writeFileSync(outside, "private-outside-data");
+    fs.symlinkSync(outside, marker);
+    assert.throws(() => assertCatalogMediaCanaryAcrossStarts(dir), {
+      code: "V1_HOSTED_CATALOG_MEDIA_CANARY_NOT_READY",
+    });
+    assert.equal(fs.readFileSync(outside, "utf8"), "private-outside-data");
+    fs.rmSync(marker);
+    assert.equal(assertCatalogMediaCanaryAcrossStarts(dir), "seeded");
+    fs.chmodSync(marker, 0o644);
+    assert.throws(() => assertCatalogMediaCanaryAcrossStarts(dir), {
+      code: "V1_HOSTED_CATALOG_MEDIA_CANARY_NOT_READY",
+    });
+    assert.equal(assertHostedV1CatalogMediaCanary({
+      ...base, FAWRI_DEPLOYMENT_MODE: "staging", NODE_ENV: "test",
+      FAWRI_DATA_DIR: "/does-not-exist",
+    }), "skipped", "staging must not write a persistent canary");
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("G3 canary fails closed when an existing marker is truncated or malformed", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "fawri-g3-persist-malformed-"));
+  const marker = path.join(root, ".fawri-g3-media-persistence-canary-v1.json");
+  try {
+    for (const value of ["", "{}", "x".repeat(520), "{not json"]) {
+      fs.writeFileSync(marker, value, { mode: 0o600 });
+      assert.throws(() => assertCatalogMediaCanaryAcrossStarts(root), {
+        code: "V1_HOSTED_CATALOG_MEDIA_CANARY_NOT_READY",
+      });
+      assert.equal(fs.readFileSync(marker, "utf8"), value,
+        "existing marker must be preserved for forensics");
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
