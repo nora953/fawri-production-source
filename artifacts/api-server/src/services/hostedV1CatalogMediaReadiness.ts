@@ -183,6 +183,107 @@ export function assertHostedV1CatalogMediaIoReady(
   assertCatalogMediaIoRoundTrip(path.resolve(String(env.FAWRI_DATA_DIR || "").trim()));
 }
 
+
+/**
+ * G3 synthetic disk canary: seed it once on the admitted durable disk; on the
+ * following process start verify that the exact bytes survived. Never use a
+ * real merchant image, DB row, user token or an API route for this probe.
+ *
+ * "seeded" is NOT persistence acceptance: operators must observe "verified"
+ * on a later hosted restart/redeploy and still test real merchant images.
+ * A corrupt pre-existing canary fails closed instead of being silently reset.
+ */
+export type CatalogMediaCanaryStatus = "seeded" | "verified";
+const G3_CANARY_FILE = ".fawri-g3-media-persistence-canary-v1.json";
+
+function canaryNotReady(): never {
+  throw Object.assign(new Error("hosted media persistence canary invalid"), {
+    code: "V1_HOSTED_CATALOG_MEDIA_CANARY_NOT_READY",
+  });
+}
+
+export function assertCatalogMediaCanaryAcrossStarts(
+  directory: string,
+): CatalogMediaCanaryStatus {
+  const filename = path.join(directory, G3_CANARY_FILE);
+
+  function verify(): void {
+    const entry = fs.lstatSync(filename);
+    if (!entry.isFile() || entry.isSymbolicLink() || entry.size > 512 ||
+        entry.size < 100 || (entry.mode & 0o077) !== 0) canaryNotReady();
+    // Prevent symlink following even if the file were replaced between lstat
+    // and open. Never read arbitrary files outside the mounted media root.
+    const fd = fs.openSync(filename,
+      fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+    let raw: string;
+    try {
+      if (!fs.fstatSync(fd).isFile()) canaryNotReady();
+      raw = fs.readFileSync(fd, "utf8");
+    } finally {
+      fs.closeSync(fd);
+    }
+    const value = JSON.parse(raw) as Record<string, unknown>;
+    if (value.version !== 1 || typeof value.nonce !== "string" ||
+        !/^[a-f0-9]{64}$/.test(value.nonce) ||
+        typeof value.digest !== "string" ||
+        !/^[a-f0-9]{64}$/.test(value.digest)) canaryNotReady();
+    const expected = crypto.createHash("sha256")
+      .update("fawri-g3-persistence-v1:" + value.nonce).digest("hex");
+    if (!crypto.timingSafeEqual(Buffer.from(expected, "hex"),
+      Buffer.from(value.digest, "hex"))) canaryNotReady();
+  }
+
+  try {
+    const existing = fs.lstatSync(filename, { throwIfNoEntry: false });
+    if (existing) {
+      verify();
+      return "verified";
+    }
+    const nonce = crypto.randomBytes(32).toString("hex");
+    const digest = crypto.createHash("sha256")
+      .update("fawri-g3-persistence-v1:" + nonce).digest("hex");
+    const proof = Buffer.from(JSON.stringify({ version: 1, nonce, digest }) + "\n");
+    let fd: number | undefined;
+    let created = false;
+    try {
+      fd = fs.openSync(filename, "wx", 0o600);
+      created = true;
+      if (fs.writeSync(fd, proof) !== proof.length) canaryNotReady();
+      fs.fsyncSync(fd);
+      fs.closeSync(fd);
+      fd = undefined;
+      verify();
+      return "seeded";
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "EEXIST" && !created) {
+        // Two instances booting concurrently may race on first seeding.
+        verify();
+        return "verified";
+      }
+      if (created) fs.rmSync(filename, { force: true });
+      throw error;
+    } finally {
+      if (fd !== undefined) fs.closeSync(fd);
+      proof.fill(0);
+    }
+  } catch {
+    canaryNotReady();
+  }
+}
+
+/** Runs only after the mounted-disk and exclusive fsync/read startup guards. */
+export function assertHostedV1CatalogMediaCanary(
+  env: NodeJS.ProcessEnv = process.env,
+): CatalogMediaCanaryStatus | "skipped" {
+  if (!productionReleaseGateRequired(env) || !manualCommercialRelease(env)) {
+    return "skipped";
+  }
+  assertHostedV1CatalogMediaMount(env);
+  return assertCatalogMediaCanaryAcrossStarts(
+    path.resolve(String(env.FAWRI_DATA_DIR || "").trim()),
+  );
+}
+
 export function createHostedV1CatalogMediaReadinessCheck(): ReadinessCheck {
   return {
     name: "hosted_catalog_media_mount",
