@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { getFawriDataDir } from "../lib/dataPaths";
+import { assertHostedV1CatalogMediaMount } from "./hostedV1CatalogMediaReadiness";
 
 export const CATALOG_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 
@@ -134,7 +135,22 @@ export function catalogMediaStorageProviderName(): string {
 
 function storageProviderByName(providerValue: unknown): CatalogMediaStorageProvider {
   const provider = String(providerValue || "").trim().toLowerCase();
-  if (provider === "filesystem") return filesystemProvider;
+  if (provider === "filesystem") {
+    // G3: startup and /readyz probes do not protect a subsequent image write
+    // if a mounted disk disappears mid-process. Check the current mount before
+    // EVERY merchant media operation; never silently switch to container storage.
+    // The assertion is a no-op for non-commercial/dev/test profiles.
+    try {
+      assertHostedV1CatalogMediaMount();
+    } catch {
+      throw new CatalogMediaError(
+        "CATALOG_MEDIA_MOUNT_NOT_READY",
+        "catalog image storage is temporarily unavailable",
+        503,
+      );
+    }
+    return filesystemProvider;
+  }
 
   throw new CatalogMediaError(
     "CATALOG_MEDIA_STORAGE_PROVIDER_UNAVAILABLE",
