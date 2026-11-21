@@ -225,6 +225,25 @@ test("provider success without a WhatsApp message id is not OTP send acceptance"
   assert.deepEqual(recipients, ["15550000001"]);
 });
 
+for (const [caseName, messageId] of [
+  ["truncated", "wamid."],
+  ["too short", "wamid.short"],
+  ["invalid characters", "wamid.abcdefgh!"],
+  ["oversized", "wamid." + "a".repeat(501)],
+] as const) {
+  test(`provider 2xx with ${caseName} WhatsApp message id cannot create a trusted receipt`, async t => {
+    const { recipients } = configure(t, {}, new Response(JSON.stringify({
+      messages: [{ id: messageId }],
+    }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    const result = await deliverAuthOtpWithProviderReceipt("+15550000001", "123456", "signup");
+    assert.deepEqual(result, {
+      ok: false, code: "OTP_DELIVERY_FAILED",
+      message: "Unable to deliver the verification code",
+    });
+    assert.deepEqual(recipients, ["15550000001"]);
+  });
+}
+
 test("malformed code and recipient are rejected before external send", async t => {
   const { recipients } = configure(t);
   for (const [phone, code] of [["", "123456"], ["+15550000001", "12345"], ["+15550000001", "ABC123"]]) {
