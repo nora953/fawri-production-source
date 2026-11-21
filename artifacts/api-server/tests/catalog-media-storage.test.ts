@@ -86,6 +86,59 @@ test("V1 catalog uploads commit privately without leftover temporary files", asy
   assert.equal(read.sha256, stored.sha256);
 });
 
+test("V1 production rejects image writes, reads and deletion when the durable mount is absent", async (t) => {
+  const merchantId = "merchant-media-unmounted";
+  const original = await storeCatalogImage({
+    merchantId, buffer: PNG, suppliedMime: "image/png",
+  });
+  const existingFile = path.join(dataDir, "catalog-media", original.storage_key);
+  const originalBytes = fs.readFileSync(existingFile);
+  const keys = [
+    "NODE_ENV", "FAWRI_DEPLOYMENT_MODE", "FAWRI_V1_MANUAL_COMMERCE",
+    "FAWRI_PERSISTENT_MEDIA_MOUNT_PATH", "FAWRI_DATA_DIR",
+    "FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER",
+  ] as const;
+  const saved = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+  t.after(() => {
+    for (const key of keys) {
+      if (saved[key] === undefined) delete process.env[key];
+      else process.env[key] = saved[key];
+    }
+  });
+  // An ordinary temporary directory is NOT a real persistent mount; even if
+  // it is writable, it must not receive new product photos under V1 production.
+  Object.assign(process.env, {
+    NODE_ENV: "production",
+    FAWRI_DEPLOYMENT_MODE: "production",
+    FAWRI_V1_MANUAL_COMMERCE: "1",
+    FAWRI_PERSISTENT_MEDIA_MOUNT_PATH: dataDir,
+    FAWRI_DATA_DIR: path.join(dataDir, "fawri"),
+    FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER: "filesystem",
+  });
+  const isUnavailable = (error: unknown) =>
+    error instanceof CatalogMediaError &&
+    error.code === "CATALOG_MEDIA_MOUNT_NOT_READY" &&
+    error.status === 503;
+  await assert.rejects(
+    () => storeCatalogImage({ merchantId, buffer: PNG, suppliedMime: "image/png" }),
+    isUnavailable,
+  );
+  await assert.rejects(
+    () => readCatalogImage({ merchantId, storageKey: original.storage_key }),
+    isUnavailable,
+  );
+  await assert.rejects(
+    () => removeCatalogMediaStorageObject({
+      merchantId, storageProvider: "filesystem", storageKey: original.storage_key,
+    }),
+    isUnavailable,
+  );
+  assert.deepEqual(fs.readFileSync(existingFile), originalBytes,
+    "a missing persistent mount must not change an existing merchant image");
+  assert.equal(fs.existsSync(path.join(dataDir, "fawri", "catalog-media")), false,
+    "no silent fallback to a fresh container media directory");
+});
+
 test("catalog media rejects MIME spoofing before writing a file", async () => {
   await assert.rejects(
     () =>
