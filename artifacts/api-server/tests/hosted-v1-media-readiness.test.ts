@@ -187,11 +187,18 @@ test("G3 synthetic canary seeds once and verifies identical durable bytes on nex
   const canary = path.join(root, ".fawri-g3-media-persistence-canary-v1.json");
   try {
     fs.writeFileSync(sentinel, "untouched-existing-image");
+    assert.throws(() => assertCatalogMediaCanaryAcrossStarts(root, true), {
+      code: "V1_HOSTED_CATALOG_MEDIA_CANARY_NOT_READY",
+    });
+    assert.equal(fs.existsSync(canary), false,
+      "strict acceptance must never create a replacement missing marker");
     assert.equal(assertCatalogMediaCanaryAcrossStarts(root), "seeded");
     const original = fs.readFileSync(canary);
     const stat = fs.statSync(canary);
     assert.equal(stat.mode & 0o777, 0o600);
     assert.equal(assertCatalogMediaCanaryAcrossStarts(root), "verified");
+    assert.equal(assertCatalogMediaCanaryAcrossStarts(root, true), "verified",
+      "strict second-boot gate must accept only an already persisted marker");
     assert.deepEqual(fs.readFileSync(canary), original);
     assert.equal(fs.readFileSync(sentinel, "utf8"), "untouched-existing-image");
     assert.deepEqual(fs.readdirSync(root).sort(), [
