@@ -204,6 +204,7 @@ function canaryNotReady(): never {
 
 export function assertCatalogMediaCanaryAcrossStarts(
   directory: string,
+  requireExisting = false,
 ): CatalogMediaCanaryStatus {
   const filename = path.join(directory, G3_CANARY_FILE);
 
@@ -239,6 +240,9 @@ export function assertCatalogMediaCanaryAcrossStarts(
       verify();
       return "verified";
     }
+    // On a later approved hosted redeploy, require the exact prior marker.
+    // Never treat a newly initialized/lost volume as persistence evidence.
+    if (requireExisting) canaryNotReady();
     const nonce = crypto.randomBytes(32).toString("hex");
     const digest = crypto.createHash("sha256")
       .update("fawri-g3-persistence-v1:" + nonce).digest("hex");
@@ -281,6 +285,7 @@ export function assertHostedV1CatalogMediaCanary(
   assertHostedV1CatalogMediaMount(env);
   return assertCatalogMediaCanaryAcrossStarts(
     path.resolve(String(env.FAWRI_DATA_DIR || "").trim()),
+    env.FAWRI_G3_REQUIRE_EXISTING_CANARY === "1",
   );
 }
 
