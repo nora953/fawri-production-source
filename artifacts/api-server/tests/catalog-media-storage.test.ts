@@ -32,6 +32,24 @@ after(() => {
   fs.rmSync(dataDir, { recursive: true, force: true });
 });
 
+test("catalog image response cannot be reused after tenant switch", () => {
+  // Browser 'private, max-age' caches are scoped to a browser, not to the
+  // currently signed-in merchant. The same browser can be used by A then B.
+  const source = fs.readFileSync(
+    new URL("../src/routes/catalog-operations.ts", import.meta.url), "utf8",
+  );
+  const begin = source.indexOf('router.get(\n  "/catalog/media/images",');
+  assert.ok(begin >= 0, "merchant image GET route must exist");
+  const next = source.indexOf("\nrouter.get(", begin + 1);
+  const route = source.slice(begin, next < 0 ? undefined : next);
+  assert.match(route, /requireMerchantSession/,
+    "merchant session must be required before reading product photos");
+  assert.match(route, /res\.setHeader\("Cache-Control", "private, no-store"\)/,
+    "private media must not be retained by a shared browser");
+  assert.doesNotMatch(route, /max-age\s*=/,
+    "a stale authenticated media response must never be reused for a new session");
+});
+
 test("catalog media detects supported image content from magic bytes", () => {
   assert.equal(detectCatalogImageMime(PNG), "image/png");
   assert.equal(detectCatalogImageMime(JPEG), "image/jpeg");
