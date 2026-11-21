@@ -1,0 +1,301 @@
+name: FT-01 isolated clean PostgreSQL 18 canonical schema rehearsal
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ft01-clean-pg18-schema-rehearsal.yml"
+      - "lib/db/drizzle/**"
+      - "lib/db/scripts/smoke-migration.mjs"
+      - "lib/db/scripts/ft01-disposable-three-login-rehearsal.mjs"
+      - "lib/db/scripts/ft01-disposable-nologin-role-reservation.mjs"
+      - "lib/db/scripts/ft01-disposable-nonsuperuser-owner-schema-rehearsal.mjs"
+      - "lib/db/scripts/ft01-disposable-invoker-retirement-rehearsal.mjs"
+      - "lib/db/scripts/lib/ft01-0052-nonsuperuser-invoker-candidate.mjs"
+      - "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-THREE-NOLOGIN-ROLE-RESERVATION-HELD-20261109.sql"
+      - "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-FOUR-NOLOGIN-ROLE-RESERVATION-HELD-20261109.sql"
+      - "artifacts/api-server/tests/ft01-disposable-production-startup-pg18.ts"
+      - "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-ROLE-ADMIN-CAPABILITY-READONLY-20261109.sql"
+      - "artifacts/api-server/src/services/authenticationPostgresAuthority.ts"
+      - "artifacts/api-server/src/services/operatorDirectoryPostgresAuthority.ts"
+      - "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts"
+      - "lib/db/scripts/lib/migration-sql-order.mjs"
+      - "lib/db/scripts/tests/isolated-neon-migration-static.test.mjs"
+      - "scripts/lib/ft01-clean-bootstrap-source-plan.mjs"
+      - "scripts/tests/ft01-clean-bootstrap-source-plan.test.mjs"
+      - "lib/db/first-commercial/held/0052_cashier_stream_receipt_storage_invoker.sql"
+      - "lib/db/first-commercial/held/meta/_journal.json"
+      - "lib/db/first-commercial/held/0052_cashier_retirement_issuer_grants.sql"
+      - "scripts/lib/ft01-first-commercial-disposable-bundle.mjs"
+      - "scripts/tests/ft01-first-commercial-disposable-bundle.test.mjs"
+      - "scripts/lib/ft01-first-commercial-invoker-source-plan.mjs"
+      - "scripts/tests/ft01-first-commercial-invoker-source-plan.test.mjs"
+      - "scripts/tests/ft01-production-cashier-storage-profile.test.mjs"
+      - "lib/db/scripts/lib/ft01-production-cashier-storage-profile.mjs"
+      - "artifacts/api-server/src/services/cashierStreamStorageReadiness.ts"
+      - "lib/db/scripts/lib/ft01-held-invoker-storage-readiness.mjs"
+      - "pnpm-lock.yaml"
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - ".github/workflows/ft01-clean-pg18-schema-rehearsal.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ft01-disposable-pg18-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fresh-canonical-schema:
+    if: >-
+      github.repository == 'nora953/fawri-production-source'
+      && (github.event_name != 'workflow_dispatch'
+          || github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+      FAWRI_ALLOW_MIGRATION_SMOKE: "1"
+      NODE_ENV: test
+
+    steps:
+      - name: Checkout exact tested source without stored credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node 24 and pnpm
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies without package scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Prove the only reachable PostgreSQL service is local PG18 and empty
+        working-directory: lib/db
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import pg from 'pg';
+          const target = new URL(process.env.DATABASE_URL);
+          assert.equal(target.hostname, '127.0.0.1');
+          assert.equal(target.pathname, '/fawri_ci');
+          const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+          await client.connect();
+          try {
+            const result = await client.query(`SELECT current_database() AS db,
+              current_setting('server_version_num')::int / 10000 AS major,
+              (SELECT count(*)::int FROM pg_class c
+                JOIN pg_namespace n ON n.oid=c.relnamespace
+                WHERE n.nspname='public' AND c.relkind IN ('r','p','m','f')) AS public_tables,
+              to_regclass('drizzle.__drizzle_migrations') IS NOT NULL AS ledger`);
+            assert.deepEqual(result.rows[0], {
+              db: 'fawri_ci', major: 18, public_tables: 0, ledger: false,
+            });
+            console.log('FT01_LOCAL_PG18_EMPTY_SOURCE_PASS');
+          } finally { await client.end(); }
+          NODE
+
+      # IMPORTANT: run on a completely clean PG18 cluster BEFORE the CI
+      # superuser schema smoke creates the cluster-global 0052 retirement role.
+      # Otherwise the result is contaminated by earlier role creation.
+      # Not the CI PostgreSQL superuser: exercises the actual canonical Drizzle
+      # sequence against a second empty local PostgreSQL18 owned by a LOGIN
+      # with Neon fawri_owner-like CREATEROLE/BYPASSRLS but NOSUPERUSER.
+      - name: FT-01 prove 53 migrations work with Neon-like non-superuser owner
+        working-directory: lib/db
+        env:
+          FAWRI_ALLOW_FT01_NON_SUPERUSER_OWNER_REHEARSAL: "1"
+        run: |
+          node --check scripts/ft01-disposable-nonsuperuser-owner-schema-rehearsal.mjs
+          node scripts/ft01-disposable-nonsuperuser-owner-schema-rehearsal.mjs
+
+      # Held alternative: non-superuser SECURITY INVOKER retirement without
+      # canonical 0052 rewrite, elevated function owner or Neon connectivity.
+      - name: FT-01 prove held 0052 invoker candidate on disposable non-superuser PG18
+        working-directory: lib/db
+        env:
+          FAWRI_ALLOW_FT01_INVOKER_CANDIDATE: "1"
+        run: |
+          node --check scripts/lib/ft01-0052-nonsuperuser-invoker-candidate.mjs
+          node --check scripts/ft01-disposable-invoker-retirement-rehearsal.mjs
+          node scripts/ft01-disposable-invoker-retirement-rehearsal.mjs
+
+      - name: Validate exact source-only migration inventory with 0052 still HELD
+        run: |
+          node --test scripts/tests/ft01-clean-bootstrap-source-plan.test.mjs
+          node --test scripts/tests/ft01-first-commercial-invoker-source-plan.test.mjs
+          node --test scripts/tests/ft01-first-commercial-disposable-bundle.test.mjs
+          node --test scripts/tests/ft01-production-cashier-storage-profile.test.mjs
+          node scripts/lib/ft01-first-commercial-invoker-source-plan.mjs > "$RUNNER_TEMP/ft01-invoker-review.json"
+          node - "$RUNNER_TEMP/ft01-invoker-review.json" <<'NODE'
+          const fs = require('node:fs');
+          const p = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          if (p.decision !== 'FT01_REVIEWABLE_NEW_COMMERCIAL_0052_INVOKER_SOURCE' ||
+              p.source_migrations_count !== 53 ||
+              p.approved_to_execute !== false ||
+              p.commercial_release_authorized !== false ||
+              p.production_startup_profile_adopted !== false ||
+              p.canonical_0052_sha256 === p.reviewed_invoker_variant_0052_sha256) {
+            throw new Error('FT01_REVIEW_PROFILE_BYPASS_NOT_ALLOWED');
+          }
+          console.log('FT01_FIRST_COMMERCIAL_0052_INVOKER_REVIEW_MANIFEST_FAIL_CLOSED_PASS');
+          NODE
+          node scripts/lib/ft01-clean-bootstrap-source-plan.mjs > "$RUNNER_TEMP/ft01-plan.json"
+          node - "$RUNNER_TEMP/ft01-plan.json" <<'NODE'
+          const fs = require('node:fs');
+          const p = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          if (p.approved_to_execute !== false ||
+              p.inventoried_migrations?.length !== 53 ||
+              p.held_migration?.disposition !== 'HELD_NOT_AUTHORIZED_FOR_HOSTED' ||
+              p.database_connection_used !== false) {
+            throw new Error('FT01_SOURCE_HOLD_NOT_PROVEN');
+          }
+          // Source-review checkpoint: print ONLY digests for the complete
+          // first-commercial immutable migration chain; never reveal SQL,
+          // credentials or runtime rows. These will be pinned in a second
+          // reviewed source commit before any release acceptance.
+          const crypto = require('node:crypto');
+          const snap = fs.readFileSync('lib/db/drizzle/meta/0052_snapshot.json');
+          const stage = fs.readFileSync('lib/db/migration-stages/0052/stage.json');
+          console.log('FT01_CANONICAL_53_MIGRATION_SOURCE_MANIFEST_SHA256 '+p.source_manifest_sha256);
+          console.log('FT01_CANONICAL_JOURNAL_SHA256 '+p.migration_journal_sha256);
+          console.log('FT01_CANONICAL_0052_SNAPSHOT_SHA256 '+crypto.createHash('sha256').update(snap).digest('hex'));
+          console.log('FT01_CANONICAL_0052_STAGE_SHA256 '+crypto.createHash('sha256').update(stage).digest('hex'));
+          console.log('FT01_SOURCE_ONLY_0052_HOLD_PASS');
+          NODE
+
+      - name: Rehearse all 53 canonical migrations twice in disposable PG18 only
+        run: |
+          pnpm --filter @workspace/db run schema:smoke
+
+      - name: Prove local post-bootstrap RLS and cashier storage baseline, without secrets
+        working-directory: lib/db
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import pg from 'pg';
+          const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+          await client.connect();
+          try {
+            const basic = (await client.query(`
+              SELECT current_database() AS db,
+                     current_setting('server_version_num')::int / 10000 AS major,
+                     (SELECT count(*)::int FROM drizzle.__drizzle_migrations) AS migrations,
+                     (SELECT count(*)::int FROM public.notifications) AS notifications
+            `)).rows[0];
+            assert.deepEqual(basic, {
+              db: 'fawri_ci', major: 18, migrations: 53, notifications: 0,
+            });
+            const wanted = [
+              'audit_events', 'manual_reply_requests', 'merchant_admin_notes',
+              'merchant_channel_overrides', 'merchant_deletion_requests',
+              'notifications', 'order_drafts', 'processed_channel_events',
+              'cashier_device_streams', 'cashier_operation_receipts',
+            ];
+            const relations = (await client.query(`
+              SELECT c.relname, c.relrowsecurity
+                FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+               WHERE n.nspname='public'
+                 AND c.relname=ANY($1::text[])
+                 AND c.relkind='r'
+            `, [wanted])).rows;
+            assert.equal(relations.length, wanted.length, 'ten protected relations required');
+            assert.ok(relations.every(row => row.relrowsecurity),
+              'all eight residual plus two cashier relations must enable RLS');
+            const owner = (await client.query(`
+              SELECT rolcanlogin, rolsuper, rolbypassrls, rolcreaterole,
+                     rolcreatedb, rolinherit, rolreplication
+                FROM pg_roles WHERE rolname='fawri_cashier_retirement_owner'
+            `)).rows;
+            assert.equal(owner.length, 1, 'reviewed cashier NOLOGIN role required');
+            assert.ok(Object.values(owner[0]).every(value => value === false),
+              'cashier retirement role must have no privileged flags');
+            const policy = (await client.query(`
+              SELECT count(*)::int AS n FROM pg_policies
+               WHERE schemaname='public' AND
+                 ((tablename='cashier_device_streams'
+                   AND policyname='cashier_device_streams_scoped_read')
+                   OR (tablename='cashier_operation_receipts'
+                   AND policyname='cashier_operation_receipts_scoped_read'))
+            `)).rows[0];
+            assert.equal(policy.n, 2);
+            console.log('FT01_LOCAL_PG18_53_MIGRATIONS_10_RLS_STORAGE_PASS');
+          } finally { await client.end(); }
+          NODE
+
+      - name: Rehearse new-Neon owner-role feasibility SQL as fail-closed SELECT on local PG18
+        working-directory: lib/db
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import pg from 'pg';
+          // This is the owner UI's reviewed SELECT-only query. CI's local
+          // fawri_ci must be explicitly REJECTED, never approved or mutated.
+          const sql = fs.readFileSync(
+            '../../docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-ROLE-ADMIN-CAPABILITY-READONLY-20261109.sql',
+            'utf8',
+          );
+          const db = new pg.Client({ connectionString: process.env.DATABASE_URL });
+          await db.connect();
+          try {
+            const result = await db.query(sql);
+            assert.equal(result.rows.length, 1);
+            assert.equal(result.rows[0].database_name, 'fawri_ci');
+            assert.equal(result.rows[0].readonly_role_provisioning_decision,
+              'WRONG_DATABASE_OR_ROLE_REFUSE');
+            console.log('FT01_READONLY_NEW_NEON_ROLE_PREFLIGHT_LOCAL_REJECTION_PASS');
+          } finally { await db.end(); }
+          NODE
+
+      # Positive and negative *new-target lookalike* only. This deliberately
+      # creates/drops a SECOND disposable PG18 DB to test the exact held SQL;
+      # no credentials, DBs or roles are ever provisioned on hosted Neon.
+      - name: FT-01 four isolated NOLOGIN role proposal positive negative SQL admission
+        working-directory: lib/db
+        env:
+          FAWRI_ALLOW_FT01_DISPOSABLE_NOLOGIN_ADMISSION: "1"
+        run: |
+          node --check scripts/ft01-disposable-nologin-role-reservation.mjs
+          node scripts/ft01-disposable-nologin-role-reservation.mjs
+
+      - name: FT-01 prove independent ephemeral tenant auth operator LOGINs on PG18
+        working-directory: lib/db
+        env:
+          FAWRI_ALLOW_FT01_DISPOSABLE_THREE_LOGIN_REHEARSAL: "1"
+        run: |
+          # This runner demands github repo identity, GITHUB_ACTIONS, a local
+          # 127.0.0.1:5432/fawri_ci URL, and an exact 53-migration preimage.
+          # Random credentials are memory-only, never printed or exported.
+          node --check scripts/ft01-disposable-three-login-rehearsal.mjs
+          node scripts/ft01-disposable-three-login-rehearsal.mjs
+
+      - name: Deny any claim of hosted admission from this local proof
+        run: |
+          test "${DATABASE_URL}" = 'postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci'
+          test "${FAWRI_ALLOW_MIGRATION_SMOKE}" = '1'
+          echo 'FT01_DISPOSABLE_ONLY_NO_NEON_NO_RELEASE_PASS'

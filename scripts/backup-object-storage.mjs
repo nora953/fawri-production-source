@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 function sha256(file) {
@@ -48,6 +48,20 @@ function assertInsideDisposableRoot(candidate) {
   if (root === path.parse(root).root || resolved === root || !resolved.startsWith(`${root}${path.sep}`)) {
     throw new Error("Object backup path is outside the approved disposable root");
   }
+  // A lexically safe path can still escape through a symlink. Never allow a
+  // disposable drill's recursive rm to resolve into a production directory.
+  const rootInfo = lstatSync(root, { throwIfNoEntry: false });
+  if (!rootInfo?.isDirectory() || rootInfo.isSymbolicLink() || realpathSync(root) !== root) {
+    throw new Error("Disposable object root must be a real directory");
+  }
+  let current = root;
+  for (const part of path.relative(root, resolved).split(path.sep)) {
+    current = path.join(current, part);
+    const info = lstatSync(current, { throwIfNoEntry: false });
+    if (info && (!info.isDirectory() || info.isSymbolicLink())) {
+      throw new Error("Disposable object backup path must not use aliases");
+    }
+  }
   return resolved;
 }
 
@@ -65,8 +79,12 @@ function main() {
   const outputDir = assertInsideDisposableRoot(output);
   const sourceStat = statSync(sourceDir, { throwIfNoEntry: false });
   if (!sourceStat?.isDirectory()) throw new Error("Object storage source must be a disposable directory");
-  if (outputDir === sourceDir || outputDir.startsWith(`${sourceDir}${path.sep}`)) {
-    throw new Error("Backup output must not be inside the source directory");
+  if (outputDir === sourceDir ||
+      outputDir.startsWith(`${sourceDir}${path.sep}`) ||
+      sourceDir.startsWith(`${outputDir}${path.sep}`)) {
+    // Both directions are unsafe: deleting the destination when it is a
+    // parent of the source would erase the source *before* making a backup.
+    throw new Error("Backup output and source directories must not overlap");
   }
 
   rmSync(outputDir, { recursive: true, force: true });

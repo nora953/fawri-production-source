@@ -1,4 +1,6 @@
 import { logger } from "../lib/logger";
+import { manualCommercialRelease } from "./manualCommercialRelease";
+import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import { getAiUsageTelemetrySnapshot } from "../observability/aiUsageTelemetry";
 import { evaluateRuntimeEarlyWarnings } from "../observability/earlyWarningEvaluation";
 import {
@@ -28,6 +30,32 @@ function systemIncident(
 
 export async function observeEarlyWarningIncidentsOnce(): Promise<void> {
   if (!operationalPostgresAuthorityRequired()) return;
+
+  if (manualCommercialRelease()) {
+    // First-commercial V1 offers manual orders, not Meta/AI/Support/POS.
+    // The global cross-merchant full-product snapshot must NOT be queried
+    // using the narrowly authorized authentication issuer LOGIN. A generic
+    // grant to background_jobs, messages or audit_events would break the
+    // separately accepted least-privilege production profile.
+    //
+    // Retain an authenticated database liveness probe and in-process HTTP
+    // telemetry warnings. This is deliberately runtime-only: it does NOT
+    // certify durable incident history or full-production observability.
+    await withAuthenticationTransaction(async (client) => {
+      await client.query("SELECT 1");
+    });
+    const runtime = evaluateRuntimeEarlyWarnings({
+      http: getHttpTelemetrySnapshot("1h"),
+      ai: getAiUsageTelemetrySnapshot("1h"),
+    });
+    for (const warning of runtime.incidents) {
+      logger.warn(
+        { code: warning.code, severity: warning.severity, area: warning.area },
+        "V1 runtime-only early warning; durable incident history not connected",
+      );
+    }
+    return;
+  }
 
   const snapshot = await loadEarlyWarningPostgresSnapshot("1h");
   const http = getHttpTelemetrySnapshot("1h");

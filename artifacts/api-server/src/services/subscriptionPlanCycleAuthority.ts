@@ -1,3 +1,6 @@
+import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
+import { manualCommercialRelease } from "./manualCommercialRelease";
+import { withMerchantOperationalTransaction } from "./operationalPostgresAuthority";
 import crypto from "node:crypto";
 import { getSaasPlan, type SaasPaidPlan } from "./saasPlanCatalog";
 
@@ -110,6 +113,7 @@ export async function applySubscriptionPlanCycleInTransaction(
     actorAccountId?: string;
     billingOrderId?: string;
     providerPaymentRef?: string;
+    manualCommerce?: boolean;
     now?: Date;
   },
 ): Promise<{
@@ -224,7 +228,7 @@ export async function applySubscriptionPlanCycleInTransaction(
               emergency_credit_amount = $10,
               emergency_credit_activated = FALSE,
               emergency_debt = $11,
-              auto_reply_enabled = TRUE,
+              auto_reply_enabled = $13,
               starts_at = $9,
               expires_at = $12,
               activated_at = $9,
@@ -247,6 +251,7 @@ export async function applySubscriptionPlanCycleInTransaction(
         plan.emergency_credit_amount,
         nextDebt,
         expiresAt,
+        !input.manualCommerce,
       ],
     );
   } else {
@@ -261,7 +266,7 @@ export async function applySubscriptionPlanCycleInTransaction(
          $1, $2, $3, 'active', $4, $5,
          $6, 0, $6,
          0, $7,
-         FALSE, 0, TRUE,
+         FALSE, 0, $10,
          $8, $9, $8, 1, $8, $8
        )`,
       [
@@ -274,6 +279,7 @@ export async function applySubscriptionPlanCycleInTransaction(
         plan.emergency_credit_amount,
         now,
         expiresAt,
+        !input.manualCommerce,
       ],
     );
   }
@@ -339,6 +345,27 @@ export async function applySubscriptionPlanCycleInTransaction(
   return { subscriptionId, previousPlan, emergencyDebtPaid };
 }
 
+export async function assertManualSubscriptionAdmin(
+  client: SubscriptionPlanCycleTransaction,
+  actorAccountId: string,
+): Promise<void> {
+  const permission = await client.query(
+    `SELECT EXISTS (
+       SELECT 1 FROM accounts a JOIN admin_profiles p ON p.account_id = a.id
+        WHERE a.id = $1 AND a.kind = 'admin' AND a.state = 'active'
+          AND p.enabled AND NOT p.must_change_password
+          AND (p.role = 'owner_admin' OR EXISTS (
+            SELECT 1 FROM admin_permissions
+             WHERE admin_id = a.id AND permission = 'manage_subscriptions'
+          ))
+     ) AS allowed`,
+    [actorAccountId],
+  );
+  if (permission.rows[0]?.allowed !== true) {
+    fail("SUBSCRIPTION_ADMIN_PERMISSION_REQUIRED", "subscription administrator permission is required", 403);
+  }
+}
+
 export async function applySubscriptionPlanCyclePostgres(input: {
   merchantId: string;
   operation: SubscriptionPlanCycleOperation;
@@ -349,13 +376,15 @@ export async function applySubscriptionPlanCyclePostgres(input: {
   if (!process.env.DATABASE_URL) {
     throw new Error("subscription plan cycle authority requires DATABASE_URL");
   }
-  const module = await import("@workspace/db");
-  const pool = module.pool as unknown as {
-    connect(): Promise<SubscriptionPlanCycleTransaction & { release(): void }>;
-  };
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
+  if (manualCommercialRelease()) {
+    return withAuthenticationTransaction(async client => {
+      await assertManualSubscriptionAdmin(client, input.actorAccountId);
+      return applySubscriptionPlanCycleInTransaction(client, {
+        ...input, source: "manual_override", manualCommerce: true,
+      });
+    });
+  }
+  return withMerchantOperationalTransaction(input.merchantId, async client => {
     const result = await applySubscriptionPlanCycleInTransaction(client, {
       merchantId: input.merchantId,
       operation: input.operation,
@@ -364,12 +393,6 @@ export async function applySubscriptionPlanCyclePostgres(input: {
       actorAccountId: input.actorAccountId,
       now: input.now,
     });
-    await client.query("COMMIT");
     return { subscriptionId: result.subscriptionId };
-  } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
-    throw error;
-  } finally {
-    client.release();
-  }
+  });
 }

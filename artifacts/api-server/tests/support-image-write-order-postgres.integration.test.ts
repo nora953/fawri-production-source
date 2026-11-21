@@ -8,8 +8,9 @@ const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "fawri-support-image-order
 process.env.FAWRI_DATA_DIR = dataDir;
 process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = "required";
 
-const dbModule = await import("@workspace/db");
-const pool = dbModule.pool;
+const { createDisposableKnowledgeRuntime } = await import("./helpers/disposable-knowledge-runtime.mjs");
+const runtime = await createDisposableKnowledgeRuntime();
+const pool = runtime.admin;
 const accounts = await import("../src/services/postgresMerchantAccountAuthority.js");
 const supportImages = await import("../src/services/postgresSupportImageAuthority.js");
 
@@ -276,6 +277,6 @@ await test("authorized image persists and orphan reconciliation removes only unr
 });
 
 test.after(async () => {
-  await pool.end();
+  await runtime.dispose();
   fs.rmSync(dataDir, { recursive: true, force: true });
 });

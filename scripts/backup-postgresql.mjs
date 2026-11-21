@@ -60,8 +60,8 @@ function sha256(file) {
   return createHash("sha256").update(readFileSync(file)).digest("hex");
 }
 
-function run(command, args) {
-  const result = spawnSync(command, args, { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8", env: Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))) });
+function run(command, args, password) {
+  const result = spawnSync(command, args, { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8", env: { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))), ...(password ? { PGPASSWORD: password } : {}) } });
   if (result.error) throw new Error(`${command} could not start: ${redact(result.error.message)}`);
   if (result.status !== 0) {
     const detail = redact(result.stderr || result.stdout || "command failed").trim();
@@ -78,7 +78,9 @@ function main() {
   if (!url || !output || !manifest) {
     throw new Error("Usage: node scripts/backup-postgresql.mjs --url <url> --output <dump> --manifest <json>");
   }
-  parseDisposableDatabaseUrl(url);
+  const parsedUrl = parseDisposableDatabaseUrl(url);
+  const password = decodeURIComponent(parsedUrl.password);
+  parsedUrl.password = "";
 
   const outputPath = path.resolve(output);
   const manifestPath = path.resolve(manifest);
@@ -88,20 +90,20 @@ function main() {
 
   run("pg_dump", [
     "--dbname",
-    url,
+    parsedUrl.toString(),
     "--format=custom",
     "--compress=9",
-    "--no-owner",
-    "--no-privileges",
     "--file",
     outputPath,
-  ]);
+  ], password);
 
   const stat = statSync(outputPath, { throwIfNoEntry: false });
   if (!stat?.isFile() || stat.size === 0) throw new Error("PostgreSQL backup is empty");
 
   const payload = {
-    format: "fawri-postgresql-backup-v1",
+    format: "fawri-postgresql-backup-v2",
+    security_model: "preserve-owners-acls",
+    role_bootstrap: "preprovision-global-roles-before-restore",
     created_at: new Date().toISOString(),
     file: path.basename(outputPath),
     size: stat.size,

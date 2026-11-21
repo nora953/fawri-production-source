@@ -6,6 +6,11 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
+import { createDisposableKnowledgeRuntime } from "./helpers/disposable-knowledge-runtime.mjs";
+import { cleanupResources } from "./helpers/cleanup-resources.mjs";
+
+await assertDisposablePostgres();
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "");
 assert.ok(DATABASE_URL, "DATABASE_URL is required");
@@ -81,8 +86,9 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
     FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: "required",
   });
 
+  const runtime = await createDisposableKnowledgeRuntime();
+  const pool = runtime.admin;
   const [
-    { pool },
     { hashPassword },
     { authPostgresSessionAuthority },
     { ADMIN_SESSION_COOKIE, MERCHANT_SESSION_COOKIE },
@@ -91,7 +97,6 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
     { default: cookieParser },
     { default: authSecurityRouter },
   ] = await Promise.all([
-    import("@workspace/db"),
     import("../src/services/authPasswordService.js"),
     import("../src/services/authPostgresSessionAuthority.js"),
     import("../src/middleware/authSession.js"),
@@ -99,15 +104,19 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
     import("express"),
     import("cookie-parser"),
     import("../src/routes/auth-security.js"),
-  ]);
+  ]).catch(async error => {
+    await runtime.dispose();
+    throw error;
+  });
 
   let server: Server | null = null;
 
   async function cleanup(): Promise<void> {
+    await pool.query("DELETE FROM database_admin_access_audits WHERE admin_account_id=ANY($1::text[])", [[ownerId,trustedId,untrustedId]]);
     await pool.query(
       "DELETE FROM emergency_merchant_notices WHERE merchant_id = $1",
       [merchantId],
-    ).catch(() => undefined);
+    );
     await pool.query(
       `DELETE FROM emergency_owner_alerts
         WHERE request_id IN (
@@ -115,40 +124,40 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
            WHERE merchant_id = $1 OR requested_by_admin_account_id = ANY($2::text[])
         )`,
       [merchantId, [ownerId, trustedId, untrustedId]],
-    ).catch(() => undefined);
+    );
     await pool.query(
       "DELETE FROM emergency_access_requests WHERE merchant_id = $1 OR requested_by_admin_account_id = ANY($2::text[])",
       [merchantId, [ownerId, trustedId, untrustedId]],
-    ).catch(() => undefined);
+    );
     await pool.query(
       "DELETE FROM emergency_authorizations WHERE admin_account_id = ANY($1::text[]) OR granted_by_owner_account_id = $2",
       [[trustedId, untrustedId], ownerId],
-    ).catch(() => undefined);
+    );
     await pool.query(
-      "DELETE FROM audit_events WHERE entity_type = 'emergency_read_access' OR actor_account_id = ANY($1::text[]) OR merchant_id = $2",
+      "DELETE FROM audit_events WHERE actor_account_id = ANY($1::text[]) OR merchant_id = $2",
       [[ownerId, trustedId, untrustedId], merchantId],
-    ).catch(() => undefined);
-    await pool.query("DELETE FROM merchant_channels WHERE id = $1 OR merchant_id = $2", [channelId, merchantId]).catch(() => undefined);
-    await pool.query("DELETE FROM products WHERE id = $1 OR merchant_id = $2", [productId, merchantId]).catch(() => undefined);
-    await pool.query("DELETE FROM subscriptions WHERE id = $1 OR merchant_id = $2", [subscriptionId, merchantId]).catch(() => undefined);
+    );
+    await pool.query("DELETE FROM merchant_channels WHERE id = $1 OR merchant_id = $2", [channelId, merchantId]);
+    await pool.query("DELETE FROM products WHERE id = $1 OR merchant_id = $2", [productId, merchantId]);
+    await pool.query("DELETE FROM subscriptions WHERE id = $1 OR merchant_id = $2", [subscriptionId, merchantId]);
     await pool.query(
       "DELETE FROM accounts WHERE id = ANY($1::text[])",
       [[ownerId, trustedId, untrustedId, merchantId]],
-    ).catch(() => undefined);
+    );
   }
 
-  t.after(async () => {
-    await stopPostgresSupportRuntimeCutoverForTests();
-    if (server) {
-      await new Promise<void>((resolve, reject) => {
-        server?.close((error) => (error ? reject(error) : resolve()));
+  t.after(() => cleanupResources([
+    ["Support timers", () => stopPostgresSupportRuntimeCutoverForTests()],
+    ["HTTP server", async () => {
+      if (server) await new Promise<void>((resolve, reject) => {
+        server?.close(error => error ? reject(error) : resolve());
         server?.closeAllConnections?.();
       });
-    }
-    await cleanup();
-    await pool.end();
-    await rm(runtimeDirectory, { recursive: true, force: true });
-  });
+    }],
+    ["synthetic emergency records", () => cleanup()],
+    ["owned runtime", () => runtime.dispose()],
+    ["temporary data", () => rm(runtimeDirectory, { recursive: true, force: true })],
+  ]));
 
   await cleanup();
 

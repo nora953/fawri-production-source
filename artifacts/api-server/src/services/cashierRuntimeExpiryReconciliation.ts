@@ -1,8 +1,7 @@
 import crypto from "node:crypto";
+import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
-  withOperationalTransaction,
 } from "./operationalPostgresAuthority";
 
 export type CashierRuntimeExpiryReconciliation = {
@@ -40,8 +39,9 @@ export async function refreshDurableCashierStationCredentialAuthoritative(input:
   const deviceId = String(input.deviceId ?? "").trim();
   if (!stationToken || !deviceId) return;
 
-  const pool = await operationalDatabasePool();
-  await pool.query(
+  // Credential maintenance uses the same independently authenticated LOGIN as
+  // station validation; the tenant pool must not need credential write grants.
+  await withAuthenticationTransaction((client) => client.query(
     `UPDATE cashier_station_credentials AS c
         SET status = 'active',
             revoked_at = NULL,
@@ -56,7 +56,7 @@ export async function refreshDurableCashierStationCredentialAuthoritative(input:
         AND s.paired_device_id = $2
         AND s.credential_version = c.version`,
     [hashStationToken(stationToken), deviceId],
-  );
+  ));
 }
 
 /**
@@ -75,7 +75,7 @@ export async function reconcileCashierRuntimeExpirationsAuthoritative(): Promise
     };
   }
 
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const pairing = await client.query(
       `UPDATE cashier_station_pairing_challenges
           SET status = 'expired'

@@ -1,4 +1,5 @@
-import { withOperationalTransaction, type OperationalSqlClient } from "./operationalPostgresAuthority";
+import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
+import { type OperationalSqlClient } from "./operationalPostgresAuthority";
 import { normalizeEarlyWarningCostMonth } from "./earlyWarningCostAuthority";
 
 const DAY_MS = 24 * 60 * 60 * 1_000;
@@ -72,7 +73,7 @@ export async function loadEarlyWarningMerchantUsageReport(input?: {
   const month = normalizeEarlyWarningCostMonth(input?.month, now);
   const bounds = monthBounds(month, now);
 
-  const result = await withOperationalTransaction(async (client: OperationalSqlClient) => {
+  const result = await withAuthenticationTransaction(async (client: OperationalSqlClient) => {
     const merchants = await client.query<Row>(
       `SELECT id AS merchant_id, store_name
        FROM merchants

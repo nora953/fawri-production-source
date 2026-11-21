@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "gate": "CASHIER-SYNC-SEQUENCE-001",
+  "status": "BOUNDED_PROPOSAL_INCLUSIVE_DATABASE_RESTORE_ACCEPTED_CANONICAL_PROMOTION_PENDING",
+  "source": "553e08f7223e5ea242b813f3edc0e270f0c4784c",
+  "sourceTree": "8e40bc1795a122827d502058c76a1cde07e23d26",
+  "release": "NO-GO",
+  "gateClosed": false,
+  "changed": [
+    "scripts/run-isolated-postgres-audit.sh",
+    "artifacts/api-server/tests/full-schema-restore-postgres.integration.test.mjs",
+    "artifacts/api-server/tests/helpers/stream-proposal-restore.mjs"
+  ],
+  "scope": "Full owned schema dump to a fresh database in same disposable cluster, including noncanonical proposal tables/data and preprovisioned owner/reader roles",
+  "observed": [
+    "Owner-preserving pg_dump/custom pg_restore into fresh database",
+    "Exact seed/verify fingerprint including public function owners, policy role bindings, proposal column ACLs, user trigger definitions/enabled state, stream/receipt JSON and owner/reader role flags",
+    "Real restricted LOGIN own tenant positives, raw/forged-GUC and cross-tenant denials in both phases",
+    "Direct reader mutation, trigger execution and owner activation denied; immutable receipt mutation rejected",
+    "Unchanged actual deletion service succeeds after restore using separate restricted authentication LOGIN; target retired binding NULL/checkpoint1 preserved; all receipts and selected peer stream unchanged"
+  ],
+  "limits": [
+    "Not canonical schema/migration adoption; proposal contributes two fixture-only tables",
+    "Global roles preprovisioned in same owned cluster, not lost-cluster role bootstrap",
+    "Not hosted backup/PITR/RPO/RTO/media retention or disaster recovery acceptance",
+    "Synthetic receipt result identifiers are not financial receipt provenance",
+    "Separate backup-postgresql.mjs and restore-postgresql.mjs still omit ownership/ACL; not exercised/certified here",
+    "FIELD005 full retained-field/retention policy remains open"
+  ],
+  "nextAction": "Reconcile separate disposable backup/restore tooling with explicit owner/ACL preservation or verified reconstruction and role bootstrap, then canonical Drizzle/readiness promotion of proposal; no live admission/hosted rollout or automatic legacy enrollment.",
+  "priorFailedCandidate": {
+    "source": "31b4e2885415fa28eb75bfcd7707c7c1bc4993f7",
+    "run": 40308962048,
+    "job": 121525027870,
+    "seed": {
+      "passed": 2,
+      "failed": 0
+    },
+    "verify": {
+      "passed": 0,
+      "failed": 2
+    },
+    "reason": "Restored SQL owner/ACL/isolation assertions succeeded, but actual deletion fixture lacked explicit FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=required; enabled and restored within test helper",
+    "accepted": false
+  },
+  "checkout": "3132c25bb42da6022d3b130967dd3bcfbf842f19",
+  "checkoutTreeMatched": true,
+  "ci": {
+    "total": 56,
+    "success": 56,
+    "broader": {
+      "run": 40309933849,
+      "job": 121528266491,
+      "invocations": 93,
+      "files": 91,
+      "passed": 734,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "checkout": "3132c25bb42da6022d3b130967dd3bcfbf842f19"
+    },
+    "restorePhases": [
+      {
+        "suite": "full-schema-restore-postgres.integration.test.mjs",
+        "auditBatch": "full-restore",
+        "runtime": "v24.22.1",
+        "phase": "seed",
+        "exit": 0,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "full-schema-restore-postgres.integration.test.mjs",
+        "auditBatch": "full-restore",
+        "runtime": "v24.22.1",
+        "phase": "verify",
+        "exit": 0,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ]
+  },
+  "runtimeProofs": [
+    {
+      "phase": "seed",
+      "proposalOutsideCanonicalJournal": true,
+      "ownerAndColumnAcl": true,
+      "realRestrictedLogin": true,
+      "tenantReadIsolation": true,
+      "immutableReceipts": true,
+      "actualDeletionServiceAfterRestore": false,
+      "rolesPreprovisionedSameOwnedCluster": true,
+      "hostedAccepted": false
+    },
+    {
+      "phase": "verify",
+      "proposalOutsideCanonicalJournal": true,
+      "ownerAndColumnAcl": true,
+      "realRestrictedLogin": true,
+      "tenantReadIsolation": true,
+      "immutableReceipts": true,
+      "actualDeletionServiceAfterRestore": true,
+      "rolesPreprovisionedSameOwnedCluster": true,
+      "hostedAccepted": false
+    }
+  ],
+  "schemaProofs": [
+    {
+      "phase": "seed",
+      "migrationCount": 52,
+      "tableCount": 97,
+      "policyCount": 78,
+      "functionCount": 21,
+      "fixtureChannels": 2,
+      "restrictedTenantReads": true,
+      "privateScopeAuthorityAclPreserved": true,
+      "privateSchemaCount": 1,
+      "privateTableCount": 1,
+      "privateFunctionCount": 2,
+      "fingerprint": "fa206254782c3b02b9a6c732eac023affc36443bd0afd15c860a6cdb958afde7"
+    },
+    {
+      "phase": "verify",
+      "migrationCount": 52,
+      "tableCount": 97,
+      "policyCount": 78,
+      "functionCount": 21,
+      "fixtureChannels": 2,
+      "restrictedTenantReads": true,
+      "privateScopeAuthorityAclPreserved": true,
+      "privateSchemaCount": 1,
+      "privateTableCount": 1,
+      "privateFunctionCount": 2,
+      "fingerprint": "fa206254782c3b02b9a6c732eac023affc36443bd0afd15c860a6cdb958afde7"
+    }
+  ],
+  "canonicalMigrationsUnchanged": 52,
+  "canonicalTablesUnchanged": 95,
+  "fixtureOnlyAddedTables": 2,
+  "fileHashes": {
+    "artifacts/api-server/tests/helpers/stream-proposal-restore.mjs": "91ea7f10ea1b39f771c40f395805739354cd69608bd608b6b6c4896ff3dad500",
+    "artifacts/api-server/tests/full-schema-restore-postgres.integration.test.mjs": "9b2fdadc03ee8456d127f8b17c3e1fd18d1cf3ef27f1de8d046f63f3a708efe5",
+    "scripts/run-isolated-postgres-audit.sh": "34a0d7e079f26d80af8def72e24738af510e856c6b93ff6fb068226cd877f410"
+  }
+}

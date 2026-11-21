@@ -1,0 +1,88 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  G2C_COMMIT, assertG2COptIn, assertG2CCredentials, buildG2CLoginSql, classifyG2CError,
+  assertG2CRoles,assertG2CProfiles,
+} from '../lib/v1-g2-production-login-admission-safety.mjs';
+
+const goodEnv={
+  GITHUB_ACTIONS:'true',
+  GITHUB_REPOSITORY:'nora953/fawri-production-source',
+  GITHUB_EVENT_NAME:'push',
+  GITHUB_ACTOR:'nora953',
+  GITHUB_REF:'refs/heads/fix/p0-provider-receipt-order-discovery-20261015',
+  FAWRI_V1_G2_ROLE_ADMISSION_ENABLED:'1',
+  FAWRI_V1_G2_ROLE_COMMIT_MESSAGE:G2C_COMMIT,
+  FAWRI_V1_G2_G1_RECEIPT:'G1-20261115-GDRIVE-READBACK-43712483648',
+  FAWRI_V1_G2_G2A_RECEIPT:'G2A-20261115-NOLOGIN-43717035419',
+  FAWRI_V1_G2_G2B_RECEIPT:'G2B-20261116-SCHEMA54-43852308674',
+};
+test('owner action and exact historical receipts are all required',()=>{
+  assert.equal(assertG2COptIn(goodEnv),true);
+  for(const key of Object.keys(goodEnv)){
+    assert.throws(()=>assertG2COptIn({...goodEnv,[key]:'invalid'}),/V1_G2C_NOT_OWNER_AUTHORIZED/,key);
+  }
+});
+const password1='Aa1'.repeat(16);
+const password2='Bb2'.repeat(16);
+const password3='Cc3'.repeat(16);
+const passwordEnv={
+  FAWRI_V1_G2_TENANT_LOGIN_PASSWORD:password1,
+  FAWRI_V1_G2_AUTH_LOGIN_PASSWORD:password2,
+  FAWRI_V1_G2_OPERATOR_LOGIN_PASSWORD:password3,
+};
+test('three unique 48+ character random passwords required; never echo values',()=>{
+  assert.equal(Object.keys(assertG2CCredentials(passwordEnv)).length,3);
+  for(const key of Object.keys(passwordEnv)){
+    assert.throws(()=>assertG2CCredentials({...passwordEnv,[key]:''}),/V1_G2C_INVALID_CREDENTIAL_FORMAT/);
+    assert.throws(()=>assertG2CCredentials({...passwordEnv,[key]:'weak_password'}),/V1_G2C_INVALID_CREDENTIAL_FORMAT/);
+  }
+  assert.throws(()=>assertG2CCredentials({...passwordEnv,
+    FAWRI_V1_G2_OPERATOR_LOGIN_PASSWORD:password1}),/V1_G2C_CREDENTIAL_REUSE_DENIED/);
+});
+const roles=[
+'fawri_restricted_runtime','fawri_auth_issuer','fawri_operator_issuer',
+'fawri_cashier_retirement_writer'].map(name=>({
+  name,can_login:name!=='fawri_cashier_retirement_writer',
+  inherit:false,superuser:false,bypass_rls:false,
+  can_create_roles:false,can_create_db:false,replication:false,
+  outgoing_membership:0,inbound_count:1,inbound_creator_only:1,public_create:false,
+}));
+test('reserved POS writer stays NOLOGIN; others least privilege',()=>{
+  assert.equal(assertG2CRoles(roles),true);
+  for(const name of ['fawri_restricted_runtime','fawri_auth_issuer','fawri_operator_issuer']){
+    assert.throws(()=>assertG2CRoles(roles.map(r=>r.name===name?{...r,bypass_rls:true}:r)),/V1_G2C_ROLE_ESCALATION_OR_MISSING_LOGIN/);
+    assert.throws(()=>assertG2CRoles(roles.map(r=>r.name===name?{...r,can_login:false}:r)),/V1_G2C_ROLE_ESCALATION_OR_MISSING_LOGIN/);
+  }
+  assert.throws(()=>assertG2CRoles(roles.map(r=>r.name==='fawri_cashier_retirement_writer'?{...r,can_login:true}:r)),/V1_G2C_ROLE_ESCALATION_OR_MISSING_LOGIN/);
+});
+test('role profile admission requires all 3 exact successes',()=>{
+  const rows=['fawri_restricted_runtime','fawri_auth_issuer','fawri_operator_issuer'].map(role_name=>({
+    role_name,observed_database_name:'fawri',observed_postgres_major:18,
+    role_exists:true,can_login:true,preliminary_role_profile_pass:true,
+  }));
+  assert.equal(assertG2CProfiles(rows),true);
+  assert.throws(()=>assertG2CProfiles(rows.slice(1)),/V1_G2C_HELD_ROLE_PROFILE_UNSAFE/);
+  assert.throws(()=>assertG2CProfiles(rows.map(r=>({...r,preliminary_role_profile_pass:false}))),/V1_G2C_HELD_ROLE_PROFILE_UNSAFE/);
+});
+
+test('PG18 non-superuser owner changes LOGIN only; no privileged flags',()=>{
+  const sql=buildG2CLoginSql('fawri_auth_issuer',password1);
+  assert.equal(sql,"ALTER ROLE fawri_auth_issuer LOGIN CONNECTION LIMIT 12 PASSWORD '"+password1+"'");
+  assert.doesNotMatch(sql,/NOSUPERUSER|NOBYPASSRLS|NOREPLICATION|NOCREATEDB|NOCREATEROLE|NOINHERIT/i);
+  assert.throws(()=>buildG2CLoginSql('fawri_cashier_retirement_writer',password1),/V1_G2C_LOGIN_ROLE_NOT_ALLOWLISTED/);
+  assert.throws(()=>buildG2CLoginSql('fawri_auth_issuer','weak'),/V1_G2C_INVALID_CREDENTIAL_FORMAT/);
+});
+
+test('known SQLSTATE failures get safe constant codes without leaking secret text',()=>{
+  assert.equal(classifyG2CError({code:'42501',message:'PASSWORD dummy-secret-value'}),
+    'V1_G2C_SQL_INSUFFICIENT_PRIVILEGE');
+  assert.equal(classifyG2CError({code:'42883',message:'sensitive SQL'}),
+    'V1_G2C_SQL_UNDEFINED_FUNCTION');
+  assert.equal(classifyG2CError({code:'V1_G2C_CREDENTIAL_REUSE_DENIED'}),
+    'V1_G2C_CREDENTIAL_REUSE_DENIED');
+  assert.equal(classifyG2CError({code:'P0001',message:'sensitive SQL'}),
+    'V1_G2C_FAIL_CLOSED_MANUAL_REVIEW_REQUIRED');
+  assert.equal(classifyG2CError({message:'PASSWORD leaked?'}), 
+    'V1_G2C_FAIL_CLOSED_MANUAL_REVIEW_REQUIRED');
+});

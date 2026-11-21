@@ -1,0 +1,11 @@
+# P0 approval access-control acceptance — 2026-10-23
+
+Accepted executable4acf13517337a4038f46f2fb672d76fde42db77a:47/47 workflows SUCCESS,0 pending/failed/cancelled. Native39869692485/job120140702367:84/84 complete clean invocations,82 unique files, zero failed/skipped/cancelled. Actual checkout3d64dfc90f8f46eb9e9899fb8d2bb66afe2fbc70 independently matches source tree8e910f6ac0ded63664f9161b51fcbc25f9c80aaa. No retry or passing-suite rerun.
+
+Approval evidence mutation controls passed14 direct denial cases and195 grant/reachability cases. Genuine authorized issuance, consumption, replay, tenant boundaries and exact snapshot restoration passed. Existing transaction, lock, concurrency, kind-management and rollback regressions remain green. Scoped capability direct-call rejection and readiness metadata controls passed. These results close the bounded source approval access-control defect; they do not certify hosted access or the full cashier/P0 scope.
+
+Foundation39869692042/job120140700011 reached FOUNDATION_CLEAN_INTEGRATION_FINAL_PASS. Schema39869692394/job120140701889 reproduced committed canonical history, including0045, and validated all46 migrations. Quality39869692369 SUCCESS. Security39869692207 SUCCESS; audit120140702494/review120140702455 each0 high/0 critical/2 moderate. Native dump/restore and Node22 coverage are retained in the exact summaries. [Complete exact evidence](evidence/P0-CASHIER-APPROVAL-ACCESS-ACCEPTANCE-20261023.json).
+
+Next bounded group is settings authorization consistency. A new owned-disposable two-merchant actual-LOGIN diagnostic compares configuration authority with business validation, and verifies authorized management, optimistic version checks, pending-evidence invalidation, transaction rollback and exact restoration. Local syntax PASS only; runtime result PENDING. A clean diagnostic is not remediation acceptance. No additional production/schema changes for this group until actual evidence is classified.
+
+Whole-P0 requirement/proof inventory remains incomplete; percentage UNMEASURED. Release **NO-GO**. Hosted remains old main and28 last-verified migrations against source46; actual deployed DB target/login/pooler and approved hosted rollout remain open. No hosted read/write performed this batch, no deployment/restart/migration/ACL/secret change/main push/merge/P1/P2.

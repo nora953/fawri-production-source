@@ -1,0 +1,154 @@
+import { sql } from "drizzle-orm";
+import { bigint, check, index, pgPolicy, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { adminProfiles } from "./merchants";
+import {
+  merchantLocationDeliveryAreas,
+  merchantLocations,
+} from "./merchant-locations";
+import { locationInventoryLevels } from "./location-inventory";
+import {
+  merchantDeliveryAreaRates,
+  merchantSettings,
+} from "./merchant-settings";
+import {
+  orders,
+  orderItems,
+  orderPaymentDecisions,
+  orderPaymentProviderEvents,
+  orderTerminalDecisionLinks,
+} from "./orders";
+import { backgroundJobs, backgroundJobPayloads } from "./jobs";
+import { merchantChannels } from "./channels";
+import { channelInboundEvents, outboundDeliveries, replyRefunds, replyReservations } from "./channel-messaging";
+import { catalogIdempotencyKeys, catalogIdentifiers, catalogImageReferences, catalogVariantOptions, inventoryMutations, products, productVariants } from "./catalog";
+import { commercePromotions } from "./commerce-promotions";
+import { replyLedger, subscriptionReplyBatches, subscriptions } from "./subscriptions";
+import { saasBillingEvents, saasBillingOrders, saasBillingRefunds, saasEntitlementApplications } from "./saas-billing";
+import { conversations, messages } from "./conversations";
+import { knowledgeAuditEvents, knowledgeEmbeddings, learnedAnswers, savedAnswers, trainingRequests } from "./knowledge";
+
+export const databaseAdminAccessAudits = pgTable(
+  "database_admin_access_audits",
+  {
+    id: text("id").primaryKey(),
+    adminAccountId: text("admin_account_id").notNull().references(() => adminProfiles.id, { onDelete: "restrict" }),
+    merchantId: text("merchant_id"),
+    reasonCode: text("reason_code").notNull(),
+    requestHash: text("request_hash").notNull(),
+    // PostgreSQL assigns the full epoch-aware transaction ID; retained audit
+    // identifiers cannot authorize a later transaction or another connection.
+    authorityTransactionId: bigint("authority_transaction_id", { mode: "bigint" }).notNull().default(sql`txid_current()`),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    adminStartedIndex: index("database_admin_access_admin_started_idx").on(table.adminAccountId, table.startedAt),
+    merchantStartedIndex: index("database_admin_access_merchant_started_idx").on(table.merchantId, table.startedAt),
+    requestHashCheck: check("database_admin_access_request_hash_check", sql`char_length(${table.requestHash}) BETWEEN 32 AND 128`),
+    durationCheck: check("database_admin_access_duration_check", sql`${table.expiresAt} > ${table.startedAt} AND ${table.expiresAt} <= ${table.startedAt} + interval '30 minutes'`),
+  }),
+);
+
+function tenantOrAuditedAdmin(merchantColumn: any) {
+  return sql`public.fawri_tenant_or_audited_admin(${merchantColumn})`;
+}
+
+function tenantPolicy(name: string, table: any) {
+  const boundary = tenantOrAuditedAdmin(table.merchantId);
+  return pgPolicy(name, { as: "permissive", for: "all", to: "public", using: boundary, withCheck: boundary }).link(table);
+}
+
+export const merchantSettingsTenantPolicy = tenantPolicy("merchant_settings_tenant_boundary", merchantSettings);
+export const merchantDeliveryAreaRatesTenantPolicy = tenantPolicy(
+  "merchant_delivery_area_rates_tenant_boundary",
+  merchantDeliveryAreaRates,
+);
+export const merchantLocationsTenantPolicy = tenantPolicy(
+  "merchant_locations_tenant_boundary",
+  merchantLocations,
+);
+export const locationInventoryLevelsTenantPolicy = tenantPolicy(
+  "location_inventory_levels_tenant_boundary",
+  locationInventoryLevels,
+);
+export const merchantLocationDeliveryAreasTenantPolicy = tenantPolicy(
+  "merchant_location_delivery_areas_tenant_boundary",
+  merchantLocationDeliveryAreas,
+);
+export const ordersTenantPolicy = tenantPolicy("orders_tenant_boundary", orders);
+export const orderItemsTenantPolicy = tenantPolicy("order_items_tenant_boundary", orderItems);
+export const orderPaymentDecisionsTenantPolicy = tenantPolicy("order_payment_decisions_tenant_boundary", orderPaymentDecisions);
+export const orderPaymentProviderEventsTenantPolicy = tenantPolicy(
+  "order_payment_provider_events_tenant_boundary",
+  orderPaymentProviderEvents,
+);
+export const orderTerminalDecisionLinksTenantPolicy = tenantPolicy("order_terminal_decision_links_tenant_boundary", orderTerminalDecisionLinks);
+export const backgroundJobsTenantPolicy = tenantPolicy("background_jobs_tenant_boundary", backgroundJobs);
+export const backgroundJobPayloadsTenantPolicy = tenantPolicy("background_job_payloads_tenant_boundary", backgroundJobPayloads);
+export const merchantChannelsTenantPolicy = tenantPolicy("merchant_channels_tenant_boundary", merchantChannels);
+export const channelInboundEventsTenantPolicy = tenantPolicy("channel_inbound_events_tenant_boundary", channelInboundEvents);
+export const replyReservationsTenantPolicy = tenantPolicy("reply_reservations_tenant_boundary", replyReservations);
+export const replyRefundsTenantPolicy = tenantPolicy("reply_refunds_tenant_boundary", replyRefunds);
+export const outboundDeliveriesTenantPolicy = tenantPolicy("outbound_deliveries_tenant_boundary", outboundDeliveries);
+export const productsTenantPolicy = tenantPolicy("products_tenant_boundary", products);
+export const productVariantsTenantPolicy = tenantPolicy("product_variants_tenant_boundary", productVariants);
+export const catalogVariantOptionsTenantPolicy = tenantPolicy("catalog_variant_options_tenant_boundary", catalogVariantOptions);
+export const catalogIdentifiersTenantPolicy = tenantPolicy("catalog_identifiers_tenant_boundary", catalogIdentifiers);
+export const catalogImageReferencesTenantPolicy = tenantPolicy("catalog_image_references_tenant_boundary", catalogImageReferences);
+export const catalogIdempotencyKeysTenantPolicy = tenantPolicy("catalog_idempotency_keys_tenant_boundary", catalogIdempotencyKeys);
+export const inventoryMutationsTenantPolicy = tenantPolicy("inventory_mutations_tenant_boundary", inventoryMutations);
+export const commercePromotionsTenantPolicy = tenantPolicy(
+  "commerce_promotions_tenant_boundary",
+  commercePromotions,
+);
+export const subscriptionsTenantPolicy = tenantPolicy("subscriptions_tenant_boundary", subscriptions);
+export const subscriptionReplyBatchesTenantPolicy = tenantPolicy("subscription_reply_batches_tenant_boundary", subscriptionReplyBatches);
+export const replyLedgerTenantPolicy = tenantPolicy("reply_ledger_tenant_boundary", replyLedger);
+export const saasBillingOrdersTenantPolicy = tenantPolicy("saas_billing_orders_tenant_boundary", saasBillingOrders);
+export const saasBillingEventsTenantPolicy = tenantPolicy("saas_billing_events_tenant_boundary", saasBillingEvents);
+export const saasEntitlementApplicationsTenantPolicy = tenantPolicy("saas_entitlement_applications_tenant_boundary", saasEntitlementApplications);
+export const saasBillingRefundsTenantPolicy = tenantPolicy("saas_billing_refunds_tenant_boundary", saasBillingRefunds);
+export const conversationsTenantPolicy = tenantPolicy("conversations_tenant_boundary", conversations);
+export const messagesTenantPolicy = tenantPolicy("messages_tenant_boundary", messages);
+export const savedAnswersTenantPolicy = tenantPolicy("saved_answers_tenant_boundary", savedAnswers);
+export const trainingRequestsTenantPolicy = tenantPolicy("training_requests_tenant_boundary", trainingRequests);
+export const learnedAnswersTenantPolicy = tenantPolicy("learned_answers_tenant_boundary", learnedAnswers);
+export const knowledgeAuditEventsTenantPolicy = tenantPolicy("knowledge_audit_events_tenant_boundary", knowledgeAuditEvents);
+export const knowledgeEmbeddingsTenantPolicy = tenantPolicy("knowledge_embeddings_tenant_boundary", knowledgeEmbeddings);
+
+import { merchantCashierStaff, merchantCashierStaffPermissions, merchantCashierStations, cashierStationPairingChallenges, cashierStationCredentials, cashierShifts, cashierOperatorSessions } from "./cashier-staff";
+
+export const merchantCashierStaffTenantPolicy = tenantPolicy("merchant_cashier_staff_tenant_boundary", merchantCashierStaff);
+export const merchantCashierStaffPermissionsTenantPolicy = tenantPolicy("merchant_cashier_staff_permissions_tenant_boundary", merchantCashierStaffPermissions);
+export const merchantCashierStationsTenantPolicy = tenantPolicy("merchant_cashier_stations_tenant_boundary", merchantCashierStations);
+export const cashierStationPairingChallengesTenantPolicy = tenantPolicy("cashier_station_pairing_challenges_tenant_boundary", cashierStationPairingChallenges);
+export const cashierStationCredentialsTenantPolicy = tenantPolicy("cashier_station_credentials_tenant_boundary", cashierStationCredentials);
+export const cashierShiftsTenantPolicy = tenantPolicy("cashier_shifts_tenant_boundary", cashierShifts);
+export const cashierOperatorSessionsTenantPolicy = tenantPolicy("cashier_operator_sessions_tenant_boundary", cashierOperatorSessions);
+
+import { merchantCashierDiscountSettings, merchantCashierStaffDiscountPolicies, merchantCashierDiscountOverrideApprovals } from "./cashier-discount";
+import { cashierOperationAttribution } from "./cashier-operation-attribution";
+
+export const merchantCashierDiscountSettingsTenantPolicy = tenantPolicy("merchant_cashier_discount_settings_tenant_boundary", merchantCashierDiscountSettings);
+export const merchantCashierStaffDiscountPoliciesTenantPolicy = tenantPolicy("merchant_cashier_staff_discount_policies_tenant_boundary", merchantCashierStaffDiscountPolicies);
+export const merchantCashierDiscountOverrideApprovalsTenantPolicy = tenantPolicy("merchant_cashier_discount_override_approvals_tenant_boundary", merchantCashierDiscountOverrideApprovals);
+export const cashierOperationAttributionTenantPolicy = tenantPolicy("cashier_operation_attribution_tenant_boundary", cashierOperationAttribution);
+
+
+// Support global operations use the existing identity-checked authentication LOGIN.
+// CASE avoids requiring private predicate grants on trusted global LOGINs.
+// A directory audit alone does not confer Support authority. All SQL below is static.
+import { supportTickets, supportMessages, supportAttachments, supportInspectionRequests, supportPreviewSessions } from "./support";
+export const supportTicketsPrivacyPolicy = pgPolicy("support_tickets_privacy_boundary", { as: "permissive", for: "all", to: "public", using: sql.raw("(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"support_tickets\".\"merchant_id\") END)"), withCheck: sql.raw("(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"support_tickets\".\"merchant_id\") END)") }).link(supportTickets);
+export const supportMessagesPrivacyPolicy = pgPolicy("support_messages_privacy_boundary", { as: "permissive", for: "all", to: "public", using: sql.raw("(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"support_messages\".\"merchant_id\") END)"), withCheck: sql.raw("(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"support_messages\".\"merchant_id\") END) AND EXISTS (SELECT 1 FROM public.support_tickets AS parent WHERE parent.id = \"support_messages\".\"ticket_id\" AND parent.merchant_id = \"support_messages\".\"merchant_id\")") }).link(supportMessages);
+export const supportAttachmentsPrivacyPolicy = pgPolicy("support_attachments_privacy_boundary", { as: "permissive", for: "all", to: "public", using: sql.raw("(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"support_attachments\".\"merchant_id\") END)"), withCheck: sql.raw("(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"support_attachments\".\"merchant_id\") END) AND EXISTS (SELECT 1 FROM public.support_messages AS parent WHERE parent.id = \"support_attachments\".\"message_id\" AND parent.ticket_id = \"support_attachments\".\"ticket_id\" AND parent.merchant_id = \"support_attachments\".\"merchant_id\")") }).link(supportAttachments);
+export const supportInspectionRequestsPrivacyPolicy = pgPolicy("support_inspection_requests_privacy_boundary", { as: "permissive", for: "all", to: "public", using: sql.raw("(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"support_inspection_requests\".\"merchant_id\") END)"), withCheck: sql.raw("(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"support_inspection_requests\".\"merchant_id\") END) AND EXISTS (SELECT 1 FROM public.support_tickets AS parent WHERE parent.id = \"support_inspection_requests\".\"ticket_id\" AND parent.merchant_id = \"support_inspection_requests\".\"merchant_id\")") }).link(supportInspectionRequests);
+export const supportPreviewSessionsPrivacyPolicy = pgPolicy("support_preview_sessions_privacy_boundary", { as: "permissive", for: "all", to: "public", using: sql.raw("(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"support_preview_sessions\".\"merchant_id\") END)"), withCheck: sql.raw("(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"support_preview_sessions\".\"merchant_id\") END) AND EXISTS (SELECT 1 FROM public.support_inspection_requests AS parent WHERE parent.id = \"support_preview_sessions\".\"request_id\" AND parent.ticket_id = \"support_preview_sessions\".\"ticket_id\" AND parent.merchant_id = \"support_preview_sessions\".\"merchant_id\")") }).link(supportPreviewSessions);
+
+// Emergency authority records are internal. Merchant notices are exposed only by
+// session-checked services with explicit merchant predicates; tenant scope grants no raw authority.
+import { emergencyAuthorizations, emergencyAccessRequests, emergencyOwnerAlerts, emergencyMerchantNotices } from "./emergency";
+export const emergencyAuthorizationsPrivacyPolicy = pgPolicy("emergency_authorizations_authentication_boundary", { as: "permissive", for: "all", to: "public", using: sql.raw("(has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole)))"), withCheck: sql.raw("(has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole)))") }).link(emergencyAuthorizations);
+export const emergencyAccessRequestsPrivacyPolicy = pgPolicy("emergency_access_requests_authentication_boundary", { as: "permissive", for: "all", to: "public", using: sql.raw("(has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole)))"), withCheck: sql.raw("(has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole)))") }).link(emergencyAccessRequests);
+export const emergencyOwnerAlertsPrivacyPolicy = pgPolicy("emergency_owner_alerts_authentication_boundary", { as: "permissive", for: "all", to: "public", using: sql.raw("(has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole)))"), withCheck: sql.raw("(has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole)))") }).link(emergencyOwnerAlerts);
+export const emergencyMerchantNoticesPrivacyPolicy = pgPolicy("emergency_merchant_notices_authentication_boundary", { as: "permissive", for: "all", to: "public", using: sql.raw("(has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole)))"), withCheck: sql.raw("(has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) AND EXISTS (SELECT 1 FROM public.emergency_access_requests AS parent WHERE parent.id = \"emergency_merchant_notices\".\"request_id\" AND parent.merchant_id = \"emergency_merchant_notices\".\"merchant_id\")") }).link(emergencyMerchantNotices);

@@ -1,15 +1,19 @@
 import assert from 'node:assert/strict';
-import { randomUUID, randomInt, createHash } from 'node:crypto';
+import { randomUUID, randomInt, createHash, generateKeyPairSync } from 'node:crypto';
 import test from 'node:test';
 import { assertDisposablePostgres } from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
 import { cleanupResources } from './helpers/cleanup-resources.mjs';
+import { verifyCashierOfflineAuthorization } from '../../fawri/src/lib/cashierOfflineEntitlementSignature.mjs';
 
 // A localhost URL alone never authorizes this test. Refuse before DB imports.
 await assertDisposablePostgres();
 process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = 'required';
 process.env.FAWRI_SAAS_BILLING_PROVIDER = 'test_fake';
 process.env.FAWRI_SAAS_BILLING_PROVIDERS = 'test_fake';
-const { pool } = await import('@workspace/db');
+const {createDisposableKnowledgeRuntime}=await import('./helpers/disposable-knowledge-runtime.mjs');
+const runtimeFixture=await createDisposableKnowledgeRuntime();
+// Root SQL is limited to owned setup, barriers, assertions and cleanup.
+const pool=runtimeFixture.admin;
 const billing = await import('../src/services/cashierBillingAuthority.ts');
 const catalog = await import('../src/services/postgresCatalogAuthority.ts');
 const staff = await import('../src/services/postgresCashierStaffAuthority.ts');
@@ -21,11 +25,21 @@ const operational = await import('../src/services/operationalPostgresAuthority.t
 
 test('isolated HTTP recovers original-shift sale after staff disable and re-enable', async t => {
   const owned = [];
+  const signingNames = ['FAWRI_CASHIER_OFFLINE_KEY_ID', 'FAWRI_CASHIER_OFFLINE_PRIVATE_JWK', 'FAWRI_CASHIER_OFFLINE_PUBLIC_KEYS'];
+  const previousSigning = Object.fromEntries(signingNames.map(name => [name, process.env[name]]));
+  const pair = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+  const publicKeys = { 'synthetic-http': pair.publicKey.export({ format: 'jwk' }) };
+  Object.assign(process.env, {
+    FAWRI_CASHIER_OFFLINE_KEY_ID: 'synthetic-http',
+    FAWRI_CASHIER_OFFLINE_PRIVATE_JWK: JSON.stringify(pair.privateKey.export({ format: 'jwk' })),
+    FAWRI_CASHIER_OFFLINE_PUBLIC_KEYS: JSON.stringify(publicKeys),
+  });
   let server;
   t.after(async () => cleanupResources([
+    ['signing configuration restoration', () => { for (const name of signingNames) { if (previousSigning[name] === undefined) delete process.env[name]; else process.env[name] = previousSigning[name]; } }],
     ['HTTP server', () => server ? new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve())) : undefined],
     ['fixture accounts', () => pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])', [owned])],
-    ['pool', () => pool.end()],
+    ['actual runtime fixture', () => runtimeFixture.dispose()],
   ]));
   async function fixture() {
     const suffix = randomUUID();
@@ -36,7 +50,7 @@ test('isolated HTTP recovers original-shift sale after staff disable and re-enab
     await pool.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status,onboarding_status) VALUES($1,$1,'Synthetic','Sync race fixture','retail','approved','approved','channel_connected')", [merchantId]);
     const activation = await billing.createCashierBillingCheckout({ merchantId, operation: 'activate',
       requestedSeats: 2, idempotencyKey: randomUUID(), provider: 'test_fake' });
-    await billing.applyVerifiedCashierBillingProviderEvent({ provider: 'test_fake', providerEventId: randomUUID(),
+    await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: activation.order.merchant_id, provider: 'test_fake', providerEventId: randomUUID(),
       orderId: activation.order.id, eventType: 'payment_succeeded', signatureVerified: true,
       payloadHash: createHash('sha256').update(suffix).digest('hex'), occurredAt: new Date(),
       amountIqd: activation.order.amount_iqd, currency: 'IQD', providerPaymentRef: randomUUID() });
@@ -63,7 +77,7 @@ test('isolated HTTP recovers original-shift sale after staff disable and re-enab
       const stationId = `audit-station-${i}-${suffix}`, deviceId = `audit-device-${i}-${suffix}`;
       await pool.query(`INSERT INTO merchant_cashier_stations(id,merchant_id,name,branch_key,location_id,status,
         paired_device_id,offline_inventory_authority,credential_version,paired_at,created_at,updated_at)
-        VALUES($1,$2,'Sync station',$3,$4,'active',$5,FALSE,1,now(),now(),now())`,
+        VALUES($1,$2,'Sync station',$3,$4,'active',$5,TRUE,1,now(),now(),now())`,
         [stationId, merchantId, `sync-${i}`, locationId, deviceId]);
       await pool.query(`INSERT INTO cashier_station_seat_assignments(id,merchant_id,subscription_id,station_id,
         status,assigned_at,created_at,updated_at) VALUES($1,$2,$3,$4,'active',now(),now(),now())`,
@@ -116,6 +130,33 @@ test('isolated HTTP recovers original-shift sale after staff disable and re-enab
   const firstLogin = await request('/api/cashier/operator/login', null, { staff_id: member.id, pin: '2468' });
   assert.equal(firstLogin.status, 200, JSON.stringify(firstLogin.body));
   const original = firstLogin.body;
+  const signed = original.cashier_offline_entitlement;
+  assert.ok(signed, 'authenticated licensed main station must receive signed offline authority');
+  const binding = { merchant_id: f.merchantId, station_id: device.stationId, device_id: device.deviceId,
+    location_id: f.locationId, credential_version: original.context.credential_version };
+  const verified = await verifyCashierOfflineAuthorization(signed, publicKeys, binding, Date.now());
+  assert.equal(verified.subscription_id, f.subscriptionId);
+  const me = async () => {
+    const response = await fetch(base + '/api/cashier/operator/me', { signal: AbortSignal.timeout(15000), headers: {
+      'x-fawri-cashier-station-token': device.stationToken, 'x-fawri-cashier-device-id': device.deviceId,
+      'x-fawri-cashier-operator-token': original.operator_token,
+    } });
+    return { status: response.status, body: await response.json() };
+  };
+  const refresh = await me();
+  assert.equal(refresh.status, 200);
+  await verifyCashierOfflineAuthorization(refresh.body.cashier_offline_entitlement, publicKeys, binding, Date.now());
+  delete process.env.FAWRI_CASHIER_OFFLINE_PRIVATE_JWK;
+  const withoutConfig = await me();
+  assert.equal(withoutConfig.status, 200, 'missing offline config must preserve online session');
+  assert.equal(withoutConfig.body.cashier_offline_entitlement, null);
+  process.env.FAWRI_CASHIER_OFFLINE_PRIVATE_JWK = JSON.stringify(pair.privateKey.export({ format: 'jwk' }));
+  await pool.query('UPDATE merchant_cashier_stations SET offline_inventory_authority=FALSE WHERE merchant_id=$1 AND id=$2', [f.merchantId, device.stationId]);
+  const secondary = await me();
+  assert.equal(secondary.status, 200, 'secondary station retains legitimate online operations');
+  assert.equal(secondary.body.cashier_offline_entitlement, null);
+  await pool.query('UPDATE merchant_cashier_stations SET offline_inventory_authority=TRUE WHERE merchant_id=$1 AND id=$2', [f.merchantId, device.stationId]);
+
   // Use actual isolated SQL clock, after issuance and before revocation. This
   // proves a feasible history interval without future timestamps or production I/O.
   await pool.query('SELECT pg_sleep(0.02)');
@@ -141,9 +182,38 @@ test('isolated HTTP recovers original-shift sale after staff disable and re-enab
     expectedVersion: disabled.version, status: 'active' });
   const nextLogin = await request('/api/cashier/operator/login', null, { staff_id: member.id, pin: '2468' });
   assert.equal(nextLogin.status, 200, JSON.stringify(nextLogin.body));
-  const restored = nextLogin.body;
+  let restored = nextLogin.body;
   assert.notEqual(restored.context.shift_id, original.context.shift_id);
   assert.equal((await request('/api/cashier/operator/sync/sale', restored.operator_token, body, 'wrong-device')).status, 401);
+  // Release the station before a different employee signs in. The station
+  // exclusivity rule is part of the security contract, not a test bypass.
+  await staff.logoutCashierOperatorAuthoritative(restored.context);
+  const otherStaff = await staff.createCashierStaffAuthoritative({ merchantId: f.merchantId,
+    displayName: 'Synthetic second cashier', role: 'cashier', pin: '1357', permissions: ['sale.create', 'sale.view_own'] });
+  const otherLogin = await request('/api/cashier/operator/login', null, { staff_id: otherStaff.id, pin: '1357' });
+  assert.equal(otherLogin.status, 200, JSON.stringify(otherLogin.body));
+  const crossStaff = await request('/api/cashier/operator/sync/sale', otherLogin.body.operator_token, body);
+  assert.equal(crossStaff.status, 403, JSON.stringify(crossStaff.body));
+  assert.equal(crossStaff.body.code, 'CASHIER_OPERATOR_HISTORICAL_OPERATOR_MISMATCH',
+    'cross-staff recovery must be rejected by historical attribution authorization');
+  assert.equal((await pool.query('SELECT count(*)::int AS n FROM cashier_operation_attribution WHERE merchant_id=$1', [f.merchantId])).rows[0].n, 0,
+    'cross-staff recovery must not persist attribution');
+  assert.equal((await pool.query('SELECT count(*)::int AS n FROM orders WHERE merchant_id=$1', [f.merchantId])).rows[0].n, 0,
+    'cross-staff recovery must not create a sale');
+  await staff.logoutCashierOperatorAuthoritative(otherLogin.body.context);
+  const finalLogin = await request('/api/cashier/operator/login', null, { staff_id: member.id, pin: '2468' });
+  assert.equal(finalLogin.status, 200, JSON.stringify(finalLogin.body));
+  restored = finalLogin.body;
+  // A sale bundle sent to a compensation endpoint must be rejected before
+  // any mutation, even when its original-shift attribution is otherwise valid.
+  const wrongKindReturn = await request('/api/cashier/operator/sync/return', restored.operator_token, body);
+  assert.ok(wrongKindReturn.status >= 400 && wrongKindReturn.status < 500,
+    'sale evidence must be rejected as a client authorization or validation error');
+  const wrongKindVoid = await request('/api/cashier/operator/sync/void', restored.operator_token, body);
+  assert.ok(wrongKindVoid.status >= 400 && wrongKindVoid.status < 500,
+    'sale evidence must not be accepted as a void');
+  assert.equal((await pool.query('SELECT count(*)::int AS n FROM orders WHERE merchant_id=$1', [f.merchantId])).rows[0].n, 0,
+    'wrong-kind compensation request must not create an order');
   const accepted = await request('/api/cashier/operator/sync/sale', restored.operator_token, body);
   assert.equal(accepted.status, 200, JSON.stringify(accepted.body));
   assert.equal(accepted.body.operation_id, body.operation_id);

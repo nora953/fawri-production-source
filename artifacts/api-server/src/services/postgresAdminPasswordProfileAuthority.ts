@@ -1,6 +1,6 @@
+import { authenticationDatabasePool } from "./authenticationPostgresAuthority";
 import { authAccountRepository } from "./authAccountRepository";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
 } from "./operationalPostgresAuthority";
 
@@ -10,7 +10,7 @@ export async function clearAdminMustChangePasswordAuthoritative(
   if (!operationalPostgresAuthorityRequired()) {
     return;
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const result = await pool.query<{ id: string }>(
     `UPDATE admin_profiles
         SET must_change_password = false, updated_at = now()

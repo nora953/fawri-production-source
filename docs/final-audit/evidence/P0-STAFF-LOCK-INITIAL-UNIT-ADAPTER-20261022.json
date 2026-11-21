@@ -1,0 +1,20 @@
+{
+  "recordedDate": "2026-10-22",
+  "source": "583492a5df7ebff0b184bfa3d043846d48628984",
+  "runId": 39749311046,
+  "jobId": 119725566020,
+  "result": "failure",
+  "classification": "unit SQL adapter not updated for the new scoped staff locking function",
+  "testsReported": 867,
+  "passedReported": 863,
+  "failedReported": 3,
+  "failedTests": [
+    "approved percentage discount at exact manager percentage limit remains syncable after approval expiry",
+    "manager percentage ceiling ignores fixed amount limit and rejects one unit above 50%",
+    "manager fixed amount ceiling ignores percentage limit and rejects one unit above amount authority"
+  ],
+  "exactError": "Unexpected SQL in override runtime test: SELECT id, display_name, role, status, revoked_at FROM public.fawri_lock_cashier_approver($1::text, $2::text)",
+  "correction": "recognize exact new function SQL; assert merchant/staff parameters; return only non-secret fields; all discount/limit/window assertions unchanged",
+  "productionChangeForCorrection": false,
+  "releaseAccepted": false
+}

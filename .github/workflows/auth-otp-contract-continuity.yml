@@ -6,6 +6,18 @@ on:
       - "artifacts/fawri/src/pages/SignupPage.tsx"
       - "artifacts/fawri/src/pages/OTPPage.tsx"
       - "artifacts/fawri/src/pages/LoginPage.tsx"
+      - "artifacts/fawri/src/pages/PendingPage.tsx"
+      - "artifacts/fawri/src/components/GoogleMerchantPhoneVerification.tsx"
+      - "artifacts/fawri/src/lib/translations/features/pages/GooglePhoneVerification.ts"
+      - "artifacts/api-server/src/services/postgresMerchantAuthSecurityAuthority.ts"
+      - "artifacts/api-server/src/services/authPolicy.ts"
+      - "artifacts/api-server/tests/google-merchant-whatsapp-phone-claim.test.ts"
+      - "artifacts/fawri/src/lib/googleMerchantSignup.ts"
+      - "artifacts/fawri/tests/google-merchant-signup-contract.test.mjs"
+      - "artifacts/api-server/src/routes/auth-google-merchant-routes.ts"
+      - "artifacts/api-server/src/services/googleMerchantAdmissionAuthority.ts"
+      - "artifacts/api-server/tests/google-merchant-admission-authority.test.ts"
+      - "artifacts/api-server/tests/google-merchant-http-readiness.test.ts"
       - "artifacts/fawri/src/pages/OwnerRecoveryPage.tsx"
       - "artifacts/fawri/src/components/ui/input-otp.tsx"
       - "artifacts/fawri/src/lib/i18n.tsx"
@@ -63,6 +75,11 @@ jobs:
 
       - name: Run backend Auth OTP contract tests
         run: node --test artifacts/api-server/tests/auth-otp-contract-continuity.test.mjs
+
+      - name: Prove Google merchant identity stays default-off and subject-scoped
+        run: |
+          node --test artifacts/fawri/tests/google-merchant-signup-contract.test.mjs
+          pnpm --filter @workspace/api-server exec tsx --test ./tests/google-merchant-admission-authority.test.ts ./tests/google-merchant-http-readiness.test.ts ./tests/google-merchant-whatsapp-phone-claim.test.ts
 
       - name: Run Auth v2 security store tests
         run: pnpm --filter @workspace/api-server exec tsx --test ./tests/auth-security-store.test.ts

@@ -88,10 +88,20 @@ jobs:
           node --test artifacts/fawri/tests/auth-otp-contract-continuity.test.mjs
           node --test artifacts/api-server/tests/auth-otp-contract-continuity.test.mjs
 
-      - name: Run Auth v2 security and cutover proofs
+      # Source-only contract checks require no database. The DB-backed
+      # cutover proof runs below under an owned, attested network-none cluster.
+      # Never weaken the disposable DB guard or treat this Docker service as
+      # trusted for application-level Postgres imports.
+      - name: Run Auth v2 security and source-only cutover contracts
+        env:
+          DATABASE_URL: ""
+          FAWRI_AUTH_DATABASE_URL: ""
         run: |
           pnpm --filter @workspace/api-server exec tsx --test ./tests/auth-security-store.test.ts
           pnpm --filter @workspace/api-server exec tsx --test ./tests/auth-cutover-contract.test.mjs
+
+      - name: Run merchant Auth cutover through pinned attested offline PostgreSQL suite
+        run: bash scripts/run-isolated-postgres-audit.sh auth-contract
 
       - name: Type-check Fawri frontend
         run: pnpm --filter @workspace/fawri run typecheck

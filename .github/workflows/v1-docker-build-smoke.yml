@@ -1,0 +1,31 @@
+name: FAWRI V1 production-image build smoke (NO DEPLOY)
+on:
+  pull_request:
+    paths:
+      - "Dockerfile.staging"
+      - "render.yaml"
+      - ".github/workflows/v1-docker-build-smoke.yml"
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - "Dockerfile.staging"
+      - "render.yaml"
+      - ".github/workflows/v1-docker-build-smoke.yml"
+permissions:
+  contents: read
+jobs:
+  build-commercial-ui-api-image:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Compile V1 full-stack Docker image using actual Render recipe (NO secrets)
+        run: docker build --progress=plain --file Dockerfile.staging --tag fawri-v1-g3-source:preflight .
+      - name: Verify React+API runtime artifacts and no cashier shell
+        run: |
+          docker run --rm --entrypoint sh fawri-v1-g3-source:preflight -c 'test -f /app/artifacts/fawri/dist/public/index.html && test ! -f /app/artifacts/fawri/dist/public/cashier.html && test -f /app/artifacts/api-server/dist/index.mjs && echo V1_DOCKER_BUILD_NO_CASHIER_SHELL_ACCEPTED'
+          echo NO_RENDER_SERVICE_NO_CUSTOMER_DEPLOY_NO_NEON_WRITES

@@ -72,9 +72,13 @@ test('approval is bound to tenant, station, operator, operation, amount and norm
   assert.match(authority, /approval\.operator_staff_id !== input\.operatorStaffId/);
   assert.match(authority, /approval\.manual_discount_reason !== input\.reason/);
   assert.match(authority, /Number\(approval\.manual_discount_minor\) !== input\.manualDiscountMinor/);
-  assert.match(authority, /merchant_id = \$1 AND id = \$2 AND operation_id = \$3/);
+  assert.match(authority, /public\.fawri_lock_cashier_discount_approval\(\$1::text,\$2::text,\$3::text\)/);
   assert.match(authority, /FOR UPDATE/);
-  assert.match(authority, /consumed_at = now\(\)/);
+  const sql = await source('../../lib/db/migration-stages/0045/manual.sql');
+  assert.match(authority, /public\.fawri_consume_cashier_discount_approval/);
+  assert.match(sql, /SET consumed_at=now\(\)/);
+  assert.match(sql, /x\.merchant_id=p_merchant AND x\.id=p_id AND x\.operation_id=p_operation/);
+  assert.match(sql, /fawri_security\.allows_merchant\(p_merchant\)/);
 });
 
 test('delayed sync validates approval against sale creation time instead of sync wall clock', async () => {
@@ -91,7 +95,7 @@ test('delayed sync validates approval against sale creation time instead of sync
 
 test('consumed approval remains retry-safe only for its exact operation and sale window', async () => {
   const authority = await source('src/services/cashierDiscountOverrideAuthority.ts');
-  assert.match(authority, /WHERE merchant_id = \$1 AND id = \$2 AND operation_id = \$3/);
+  assert.match(authority, /public\.fawri_lock_cashier_discount_approval/);
   assert.match(authority, /approval\.station_id !== input\.stationId/);
   assert.match(authority, /approval\.operator_staff_id !== input\.operatorStaffId/);
   assert.match(authority, /Number\(approval\.manual_discount_minor\) !== input\.manualDiscountMinor/);

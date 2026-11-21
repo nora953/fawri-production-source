@@ -1,3 +1,4 @@
+import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import test from 'node:test';
@@ -9,7 +10,8 @@ Object.assign(process.env, {
   FAWRI_META_TOKEN_KEY_ID: 'queue-lease-regression',
   FAWRI_META_TOKEN_KEY_BASE64: Buffer.alloc(32, 19).toString('base64'),
 });
-const { pool } = await import('@workspace/db');
+const runtime=await createDisposableKnowledgeRuntime();
+const pool=runtime.admin;
 const queue = await import('../src/services/postgresDurableJobQueue.js');
 
 test('expired job settlement revalidates the lease and execution attempt', { timeout: 60000 }, async (t) => {
@@ -58,4 +60,4 @@ test('expired job settlement revalidates the lease and execution attempt', { tim
     });
   }
 });
-test.after(() => pool.end());
+test.after(() => runtime.dispose());

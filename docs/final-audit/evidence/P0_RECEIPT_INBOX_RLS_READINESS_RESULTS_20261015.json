@@ -1,0 +1,218 @@
+{
+  "status": "PASS",
+  "source": "e1b31378ff7acc3ead9850db2eb418dee90b31c7",
+  "pr": 550,
+  "run": 38684893840,
+  "job": 116257386044,
+  "mergeCheckout": "2f4abef901f29cb9295800f80ae0e5b25472abfa",
+  "summary": {
+    "passed": 326,
+    "failed": 0,
+    "skipped": 0,
+    "uniqueFiles": 55,
+    "invocations": 57
+  },
+  "rlsSuite": {
+    "suite": "production-postgres-rls-security.integration.test.ts",
+    "auditBatch": "tenant",
+    "runtime": "v24.22.0",
+    "exit": 0,
+    "passed": 22,
+    "failed": 0,
+    "skipped": 0,
+    "summaryComplete": true
+  },
+  "localUnit": {
+    "before": {
+      "passed": 6,
+      "failed": 1,
+      "missing": [
+        "verified_provider_payment_receipts"
+      ]
+    },
+    "after": {
+      "passed": 7,
+      "failed": 0
+    }
+  },
+  "workflows": [
+    {
+      "id": 38684894048,
+      "name": "Meta OAuth operational cutoff",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684893967,
+      "name": "Complete schema candidate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684893905,
+      "name": "Global merchant golden journey",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684894062,
+      "name": "Merchant deletion provider identifiers",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684893991,
+      "name": "Merchant deletion physical media lifecycle",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684894003,
+      "name": "Global Merchant PostgreSQL HTTP Journey",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684893934,
+      "name": "PostgreSQL outage recovery proof",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684893895,
+      "name": "Location inventory authority",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684894073,
+      "name": "Billing provider readiness",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684894112,
+      "name": "Clean deployment golden gate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684893932,
+      "name": "Pre-release performance smoke gate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684894150,
+      "name": "Meta webhook PostgreSQL ingress cutover",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684894111,
+      "name": "Bot logic adversarial matrix",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684894026,
+      "name": "Catalog variant signature schema contract",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684894042,
+      "name": "PostgreSQL migration candidate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684894101,
+      "name": "Final quality gates",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684894121,
+      "name": "Cashier subscription lifecycle",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684893988,
+      "name": "Merchant deletion cashier lifecycle",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684894105,
+      "name": "Product catalog UI cutover",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684894170,
+      "name": "Cashier operational cutoff",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684894116,
+      "name": "Staging container contract",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684893931,
+      "name": "Final security and supply chain",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684894080,
+      "name": "Foundation integration final gate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684893946,
+      "name": "PostgreSQL schema validation",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38684893840,
+      "name": "Isolated PostgreSQL engineering audit",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "restore": [
+    {
+      "phase": "seed",
+      "migrationCount": 34,
+      "tableCount": 95,
+      "policyCount": 45,
+      "functionCount": 9,
+      "fixtureChannels": 2,
+      "restrictedTenantReads": true,
+      "fingerprint": "388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035"
+    },
+    {
+      "phase": "verify",
+      "migrationCount": 34,
+      "tableCount": 95,
+      "policyCount": 45,
+      "functionCount": 9,
+      "fixtureChannels": 2,
+      "restrictedTenantReads": true,
+      "fingerprint": "388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035"
+    }
+  ],
+  "limits": [
+    "No hosted role/grant certification",
+    "No policy or migration changed",
+    "Session identity hardening is a separate pending source",
+    "Historical 85% not freshly measured; release NO-GO"
+  ]
+}

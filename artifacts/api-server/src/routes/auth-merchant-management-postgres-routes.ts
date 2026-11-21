@@ -47,7 +47,9 @@ function isManagedSurface(path: string): boolean {
 }
 
 router.use((req: Request, res: Response, next: NextFunction) => {
-  if (!isManagedSurface(String(req.path || ""))) {
+  // Match Express's case-insensitive, non-strict routes without rewriting IDs.
+  const surfacePath = String(req.path || "").toLowerCase().replace(/\/+$/, "");
+  if (!isManagedSurface(surfacePath)) {
     next("router");
     return;
   }
@@ -401,9 +403,17 @@ router.post(
 );
 
 router.get("/admin/logs", requireSecureAdminSession, async (_req, res) => {
-  if (!requirePermission(res, "view_logs")) return;
+  const context = requirePermission(res, "view_logs");
+  if (!context) return;
   try {
-    res.json({ ok: true, logs: await listAdminLogsPostgres(1000) });
+    // Emergency audit has an owner-only reader; preserve that boundary in this
+    // alternate projection using the current SQL-backed profile, never hints.
+    res.json({ ok: true, logs: await listAdminLogsPostgres(1000, {
+      includeEmergencyAudit: context.adminProfile?.role === "owner_admin",
+      includeMerchantIncidentAudit: Boolean(context.adminProfile && hasAdminPermission(
+        context.adminProfile.role, context.adminProfile.permissions, "view_merchants",
+      )),
+    }) });
   } catch (error) {
     handleManagementError(res, error);
   }

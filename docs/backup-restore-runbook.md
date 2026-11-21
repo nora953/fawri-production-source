@@ -25,6 +25,14 @@ The drill must never use Production, Replit, hosted PostgreSQL, cloud object sto
 
 Failures are generic and database URLs/credentials are redacted from command errors.
 
+### FIELD002 precommercial notification fixture exclusion
+
+For an **isolated disposable copy of the precommercial release candidate**, the restore CLI supports an explicit optional `--field002-require-empty-notifications 1` argument. When enabled, after the ordinary row-count verification it runs the fixed read-only SQL `SELECT count(*) FROM public.notifications`, and fails closed unless the table exists and the result is exactly `0`. No user-provided SQL, arbitrary expected count, role elevation, or data deletion is accepted by this check.
+
+The GitHub `Backup and restore drill` now creates a real empty `public.notifications` table in its isolated PostgreSQL source and supplies the flag on a genuine `pg_restore` trial. Unit regressions additionally simulate a restored cohort of 28 notices and a missing table and require failure.
+
+**Critical limitation:** this flag is opt-in and the current restore command is restricted to loopback disposable databases. Neither it nor the workflow proves that an external/manual import, a commercial hosted restore, or the future deployment will invoke the check. It must not be wired to normal merchant backup recovery, which may legitimately contain live notification rows. Before launching the first merchant, release engineering must independently inventory all seed/restore/import paths and mandate a fail-closed fixture exclusion gate **before promoting any production candidate**, with evidence from the actual release topology. FIELD002-R2 remains OPEN until then.
+
 ## PostgreSQL drill order
 
 1. Start the GitHub Actions PostgreSQL service container.
@@ -52,6 +60,10 @@ Both backup and restore require `FAWRI_DISPOSABLE_OBJECT_ROOT`. Every source, ba
 - `FAWRI_ALLOW_DISPOSABLE_OBJECT_RESTORE=1`
 
 The backup manifest contains relative object path, byte size, and SHA-256 only. Object contents are not copied into the manifest. Restore verifies every backup object before the target directory is replaced, then verifies every restored object again.
+
+**G5 recovery safety boundary (disposable drill only):** Before either tool removes/replaces any directory, it rejects source/output or backup/target paths that overlap in *either* direction. Both paths must remain inside a real, non-aliased disposable root; symlinked path components are rejected. Restore rejects manifest traversal, empty/dot segments, path duplicates, symlinked archive objects, invalid byte counts or SHA-256 records, and verifies the complete archive **before touching the target**. CI has negative regressions requiring that a pre-existing source/target marker survives each rejected attempt. These controls reduce the risk of erasing the only local source or following untrusted archive paths; they do not constitute an operational backup of the hosted Render disk.
+
+**Still missing for a commercial G5 PASS:** an independently stored, access-controlled and encrypted *actual* Render catalog-media backup paired with the matching Neon database checkpoint; an off-provider recovery drill on isolated infrastructure, with photo hashes, merchant authorization boundaries, and retention/expiry documented. Do not run these disposable-only CLIs against `/var/data`, Neon commercial, or real merchant assets.
 
 ## Restore evidence
 

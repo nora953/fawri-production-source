@@ -1,0 +1,11 @@
+{
+  "index": 43,
+  "name": "cashier_identity_tenant_rls",
+  "when": 1791936000015,
+  "mode": "reviewed_sql",
+  "sql_sha256": "bf5a69f70c377eea3b141101b3d17cfb9fde810e1dce9a7a18c0b344eeec433c",
+  "preimage_files": [
+    "cashier-staff.ts",
+    "tenant-security.ts"
+  ]
+}

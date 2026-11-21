@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "gate": "CASHIER-SYNC-SEQUENCE-001",
+  "status": "CANONICAL_0052_SOURCE_STORAGE_STARTUP_READINESS_RETIREMENT_RESTORE_BOUNDED_ACCEPTED_PROTOCOL_PENDING",
+  "source": "3bb3c67717a17da1cba903047e35f2b622b997b1",
+  "sourceTree": "b4421cc61bf2527c2de8cba38226913c90d745b4",
+  "release": "NO-GO",
+  "gateClosed": false,
+  "canonical": {
+    "migration": "lib/db/drizzle/0052_cashier_stream_receipt_storage.sql",
+    "stage": "lib/db/migration-stages/0052/stage.json",
+    "snapshot": "lib/db/drizzle/meta/0052_snapshot.json",
+    "migrations": 53,
+    "publicTables": 97,
+    "oldSqlAndSnapshotsByteIdentical": 104,
+    "reviewedSqlSha256": "aaf7ee97fbdef0c1b4600e905216117ee8ff89f31ccd67d783ab61a9c4bd9b8e"
+  },
+  "startup": {
+    "entry": "artifacts/api-server/src/index.ts",
+    "component": "artifacts/api-server/src/services/cashierStreamStorageReadiness.ts",
+    "beforeProviderBootstrap": true,
+    "primaryAndAuthenticationRolesFromActualSessions": true,
+    "continuousRuntimeAttestation": false
+  },
+  "scope": [
+    "Committed generated0052/schema/preimage/journal with reviewed SQL and unchanged0000-0051 bytes",
+    "Storage and restore tests consume committed tables rather than recreate/drop canonical objects",
+    "Canonical non-login column-limited retirement owner and scoped immutable receipt/checkpoint constraints",
+    "Legacy deletion with no non-retired stream rows retains prior behavior; populated streams require trusted authentication authority",
+    "Production startup fails closed on new storage/owner/grant/function/trigger/policy defects",
+    "Fresh complete-schema harnesses compose private prerequisites from reviewed SQL; these remain structural harnesses, not complete historical security-cutover proof"
+  ],
+  "priorAttempts": [
+    {
+      "source": "dc24e5374d882aeb87c1f33392d12e95c50bbb30",
+      "canonicalGeneration": true,
+      "cashierPassed": 52,
+      "sourceAccepted": false,
+      "failures": [
+        {
+          "run": 40321388320,
+          "job": 121566909382,
+          "code": "3F000",
+          "reason": "fresh schema harness lacked private prerequisites"
+        },
+        {
+          "run": 40321388204,
+          "job": 121566908193,
+          "reason": "same prerequisite gap in cross-lane fresh schema harness"
+        },
+        {
+          "run": 40321388162,
+          "job": 121566908365,
+          "reason": "browser prerequisite timeout before application test; failed-job retry requested"
+        }
+      ]
+    },
+    {
+      "source": "645de0b3c2ffdd5fd930f11a7ea7c1a7c4b2898b",
+      "sourceAccepted": false,
+      "run": 40322462811,
+      "job": 121570719851,
+      "fixture": "cashier-alternate-privilege-postgres.integration.test.mjs",
+      "reason": "strict inventory expected18 cashier tables;0052 adds2. Updated to20 and explicitly requires both new tables; per-table safety assertions retained",
+      "restorePassed": true
+    }
+  ],
+  "limits": [
+    "No hosted schema/role/provider changes, merge or deployment",
+    "No new live stream enrollment or canonical financial receipt writer/admission/client protocol",
+    "Synthetic receipt identifiers are not real financial result provenance",
+    "Restore global roles preprovisioned in owned cluster; generic two-role bootstrap is not full FAWRI credential recovery",
+    "FIELD005 retained-field/retention policy and historical/device adoption remain open",
+    "Startup catalog inspection is not continuous/concurrent-DDL or complete actor/privacy certification"
+  ],
+  "nextAction": "Implement the next bounded SEQ-D3 trusted versioned receipt/admission slice against actual canonical financial transaction and exact replay/attribution repair, with explicit enrollment provenance and unsupported-operation hold. Preserve legacy admission and ambiguous histories; no hosted rollout.",
+  "checkout": "49afa67d21566846c1efbb321fc4ef4339351d63",
+  "checkoutTreeMatched": true,
+  "ci": {
+    "total": 57,
+    "success": 57,
+    "canonical": {
+      "run": 40323848241,
+      "job": 121575332020,
+      "invocations": 2,
+      "files": 2,
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "checkout": "49afa67d21566846c1efbb321fc4ef4339351d63"
+    },
+    "cashier": {
+      "run": 40323848140,
+      "job": 121575332493,
+      "invocations": 15,
+      "files": 15,
+      "passed": 52,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "checkout": "49afa67d21566846c1efbb321fc4ef4339351d63"
+    },
+    "completeSchema": {
+      "run": 40323848361,
+      "job": 121575332712,
+      "conclusion": "success"
+    },
+    "schemaValidation": {
+      "run": 40323848333,
+      "conclusion": "success"
+    },
+    "broader": {
+      "run": 40323848365,
+      "job": 121575333763,
+      "invocations": 94,
+      "files": 92,
+      "passed": 750,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "checkout": "49afa67d21566846c1efbb321fc4ef4339351d63"
+    }
+  },
+  "restore": {
+    "phases": [
+      {
+        "suite": "full-schema-restore-postgres.integration.test.mjs",
+        "auditBatch": "full-restore",
+        "runtime": "v24.22.1",
+        "phase": "seed",
+        "exit": 0,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "full-schema-restore-postgres.integration.test.mjs",
+        "auditBatch": "full-restore",
+        "runtime": "v24.22.1",
+        "phase": "verify",
+        "exit": 0,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "proofs": [
+      {
+        "phase": "seed",
+        "migrationCount": 53,
+        "tableCount": 97,
+        "policyCount": 78,
+        "functionCount": 21,
+        "fixtureChannels": 2,
+        "restrictedTenantReads": true,
+        "privateScopeAuthorityAclPreserved": true,
+        "privateSchemaCount": 1,
+        "privateTableCount": 1,
+        "privateFunctionCount": 2,
+        "fingerprint": "01df7faada4d2ec36442c97048edb902c2618913cbfcf27dcc62abab08034b62"
+      },
+      {
+        "phase": "verify",
+        "migrationCount": 53,
+        "tableCount": 97,
+        "policyCount": 78,
+        "functionCount": 21,
+        "fixtureChannels": 2,
+        "restrictedTenantReads": true,
+        "privateScopeAuthorityAclPreserved": true,
+        "privateSchemaCount": 1,
+        "privateTableCount": 1,
+        "privateFunctionCount": 2,
+        "fingerprint": "01df7faada4d2ec36442c97048edb902c2618913cbfcf27dcc62abab08034b62"
+      }
+    ],
+    "fingerprintEqual": true
+  }
+}

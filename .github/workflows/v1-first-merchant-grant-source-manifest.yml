@@ -1,0 +1,48 @@
+name: V1 first merchant role grant source manifest (no DB)
+
+on:
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - ".github/workflows/v1-first-merchant-grant-source-manifest.yml"
+      - "scripts/lib/v1-first-merchant-grant-package-source-plan.mjs"
+      - "scripts/tests/v1-first-merchant-grant-package-source-plan.test.mjs"
+      - "lib/db/first-commercial/held/v1_authentication_core_grants.sql"
+      - "lib/db/first-commercial/held/v1_tenant_online_commerce_grants.sql"
+      - "lib/db/first-commercial/held/v1_operator_receipt_review_grants.sql"
+      - "lib/db/first-commercial/held/v1_meta_channel_onboarding_grants.sql"
+      - "lib/db/first-commercial/held/v1_meta_inbound_conversation_grants.sql"
+      - "lib/db/first-commercial/held/v1_meta_worker_tenant_job_rls.sql"
+      - "lib/db/first-commercial/held/v1_meta_worker_tenant_job_rls_failclosed_revert.sql"
+      - "lib/db/first-commercial/held/v1_pos_off_merchant_deletion_guard.sql"
+      - "lib/db/first-commercial/held/v1_pos_off_merchant_deletion_guard_revert.sql"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v1-role-manifest-source-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pinned-role-grants-without-publishing:
+    if: >-
+      github.repository == 'nora953/fawri-production-source'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout source with no persistent credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Source syntax and first commercial granted-role manifest only
+        run: |
+          node --check scripts/lib/v1-first-merchant-grant-package-source-plan.mjs
+          node --test scripts/tests/v1-first-merchant-grant-package-source-plan.test.mjs
+          echo "V1_GRANT_SOURCE_MANIFEST_NO_PRODUCTION_WRITE_PASS"

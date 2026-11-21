@@ -1,0 +1,587 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-002",
+  "status": "SOURCE_PROVENANCE_AND_LOCAL_CLIENT_CONTRACT_RECONCILED_FIELD002_OPEN",
+  "sourceRevision": "7be0c3ff8d23b3a475a9a59364b1016b83ee59d4",
+  "lastAcceptedExecutable": "6182678d76e97e315df428bd2739af284afea420",
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "applicationChanged": false,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "method": {
+    "scannedTrackedRuntimeFiles": 807,
+    "roots": [
+      "artifacts/api-server/src/",
+      "artifacts/fawri/src/",
+      "src/",
+      "lib/"
+    ],
+    "embeddedNulHandledAsText": true,
+    "formalCallGraph": false,
+    "manifestSha256": "80d3b37307a9e8a4f1611f79c3e8cab15db32dcd231b0427f6f851e997add000",
+    "matchingInputDigests": [
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "sha256": "1f16a203153f02f5aa2960eed63408ab46ecd72125cb505e579a3ebf78502780"
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/legacyProductionFallbackGuard.ts",
+        "sha256": "291c917025c196b0b7ff62de975245a66aee4a66919d76f743fc2904f8b859e6"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-security.ts",
+        "sha256": "69383e59066004751603d8efb03706cd9f6f7bc431943eb8e195200798881be1"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart1.ts",
+        "sha256": "6df8ea27106cb9d4bb80370c66f220d4228127b0fcde83ab92e08c07a6cceea5"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart2.ts",
+        "sha256": "03a3cdf0417805f0dd0860c5d1962030196a82ca7b5e6701859477d50b182c15"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart3.ts",
+        "sha256": "1dd77650f4de09fec1ad3021f6e7f44255cddc20b5e4c20ee3b21a34286149b9"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart1.ts",
+        "sha256": "2ebd5d74006591c79aa2e73d458628ee25cb608c62460a7336495600bdc0aef1"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "sha256": "9bd16f5b20a3583e12f101371021384532db3bbab8b2c099eca6948b0ea871ff"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart4.ts",
+        "sha256": "c7b3a8a0429c07f45056b76366855e22bc61b497ff5fc41df404dae97c0e99ef"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresSubscriptionEntitlement.ts",
+        "sha256": "3c93579946ece775615be4b756743aceb2d659f94dc2192780a2f579b381a437"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+        "sha256": "521a39ccc1a798dd20d5e0fdee93b0218ed9a3df125d8ad8759f055f14e4d7e0"
+      },
+      {
+        "path": "artifacts/fawri/src/components/EmergencyCredit.tsx",
+        "sha256": "ce0ac5f2b9f533b4af9c5b82a9ac75b295c448ac37d626cc356fdf1618b658ed"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
+        "sha256": "59dfcf9918a0f7ab904c828686da002c32c659a3e5d0879409e3c5afb0bdc5d6"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/ar.ts",
+        "sha256": "87d8d50de8aa4d9aca6e56cf720bfeb15d31a0d8776103c449d6c3cec531bf86"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/en.ts",
+        "sha256": "189f9bbadc6245bff702eaaedd667d9460289d20d31052412fd93f565e7f5cfc"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/ku.ts",
+        "sha256": "2731713a397867ac2e0418cbe9f06f62d1d192f0fce906047b5721cc9fb8a5de"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/types.ts",
+        "sha256": "f4cbf18d2bf5c561c5e3fc30a5d83091dfd2d0991aa173cf287564afe3537c45"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx",
+        "sha256": "5641588984c16c895ff1c32183f9f39fe513ed6a471663a7d8d62999d4770980"
+      }
+    ]
+  },
+  "references": {
+    "appendMerchantBalanceNotification": [
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart3.ts",
+        "line": 55,
+        "text": "import { ACCOUNT_CHANNEL_ACTIVATION_MS, adminHasPermission, appendAdminLog, appendMerchantBalanceNotification, appendMerchantSubscriptionPlanNotification, consumeReplies, createPaidSubscription, emitMerchantRealtimeState, ensureDb, findRegularMerchant, isAssistantAdmin, isMerchantDeleteReason, isOwnerAdmin, isSubscriptionPlan, makeId, normalizeSubscriptionRecord, now, publicMerchant, purchaseAdditionalReplies, recalculateSubscriptionTotals, requireAdminPermission, requireAdminSession, requireOwner, router, sendError, writeDb } from './authRuntime';"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart3.ts",
+        "line": 565,
+        "text": "merchantNotification = appendMerchantBalanceNotification("
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 581,
+        "text": "export function appendMerchantBalanceNotification("
+      }
+    ],
+    "appendMerchantSubscriptionPlanNotification": [
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart3.ts",
+        "line": 55,
+        "text": "import { ACCOUNT_CHANNEL_ACTIVATION_MS, adminHasPermission, appendAdminLog, appendMerchantBalanceNotification, appendMerchantSubscriptionPlanNotification, consumeReplies, createPaidSubscription, emitMerchantRealtimeState, ensureDb, findRegularMerchant, isAssistantAdmin, isMerchantDeleteReason, isOwnerAdmin, isSubscriptionPlan, makeId, normalizeSubscriptionRecord, now, publicMerchant, purchaseAdditionalReplies, recalculateSubscriptionTotals, requireAdminPermission, requireAdminSession, requireOwner, router, sendError, writeDb } from './authRuntime';"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart3.ts",
+        "line": 507,
+        "text": "const merchantNotification = appendMerchantSubscriptionPlanNotification("
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 628,
+        "text": "export function appendMerchantSubscriptionPlanNotification("
+      }
+    ],
+    "appendMerchantEmergencyActivationNotification": [
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart1.ts",
+        "line": 54,
+        "text": "import { OTP_RESEND_COOLDOWN_SECONDS, addBaghdadCalendarMonths, adminSubscriptionRealtimeClients, appendAdminLog, appendMerchantEmergencyActivationNotification, buildAdminSubscriptionSnapshot, buildMerchantRealtimePayload, clearMerchantSessionCookie, createAdminSessionToken, createAssistantTrackedSession, deliverOtp, emitMerchantRealtimeState, ensureDb, findRegularMerchant, findValidOtp, getAdminDeviceContext, getBaghdadDateParts, getMerchantIdFromSession, getOtpRetryAfterSeconds, includeDevCode, isTrialStatus, issueOtp, makeId, merchantRealtimeClients, normalizeLanguage, normalizeOptionalUrl, normalizePhone, now, publicMerchant, recalculateSubscriptionTotals, refreshAndPersistSubscriptionLifecycle, refreshAndPersistSupportLifecycle, refreshInspectionRequestExpirations, requireAdminPermission, requireMerchantSession, requireSupportAssistant, router, sendAdminWorkMonitorError, sendError, sendOtpCooldownError, setMerchantSessionCookie, setSupportTicketWaitingOn, writeAdminSubscriptionRealtimeEvent, writeDb, writeMerchantRealtimeEvent } from './authRuntime';"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart1.ts",
+        "line": 1000,
+        "text": "const merchantNotification = appendMerchantEmergencyActivationNotification("
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 656,
+        "text": "export function appendMerchantEmergencyActivationNotification("
+      }
+    ],
+    "appendMerchantInspectionNotification": [
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart2.ts",
+        "line": 55,
+        "text": "import { appendAdminLog, appendMerchantInspectionNotification, createAdminSessionToken, createAssistantTrackedSession, emitMerchantRealtimeState, ensureDb, findRegularMerchant, getBearerToken, hasActiveInspectionRequest, isAdminPermission, isAdminRole, isAssistantAdmin, isChannelPlatform, isChannelStatus, isInspectionSessionMode, makeId, now, publicMerchant, refreshInspectionRequestExpirations, requireAdminPermission, requireAdminSession, requireAnyAdminPermission, requireInspectionSupportAssistant, requireOwner, requireOwnerPassword, requireSupportAssistant, revokeAdminSessions, router, sendAdminWorkMonitorError, sendError, setSupportTicketWaitingOn, toAdminSummary, verifyAdminSessionToken, writeDb } from './authRuntime';"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart2.ts",
+        "line": 174,
+        "text": "appendMerchantInspectionNotification(db, ticket, inspectionRequest);"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 674,
+        "text": "export function appendMerchantInspectionNotification("
+      }
+    ],
+    "createInspectionRequestPostgres": [
+      {
+        "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+        "line": 582,
+        "text": "export async function createInspectionRequestPostgres(input: {"
+      }
+    ],
+    "refreshSupportLifecyclePostgres(": [
+      {
+        "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+        "line": 1044,
+        "text": "export async function refreshSupportLifecyclePostgres(now = new Date()) {"
+      }
+    ],
+    "merchant_notifications": [
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart1.ts",
+        "line": 573,
+        "text": "const notifications = db.merchant_notifications"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart1.ts",
+        "line": 625,
+        "text": "const notification = db.merchant_notifications.find("
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart1.ts",
+        "line": 772,
+        "text": "for (const notification of db.merchant_notifications) {"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart1.ts",
+        "line": 846,
+        "text": "const inspectionNotification = db.merchant_notifications.find("
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart1.ts",
+        "line": 574,
+        "text": "merchant_notifications: MerchantNotificationRecord[];"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 176,
+        "text": "merchant_notifications: [],"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 220,
+        "text": "merchant_notifications: Array.isArray(parsed.merchant_notifications)"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 221,
+        "text": "? parsed.merchant_notifications.filter(isMerchantNotificationRecord)"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 547,
+        "text": "db.merchant_notifications.unshift(notification);"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 548,
+        "text": "const merchantNotificationIds = db.merchant_notifications"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 554,
+        "text": "db.merchant_notifications = db.merchant_notifications.filter("
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 613,
+        "text": "db.merchant_notifications.unshift(notification);"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 614,
+        "text": "const merchantNotificationIds = db.merchant_notifications"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 620,
+        "text": "db.merchant_notifications = db.merchant_notifications.filter("
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 693,
+        "text": "db.merchant_notifications.unshift(notification);"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 694,
+        "text": "const merchantNotificationIds = db.merchant_notifications"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 700,
+        "text": "db.merchant_notifications = db.merchant_notifications.filter("
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 721,
+        "text": "db.merchant_notifications.unshift(notification);"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 723,
+        "text": "const merchantNotificationIds = db.merchant_notifications"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 729,
+        "text": "db.merchant_notifications = db.merchant_notifications.filter("
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 786,
+        "text": "const existingReminder = db.merchant_notifications.find("
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 823,
+        "text": "for (const notification of db.merchant_notifications) {"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 1041,
+        "text": "unread_notification_count: db.merchant_notifications.filter("
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart4.ts",
+        "line": 314,
+        "text": "const existing = db.merchant_notifications.find("
+      }
+    ],
+    "subscription_balance_purchase": [
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart1.ts",
+        "line": 318,
+        "text": "type: \"subscription_balance_purchase\";"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 71,
+        "text": "if (item.type === \"subscription_balance_purchase\") return true;"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 595,
+        "text": "type: \"subscription_balance_purchase\","
+      },
+      {
+        "path": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
+        "line": 80,
+        "text": "record.type === \"subscription_balance_purchase\" &&"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/types.ts",
+        "line": 186,
+        "text": "type: 'subscription_balance_purchase';"
+      }
+    ],
+    "subscription_plan_event": [
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart1.ts",
+        "line": 336,
+        "text": "type: \"subscription_plan_event\";"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 72,
+        "text": "if (item.type === \"subscription_plan_event\") {"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 639,
+        "text": "type: \"subscription_plan_event\","
+      },
+      {
+        "path": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
+        "line": 96,
+        "text": "record.type === \"subscription_plan_event\" &&"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/types.ts",
+        "line": 204,
+        "text": "type: 'subscription_plan_event';"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx",
+        "line": 44,
+        "text": "notification.type === 'subscription_plan_event' ||"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx",
+        "line": 220,
+        "text": "if (notification.type === 'subscription_plan_event') {"
+      }
+    ],
+    "subscription_emergency_activated": [
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart1.ts",
+        "line": 354,
+        "text": "type: \"subscription_emergency_activated\";"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 80,
+        "text": "if (item.type === \"subscription_emergency_activated\") {"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "line": 665,
+        "text": "type: \"subscription_emergency_activated\","
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresSubscriptionEntitlement.ts",
+        "line": 1213,
+        "text": "actionType: \"subscription_emergency_activated\","
+      },
+      {
+        "path": "artifacts/fawri/src/components/EmergencyCredit.tsx",
+        "line": 76,
+        "text": "{t.subscription_emergency_activated}"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
+        "line": 112,
+        "text": "record.type === \"subscription_emergency_activated\" &&"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/ar.ts",
+        "line": 387,
+        "text": "subscription_emergency_activated: \"مفعّل\","
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/en.ts",
+        "line": 421,
+        "text": "subscription_emergency_activated: \"Activated\","
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/ku.ts",
+        "line": 352,
+        "text": "subscription_emergency_activated: \"چالاککراوە\","
+      },
+      {
+        "path": "artifacts/fawri/src/lib/types.ts",
+        "line": 222,
+        "text": "type: 'subscription_emergency_activated';"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx",
+        "line": 45,
+        "text": "notification.type === 'subscription_emergency_activated' ||"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx",
+        "line": 253,
+        "text": "if (notification.type === 'subscription_emergency_activated') {"
+      }
+    ],
+    "enforceLegacyAuthProductionCutoverGate": [
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "line": 45,
+        "text": "import { enforceLegacyAuthProductionCutoverGate } from \"./middleware/legacyProductionFallbackGuard\";"
+      },
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "line": 333,
+        "text": "enforceLegacyAuthProductionCutoverGate,"
+      },
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "line": 372,
+        "text": "enforceLegacyAuthProductionCutoverGate,"
+      },
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "line": 377,
+        "text": "enforceLegacyAuthProductionCutoverGate,"
+      },
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "line": 382,
+        "text": "enforceLegacyAuthProductionCutoverGate,"
+      },
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "line": 387,
+        "text": "enforceLegacyAuthProductionCutoverGate,"
+      },
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "line": 392,
+        "text": "enforceLegacyAuthProductionCutoverGate,"
+      },
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "line": 422,
+        "text": "app.use(enforceLegacyAuthProductionCutoverGate);"
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/legacyProductionFallbackGuard.ts",
+        "line": 16,
+        "text": "export function enforceLegacyAuthProductionCutoverGate("
+      }
+    ],
+    "merchantNotificationsPgRouter": [
+      {
+        "path": "artifacts/api-server/src/routes/auth-security.ts",
+        "line": 25,
+        "text": "import merchantNotificationsPgRouter from \"./merchant-notifications-pg\";"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-security.ts",
+        "line": 59,
+        "text": "router.use(merchantNotificationsPgRouter as any);"
+      }
+    ],
+    "subscriptionEntitlementPgRouter": [
+      {
+        "path": "artifacts/api-server/src/routes/auth-security.ts",
+        "line": 27,
+        "text": "import subscriptionEntitlementPgRouter from \"./subscription-entitlement-pg\";"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-security.ts",
+        "line": 58,
+        "text": "router.use(subscriptionEntitlementPgRouter as any);"
+      }
+    ]
+  },
+  "compatibilityMatrix": [
+    {
+      "id": "LEGACY-JSON-SUBSCRIPTION-3",
+      "types": [
+        "subscription_balance_purchase",
+        "subscription_plan_event",
+        "subscription_emergency_activated"
+      ],
+      "storage": "AuthDb.merchant_notifications",
+      "frontend": "SOURCE_DERIVED_SYNTHETIC_SHAPES_VALID",
+      "producer": "authRuntimePart3 append helpers",
+      "callers": "Legacy authRoutesPart3 PUT/PATCH merchants/:id/subscription; authRoutesPart1 POST subscription/emergency",
+      "requiredMode": "Earlier canonical subscriptionEntitlementPgRouter handles supported routes; unresolved auth fallthrough is retired410 before legacy router. Source trace, not new HTTP execution.",
+      "canonicalSqlProducerAccepted": false
+    },
+    {
+      "id": "OLDER-SQL-INSPECTION",
+      "types": [
+        "inspection_session_request"
+      ],
+      "storage": "notifications SQL older helper",
+      "frontend": "SOURCE_DERIVED_SYNTHETIC_SHAPE_INVALID",
+      "producer": "postgresSupportAuthority.createInspectionRequestPostgres",
+      "shape": "ticket_id, request_id, action_url; lacks current inspection_request_id/ticket_subject/admin_name/mode/request_expires_at/current lifecycle",
+      "requiredMode": "Only declaration found for helper in scanned runtime identifier references; tested canonical route calls createInspectionRequestCanonicalPostgres instead. Not a formal reachability theorem.",
+      "canonicalSqlProducerAccepted": false
+    },
+    {
+      "id": "RAW-JSON-INSPECTION",
+      "types": [
+        "inspection_session_request"
+      ],
+      "storage": "AuthDb.merchant_notifications",
+      "frontend": "RAW_SHAPE_REQUIRES_LIFECYCLE_ENRICHMENT",
+      "producer": "authRuntimePart3.appendMerchantInspectionNotification",
+      "shape": "Current inspection_request_id/template fields, no request_status in raw literal. Current canonical SQL path obtains lifecycle from matching owned request, not this JSON array.",
+      "requiredMode": "Legacy auth fallthrough guarded; source-only provenance, no historical JSON import or implicit conversion accepted.",
+      "canonicalSqlProducerAccepted": false
+    },
+    {
+      "id": "CURRENT-CANONICAL-INSPECTION",
+      "types": [
+        "inspection_session_request"
+      ],
+      "storage": "notifications SQL plus scoped support_inspection_requests read-time projection",
+      "frontend": "LOCAL_SYNTHETIC_PENDING_AND_ENDED_SHAPES_VALID; ACTUAL_SQL_HTTP_EVIDENCE_REUSED",
+      "producer": "postgresSupportInspectionAuthority.createInspectionRequestCanonicalPostgres",
+      "evidence": [
+        "P0-SUPPORT-NOTIFICATION-CALLER-20261025.json",
+        "P0-SUPPORT-NOTIFICATION-ENDING-20261025.json"
+      ],
+      "runtimeReexecutedInThisBatch": false
+    }
+  ],
+  "localClientContract": {
+    "command": "node --test --test-reporter=tap docs/final-audit/evidence/p0-notification-legacy-shapes.test.mjs",
+    "runtime": "v24.22.1",
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "actualClientModule": true,
+    "syntheticShapeFixtures": true,
+    "fetchAdapterInProcess": true,
+    "externalNetwork": false,
+    "sqlOrApplicationHttpExecuted": false,
+    "testFileSha256": "ea7efc4cf1cfc1dae9ef4123b9b6dd62dff2e230df8c1a6703896a0530fc492e",
+    "tapSha256": "84580278044d1e720615c9e1894905e617e49ff08af116ace4df44989e42b0f7",
+    "firstAttempt": {
+      "passed": 3,
+      "failed": 1,
+      "status": "TEST_FIXTURE_INVALID_NOT_PRODUCT_FINDING",
+      "reason": "Synthetic previous_plan_name bronze is not a current allowed plan. Corrected to allowed gold; same assertions and production module unchanged."
+    }
+  },
+  "boundaries": [
+    "No actual hosted or historical SQL/JSON contents inspected; source-derived shapes do not establish row existence or migration history.",
+    "Structural compatibility of three JSON subscription types is not canonical SQL producer, privacy allowlist or billing acceptance.",
+    "Renaming request_id alone cannot repair older inspection rows; missing fields and tenant/source/request/ticket provenance require explicit review.",
+    "Current client rejects an entire mixed response with an incompatible record; no partial-display or historical-repair policy introduced.",
+    "No cleanup, import, migration, retention period, relinking or frontend weakening performed.",
+    "No new CI run claimed. Previous exact-source56/56,notification72TAP,broader721TAP acceptance retained separately.",
+    "Literal reference/mount/guard review is not a whole-program proof or production runtime observation."
+  ],
+  "nextExactAction": "Test concurrent actual authenticated notification-list refreshes for the same merchant and a peer with eligible subscription/add-on states; require one notice per source, stable sent markers, no duplicate side effects and tenant separation. Keep historical/extra-reserved-key policy unresolved; do not invent data repair or cleanup."
+}

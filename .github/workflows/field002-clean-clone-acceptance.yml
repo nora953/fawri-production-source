@@ -1,0 +1,130 @@
+name: FIELD002 clean isolated Neon clone SQL + HTTP acceptance
+
+on:
+  # Branch-local request path is necessary: GitHub only recognizes
+  # workflow_dispatch files already present on the default branch.
+  # No other source push can create roles/fixtures.
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - docs/final-audit/evidence/field002-clean-clone-run-request.json
+  workflow_dispatch:
+    inputs:
+      authorization:
+        description: 'Enter exactly APPROVE_CLEAN_CLONE_TEST_FIXTURES to authorize temporary test roles, merchants and cleanup on the pinned isolated clone'
+        required: true
+        type: string
+      source_sha:
+        description: 'Enter exact current 40-character PR branch HEAD commit SHA'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  # Reporting only: write a sanitized pass/fail checkpoint on draft PR #550.
+  issues: write
+
+concurrency:
+  group: field002-clean-clone-exclusive
+  cancel-in-progress: false
+
+jobs:
+  clean-clone-acceptance:
+    if: >-
+      github.repository == 'nora953/fawri-production-source'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+      && (
+        github.event_name == 'push'
+        || (
+          github.event_name == 'workflow_dispatch'
+          && inputs.authorization == 'APPROVE_CLEAN_CLONE_TEST_FIXTURES'
+          && inputs.source_sha == github.sha
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout verified immutable source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 2
+
+      - name: Node 24 and dependencies
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Verify clean clone owner-approval request and unchanged source
+        env:
+          EVENT_KIND: ${{ github.event_name }}
+          DISPATCH_APPROVAL: ${{ inputs.authorization }}
+          DISPATCH_SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_KIND" = push ]; then
+            # The authorization commit must introduce ONLY the one request file.
+            changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
+            test "$changed" = 'docs/final-audit/evidence/field002-clean-clone-run-request.json'
+            node <<'NODE'
+          const fs = require('node:fs');
+          const cp = require('node:child_process');
+          const request = JSON.parse(fs.readFileSync('docs/final-audit/evidence/field002-clean-clone-run-request.json','utf8'));
+          const approved = ['approval','approved_branch','approved_parent_sha'];
+          const keys = Object.keys(request).sort();
+          if (JSON.stringify(keys) !== JSON.stringify(approved)) process.exit(2);
+          if (request.approval !== 'APPROVE_CLEAN_CLONE_TEST_FIXTURES' ||
+              request.approved_branch !== 'br-polished-mouse-b1proel7' ||
+              !/^[0-9a-f]{40}$/.test(request.approved_parent_sha) ||
+              request.approved_parent_sha !== cp.execFileSync('git',['rev-parse','HEAD^'],{encoding:'utf8'}).trim())
+            process.exit(2);
+          NODE
+          else
+            test "$DISPATCH_APPROVAL" = 'APPROVE_CLEAN_CLONE_TEST_FIXTURES'
+            test "$DISPATCH_SOURCE_SHA" = "$GITHUB_SHA"
+          fi
+      - run: corepack enable
+      - run: node --test scripts/tests/field002-isolated-acceptance-plan.test.mjs
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Execute fresh clone only — temporary three-LOGIN real SQL and local mounted HTTP
+        id: hosted_probe
+        env:
+          FAWRI_FIELD002_CLONE_PROFILE: clean_20261106
+          FAWRI_FIELD002_ALLOWED_EXECUTION_BRANCH: br-polished-mouse-b1proel7
+          FAWRI_FIELD002_EXPECTED_SOURCE: ${{ github.sha }}
+          FAWRI_FIELD002_CLONE_ADMIN_URL: ${{ secrets.FAWRI_FIELD002_CLEAN_CLONE_ADMIN_URL }}
+        run: |
+          set -euo pipefail
+          # The harness checks exact reviewed endpoint, pinned SHA, role,
+          # migration hash/52 ledger, zero historical notices, exclusive
+          # advisory lock, safe grants and full before/after cleanup.
+          # No target URL or credential is emitted to logs/artifacts.
+          pnpm exec tsx artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs --execute
+
+      - name: Report sanitized hosted verdict to PR #550
+        # This is a real push-triggered hosted workflow, not a PR-only CI job.
+        # Only the exact safe outcome and run URL are ever published: never the
+        # PostgreSQL URL, auth credentials, fixture data, output or raw logs.
+        if: ${{ always() }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STEP_OUTCOME: ${{ steps.hosted_probe.outcome }}
+          SOURCE_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [ "$STEP_OUTCOME" = success ]; then
+            verdict=BOUNDED_SQL_HTTP_PASS_AND_CLEANUP
+          else
+            verdict=NOT_ACCEPTED_REVIEW_HOSTED_LOGS
+          fi
+          # No database URLs, credentials or raw runner result are read here.
+          body="FIELD002 isolated hosted 3-LOGIN SQL/HTTP evidence — run #${RUN_ID}. Source SHA: ${SOURCE_SHA}. Branch: br-polished-mouse-b1proel7. Probe verdict: ${verdict}. Hosted run: https://github.com/nora953/fawri-production-source/actions/runs/${RUN_ID}. No claim of original staging closure; PR #550 remains DRAFT, commercial NO-GO."
+          if gh api "repos/nora953/fawri-production-source/issues/550/comments" -f body="$body" >/dev/null 2>&1; then
+            echo "FIELD002_SANITIZED_VERDICT_RECORDED ${verdict}"
+          else
+            echo "FIELD002_SANITIZED_VERDICT_REPORT_UNAVAILABLE"
+          fi

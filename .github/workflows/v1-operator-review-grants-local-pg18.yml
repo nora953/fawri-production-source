@@ -1,0 +1,61 @@
+name: V1 operator receipt review GRANTs (disposable PG18)
+
+on:
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - ".github/workflows/v1-operator-review-grants-local-pg18.yml"
+      - "lib/db/first-commercial/held/v1_operator_receipt_review_grants.sql"
+      - "lib/db/scripts/v1-operator-review-held-grants-pg18.mjs"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v1-operator-review-local-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  isolated-operator-acl:
+    if: >-
+      github.repository == 'nora953/fawri-production-source'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+      FAWRI_ALLOW_LOCAL_V1_OPERATOR_GRANTS: "1"
+      NODE_ENV: test
+    steps:
+      - name: Checkout exact SHA without persistent tokens
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Enable pnpm via Corepack
+        run: corepack enable
+      - name: Frozen dependency install, no scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: New operator HELD capability-only SQL with nine negative grants
+        working-directory: lib/db
+        run: |
+          node --check scripts/v1-operator-review-held-grants-pg18.mjs
+          node scripts/v1-operator-review-held-grants-pg18.mjs

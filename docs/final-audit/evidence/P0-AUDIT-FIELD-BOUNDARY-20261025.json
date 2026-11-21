@@ -1,0 +1,1638 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-003",
+  "status": "BOUNDED_SOURCE_FIX_ACCEPTED_FIELD003_OPEN",
+  "finding": "EMERGENCY-AUDIT-ALTERNATE-PROJECTION-001",
+  "findingState": "FIXED_SOURCE_BOUNDED_ACTUAL_HTTP_SQL_ACCEPTED",
+  "recoveredHead": "a363d0d89cfc3bab0d7068552b232861931a0866",
+  "sourceCandidate": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+  "previousAcceptedExecutable": "4e36d59149f1ac3b7b1cad91c93a09aff9146612",
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "applicationChanged": true,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+  "newFunctionalCases": 3,
+  "existingFunctionalCases": 6,
+  "localSyntax": "PASS",
+  "failedAttempts": [
+    {
+      "source": "3e631f0a356a3a3aaea200ad6454ed388c7e6038",
+      "runId": 40193604397,
+      "jobId": 121169614760,
+      "status": "FAILED_NOT_ACCEPTED",
+      "fixturePassed": 8,
+      "fixtureFailed": 2,
+      "functionalFailures": 1,
+      "parentFailures": 1,
+      "observation": {
+        "role": "view_logs_only",
+        "dedicatedAuditDenied": true,
+        "emergencyRowsInGeneralLog": 4,
+        "chainPayloadInResponse": true
+      },
+      "meaning": "Two actual owner-created emergency requests emitted four genuine SQL emergency events. Assistant with only view_logs was denied owner-only audit but received those events and chain metadata through general management logs."
+    }
+  ],
+  "fix": "Current SQL-backed admin profile determines explicit includeEmergencyAudit option. Generic SQL query excludes emergency_read_access rows unless owner option true; predicate applied before ordering/limit. Default helper invocation excludes emergency audit. No metadata mutation/redaction, grants, chain rewrite or ordinary-log schema change.",
+  "sourceInventory": {
+    "method": "Literal INSERT INTO/FROM/UPDATE exact audit_events table matches in839tracked ts/tsx/js/mjs under artifacts/api-server/src,artifacts/fawri/src,src,lib; embedded NUL read as text; not formal call graph or hosted inventory",
+    "exactTableReferences": 17,
+    "insertSites": 11,
+    "producerFiles": 9,
+    "readSites": 5,
+    "readerFiles": 3,
+    "consumerBoundaries": [
+      {
+        "source": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+        "function": "listAdminLogsPostgres",
+        "projection": "Selected row/join fields; details plus whole metadata as meta; generic selected merchant-linked events",
+        "route": "GET /api/auth/admin/logs",
+        "guard": "secure admin + view_logs; owner-only emergency rows now additionally filtered",
+        "scope": "Current selected runtime target, not all metadata privacy accepted"
+      },
+      {
+        "source": "artifacts/api-server/src/services/postgresEmergencyReadAccessAuthority.ts",
+        "function": "auditRows/mapAudit/getEmergencyAuditPostgres",
+        "projection": "Emergency-only event/hash rows; metadata.event_metadata parsed; chain verification before returning owner audit",
+        "route": "GET /api/auth/admin/emergency-read-access/audit",
+        "guard": "secure admin + owner",
+        "scope": "Direct owner denial/positive reused and extended through actual app; no all-emergency-domain acceptance"
+      },
+      {
+        "source": "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts",
+        "function": "syncEarlyWarningIncidentHistory/normalizedMetadata/buildHistory",
+        "projection": "Exact severity,area,code,value,runbook,scope,merchant_id,merchant_name plus derived episode fields; no wholesale metadata spread",
+        "route": "GET /api/auth/admin/early-warning",
+        "guard": "secure admin + view_logs; merchant incidents/history additionally view_merchants",
+        "scope": "Source-only field reconciliation; normalized historical metadata and permission partition runtime remains separate"
+      }
+    ],
+    "otherProducerFiles": [
+      "earlyWarningIncidentHistory.ts",
+      "postgresEmergencyReadAccessAuthority.ts",
+      "postgresMerchantAdminLogAuthority.ts",
+      "postgresMerchantManagementAuthority.ts",
+      "postgresOrderPaymentProviderAuthority.ts",
+      "postgresSubscriptionEntitlement.ts",
+      "postgresSupportLifecycleAuthority.ts",
+      "subscriptionPlanCycleAuthority.ts",
+      "subscriptionServiceGuarantee.ts"
+    ],
+    "notes": [
+      "auth_audit_events,knowledge_audit_events,cashier_entitlement_audit_events and legacy JSON arrays are separate authorities.",
+      "Owner-only legacy import stores source_admin_* and nested source_meta in metadata; no new generic meta allowlist accepted.",
+      "Management audit metadata, subscription/payment/support details and incident-history normalization have different source/control contracts; one fixed alternate path does not close FIELD003."
+    ]
+  },
+  "scope": [
+    "Actual app/restricted primary/separate authentication LOGIN, real trusted owner/view_logs-only/manager/denied actors and two merchants",
+    "Actual owner-created emergency requests and SQL chain events, no bootstrap fake audit rows",
+    "Dedicated owner route positive and assistant denial; assistant generic canonical/alias/hint requests cannot return owner-only events",
+    "Owner retains general and dedicated emergency event history; ordinary log exact actor/details/reason/filtered primitive meta remains available",
+    "Anonymous/merchant/no-permission/revoked-permission negative responses and complete selected audit/management/request snapshots unchanged by reads"
+  ],
+  "limits": [
+    "Disposable synthetic credentials/merchants only; no hosted incident or credential compromise claimed",
+    "Fixture primary grants broad and RLS-mediated, separate auth role; not deployed least-privilege proof",
+    "No arbitrary audit meta allowlist, whole actor/privacy matrix, incident normalization runtime or historical cleanup acceptance",
+    "No emergency hash/ledger change, migration, ACL or provider/browser/capacity acceptance",
+    "Three new cases in dedicated management lane; broader selection excludes this fixture; totals separate"
+  ],
+  "targeted": {
+    "status": "PASS",
+    "runId": 40193882711,
+    "jobId": 121170462946,
+    "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882711/job/121170462946",
+    "tapPass": 35,
+    "functionalCases": 31,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "suites": [
+      {
+        "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "checkout": "40205fad31738a54b42cc9cd01c2c587b28e41d2",
+    "tree": "e1731ae10436c5023e7d8743cd5ae28dae371022",
+    "sourceTreeMatches": true,
+    "cleanup": "success"
+  },
+  "broader": {
+    "status": "PASS",
+    "runId": 40193883147,
+    "jobId": 121170697031,
+    "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883147/job/121170697031",
+    "tapPass": 721,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "suiteInvocations": 92,
+    "uniqueFiles": 90,
+    "checkout": "40205fad31738a54b42cc9cd01c2c587b28e41d2",
+    "tree": "e1731ae10436c5023e7d8743cd5ae28dae371022",
+    "sourceTreeMatches": true,
+    "cleanup": "success",
+    "suites": [
+      {
+        "suite": "residual-business-privacy-rls-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-management-privacy-rls-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "residual-merchant-privacy-authority-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "emergency-privacy-remediation-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "emergency-privacy-authority-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "emergency-read-access-postgres.integration.test.ts",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "support-privacy-tenant-rls-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "tenant-transaction-scope-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 16,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "authentication-operator-pool-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 63,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-credential-housekeeping-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-manager-pin-persistence-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-permission-session-authority-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-staff-lock-boundary-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-identity-tenant-rls-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-discount-attribution-tenant-rls-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-alternate-privilege-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-discount-policy-integrity-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-approval-provenance-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-discount-settings-authority-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "admin-audit-boundary-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-central-scope-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-settings-clock.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "queue-expired-lease-race.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-operator-login-concurrency-hardening.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "subscription-tenant-transaction-unit.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "billing-merchant-context-unit.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "operational-postgres-transaction-lifecycle.test.ts",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "failed-setup-cleanup-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "global-merchant-auth-bootstrap-postgres.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "global-merchant-golden-journey.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "global-merchant-postgres-http-journey.integration.test.ts",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-deletion-tenant-rls.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "meta-webhook-postgres-ingress-cutover.integration.test.ts",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "meta-page-directory-restricted-rls.integration.test.mjs",
+        "auditBatch": "priority",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-operator-profit-http-postgres.integration.test.mjs",
+        "auditBatch": "cashier",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-historical-compensation-http-postgres.integration.test.mjs",
+        "auditBatch": "cashier",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-closed-shift-recovery-http-postgres.integration.test.mjs",
+        "auditBatch": "cashier",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-sync-multidevice-postgres.integration.test.mjs",
+        "auditBatch": "cashier",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-billing-negative-failure-cases.integration.test.mjs",
+        "auditBatch": "cashier",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-full-lifecycle-postgres.integration.test.ts",
+        "auditBatch": "cashier",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-subscription-postgres.integration.test.ts",
+        "auditBatch": "cashier",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-billing-postgres.integration.test.ts",
+        "auditBatch": "cashier",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-downgrade-grace-postgres.integration.test.ts",
+        "auditBatch": "cashier",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-historical-operation-postgres.integration.test.ts",
+        "auditBatch": "cashier",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-operator-logout-pin-postgres.integration.test.ts",
+        "auditBatch": "cashier",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-operator-own-history-scope-postgres.integration.test.ts",
+        "auditBatch": "cashier",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "catalog-cashier-compensation-history-postgres.integration.test.ts",
+        "auditBatch": "cashier",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-billing-context-postgres.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "receipt-operator-pool-postgres.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "receipt-review-operator-pool-postgres.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "receipt-execution-operator-pool-postgres.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 15,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "receipt-resolver-inflight-phantom-postgres.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "receipt-cross-authority-phantom-postgres.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "billing-provider-discovery-restricted-postgres.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 19,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "postgres-autocommit-response-proxy.unit.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "verified-inbox-wire-recovery-postgres.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "operator-replay-wire-recovery-postgres.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 17,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 20,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "verified-receipt-replay-review-http-postgres.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 20,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "verified-receipt-operator-http-postgres.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "verified-provider-receipt-inbox-postgres.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 18,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "billing-receipt-process-recovery-postgres.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 15,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "billing-external-checkout-rollback-postgres.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "saas-billing-sql-failure-recovery.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "saas-billing-negative-failure-cases.integration.test.mjs",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "saas-billing-authority.integration.test.ts",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "superqi-sandbox-billing.integration.test.ts",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "subscription-entitlement-postgres.integration.test.ts",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-customer-payment-authority-postgres.integration.test.ts",
+        "auditBatch": "billing",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "admin-auth-router-postgres.integration.test.ts",
+        "auditBatch": "tenant",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "support-postgres-cutover.integration.test.ts",
+        "auditBatch": "tenant",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-session-restricted-http-postgres.integration.test.mjs",
+        "auditBatch": "tenant",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "auth-cutover-contract.test.mjs",
+        "auditBatch": "tenant",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-password-recovery-postgres.integration.test.ts",
+        "auditBatch": "tenant",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "reply-addon-refund-postgres.integration.test.mjs",
+        "auditBatch": "tenant",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "reply-cross-cycle-refund-postgres.integration.test.mjs",
+        "auditBatch": "tenant",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "production-postgres-rls-security.integration.test.ts",
+        "auditBatch": "tenant",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 89,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "knowledge-tenant-rls.integration.test.mjs",
+        "auditBatch": "tenant",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "knowledge-management-postgres-cutover.integration.test.ts",
+        "auditBatch": "tenant",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "knowledge-postgres-lifecycle.integration.test.ts",
+        "auditBatch": "tenant",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-management-tenant-rls.integration.test.mjs",
+        "auditBatch": "tenant",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "subscription-reminder-rls.integration.test.mjs",
+        "auditBatch": "tenant",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "meta-worker-precommit-restart-postgres.integration.test.mjs",
+        "auditBatch": "meta-bot",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "meta-job-identity-postgres.integration.test.mjs",
+        "auditBatch": "meta-bot",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 26,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "meta-worker-deadletter-restart-postgres.integration.test.mjs",
+        "auditBatch": "meta-bot",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "meta-restore-wire-recovery-postgres.integration.test.mjs",
+        "auditBatch": "meta-bot",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "meta-full-app-restricted-postgres.integration.test.mjs",
+        "auditBatch": "meta-bot",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 13,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "knowledge-learning-cycle-postgres.integration.test.ts",
+        "auditBatch": "meta-bot",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "meta-live-reply-postgres.integration.test.ts",
+        "auditBatch": "meta-bot",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 54,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "full-schema-restore-postgres.integration.test.mjs",
+        "auditBatch": "full-restore",
+        "runtime": "v24.22.1",
+        "phase": "seed",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "full-schema-restore-postgres.integration.test.mjs",
+        "auditBatch": "full-restore",
+        "runtime": "v24.22.1",
+        "phase": "verify",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "global-merchant-postgres-http-journey.integration.test.ts",
+        "auditBatch": "node22-http",
+        "runtime": "v22.23.4",
+        "exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ]
+  },
+  "nextExactAction": "Exercise actual /api/auth/admin/early-warning incident_history projection with view_logs-only versus view_logs+view_merchants and owner actors, current system/merchant incident producers, selected normalized metadata, denial/permission revocation and stable SQL lifecycle snapshots. Reuse existing direct sync opened/dedup/resolved proof; do not count it as HTTP field acceptance or repeat the accepted emergency generic-log boundary. FIELD002 candidate remains unenforced and its historical/scope items stay open.",
+  "observations": [
+    {
+      "role": "view_logs_only",
+      "dedicatedAuditDenied": true,
+      "emergencyRowsInGeneralLog": 0,
+      "chainPayloadInResponse": false
+    },
+    {
+      "role": "manager",
+      "dedicatedAuditDenied": true,
+      "emergencyRowsInGeneralLog": 0,
+      "chainPayloadInResponse": false
+    },
+    {
+      "role": "view_logs_only",
+      "dedicatedAuditDenied": true,
+      "emergencyRowsInGeneralLog": 0,
+      "chainPayloadInResponse": false
+    },
+    {
+      "role": "manager",
+      "dedicatedAuditDenied": true,
+      "emergencyRowsInGeneralLog": 0,
+      "chainPayloadInResponse": false
+    }
+  ],
+  "runtime": "BOUNDED_PASS",
+  "lastAcceptedExecutable": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+  "inputSha256": {
+    "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts": "ab3ff68d78d501dfc9e619b8436fedcd5028f3423ce221b639ed7d877ccaf44d",
+    "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts": "4aa2ec6037a1ae1ec5e3150670dcbdeb381044eae5cff6287eebe1d7ac908d3f",
+    "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs": "7f957e8bca71551f9937d571cd2e94c651970ec9735e0fa471130e3174597e1f",
+    "artifacts/api-server/src/services/postgresEmergencyReadAccessAuthority.ts": "45c53442056c4842e969d1867d085053aa0d935f4fbc9d0c5b7ca9815a320f40",
+    "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts": "a67633bebbf6588c3412ecf85fae5ebd10493921c7d93392c4cce4e24461e165",
+    "artifacts/api-server/src/routes/auth-early-warning-postgres-routes.ts": "a4e12146a54c422e2fe70d961453dae6db76dd6c9889db16c1b41f56ea246b53",
+    "artifacts/api-server/tests/residual-business-privacy-rls-postgres.integration.test.mjs": "a83d66725d15eb36a15193499b28a858ae010ce2ca1d309104cee341338743e6"
+  },
+  "allCi": {
+    "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+    "total": 56,
+    "success": 56,
+    "pending": 0,
+    "failed": 0,
+    "cancelled": 0,
+    "runs": [
+      {
+        "id": 40193882828,
+        "name": "AWS KMS production adapter readiness",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882828"
+      },
+      {
+        "id": 40193882809,
+        "name": "Knowledge embedding readiness",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882809"
+      },
+      {
+        "id": 40193883018,
+        "name": "Merchant deletion promotions lifecycle",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883018"
+      },
+      {
+        "id": 40193882750,
+        "name": "P0 conversation privacy HTTP matrix",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882750"
+      },
+      {
+        "id": 40193883037,
+        "name": "P0 cashier IndexedDB browser regression",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883037"
+      },
+      {
+        "id": 40193882849,
+        "name": "Merchant deletion cashier lifecycle",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882849"
+      },
+      {
+        "id": 40193882823,
+        "name": "Auth OTP contract continuity",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882823"
+      },
+      {
+        "id": 40193882831,
+        "name": "Merchant regional PostgreSQL authority",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882831"
+      },
+      {
+        "id": 40193883035,
+        "name": "P0 Support privacy authority diagnostic",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883035"
+      },
+      {
+        "id": 40193882798,
+        "name": "Merchant account security UI",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882798"
+      },
+      {
+        "id": 40193882892,
+        "name": "Catalog variant signature schema contract",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882892"
+      },
+      {
+        "id": 40193883052,
+        "name": "Commerce cashier closeout",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883052"
+      },
+      {
+        "id": 40193883042,
+        "name": "Global subscription golden journey",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883042"
+      },
+      {
+        "id": 40193883005,
+        "name": "Billing provider readiness",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883005"
+      },
+      {
+        "id": 40193883067,
+        "name": "Product catalog UI cutover",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883067"
+      },
+      {
+        "id": 40193883032,
+        "name": "Staging container contract",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883032"
+      },
+      {
+        "id": 40193882759,
+        "name": "Merchant deletion provider identifiers",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882759"
+      },
+      {
+        "id": 40193883030,
+        "name": "Pre-release performance smoke gate",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883030"
+      },
+      {
+        "id": 40193883015,
+        "name": "PostgreSQL migration candidate",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883015"
+      },
+      {
+        "id": 40193883126,
+        "name": "Merchant deletion audit PII",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883126"
+      },
+      {
+        "id": 40193882957,
+        "name": "Cashier dashboard surface regression",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882957"
+      },
+      {
+        "id": 40193883084,
+        "name": "PostgreSQL outage recovery proof",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883084"
+      },
+      {
+        "id": 40193883058,
+        "name": "Bot logic adversarial matrix",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883058"
+      },
+      {
+        "id": 40193883012,
+        "name": "Isolated Neon preflight static safety",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883012"
+      },
+      {
+        "id": 40193883125,
+        "name": "Complete migration safety",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883125"
+      },
+      {
+        "id": 40193883124,
+        "name": "Backup and restore drill",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883124"
+      },
+      {
+        "id": 40193883092,
+        "name": "Order operations",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883092"
+      },
+      {
+        "id": 40193883114,
+        "name": "Merchant access security",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883114"
+      },
+      {
+        "id": 40193882947,
+        "name": "Auth PostgreSQL concurrency proof",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882947"
+      },
+      {
+        "id": 40193883128,
+        "name": "Global merchant golden journey",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883128"
+      },
+      {
+        "id": 40193883090,
+        "name": "P0 dependency security upgrade candidate",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883090"
+      },
+      {
+        "id": 40193883107,
+        "name": "Merchant deletion physical media lifecycle",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883107"
+      },
+      {
+        "id": 40193883063,
+        "name": "Location inventory authority",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883063"
+      },
+      {
+        "id": 40193882921,
+        "name": "Meta webhook pipeline",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882921"
+      },
+      {
+        "id": 40193882963,
+        "name": "Merchant settings",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882963"
+      },
+      {
+        "id": 40193883162,
+        "name": "Meta webhook PostgreSQL ingress cutover",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883162"
+      },
+      {
+        "id": 40193883086,
+        "name": "Meta OAuth operational cutoff",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883086"
+      },
+      {
+        "id": 40193883038,
+        "name": "Dashboard channel coherence",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883038"
+      },
+      {
+        "id": 40193883112,
+        "name": "Global Merchant PostgreSQL HTTP Journey",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883112"
+      },
+      {
+        "id": 40193883053,
+        "name": "Cashier operational cutoff",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883053"
+      },
+      {
+        "id": 40193882996,
+        "name": "Complete schema candidate",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882996"
+      },
+      {
+        "id": 40193882746,
+        "name": "P0 signed cashier offline authority",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882746"
+      },
+      {
+        "id": 40193882818,
+        "name": "Final quality gates",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882818"
+      },
+      {
+        "id": 40193883120,
+        "name": "Cashier subscription lifecycle",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883120"
+      },
+      {
+        "id": 40193883097,
+        "name": "P0 notification privacy HTTP matrix",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883097"
+      },
+      {
+        "id": 40193883140,
+        "name": "Clean deployment golden gate",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883140"
+      },
+      {
+        "id": 40193883429,
+        "name": "Observability mounted routes",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883429"
+      },
+      {
+        "id": 40193883188,
+        "name": "Global admin golden journey",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883188"
+      },
+      {
+        "id": 40193883096,
+        "name": "PostgreSQL schema validation",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883096"
+      },
+      {
+        "id": 40193882949,
+        "name": "Foundation integration final gate",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882949"
+      },
+      {
+        "id": 40193882808,
+        "name": "Final security and supply chain",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882808"
+      },
+      {
+        "id": 40193883147,
+        "name": "Isolated PostgreSQL engineering audit",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193883147"
+      },
+      {
+        "id": 40193882710,
+        "name": "Browser storage authority audit",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882710"
+      },
+      {
+        "id": 40193882734,
+        "name": "Location routing engine",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882734"
+      },
+      {
+        "id": 40193882711,
+        "name": "P0 management privacy HTTP matrix",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882711"
+      },
+      {
+        "id": 40193882708,
+        "name": "Subscription service guarantee validation",
+        "headSha": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882708"
+      }
+    ]
+  },
+  "counting": "Three new functional cases in dedicated management lane:fixture10TAP(9functional+parent),lane35TAP(31functional+4parents). Broader excludes this fixture:721TAP unchanged. Dedicated and broader totals are separate, not added as unique tests."
+}

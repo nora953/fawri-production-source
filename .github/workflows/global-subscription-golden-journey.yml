@@ -31,23 +31,6 @@ jobs:
   subscription-journey:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: fawri_ci
-          POSTGRES_PASSWORD: fawri_ci
-          POSTGRES_DB: fawri_ci
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -67,16 +50,17 @@ jobs:
       - name: Install frozen dependencies without lifecycle scripts
         run: node scripts/ci-run-redacted.mjs --label frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
 
-      # This is a runtime authority proof. Migration-history reproducibility is
-      # validated independently by the PostgreSQL schema foundation work.
-      - name: Initialize disposable PostgreSQL runtime schema
-        run: pnpm --filter @workspace/db run push-force
-
       - name: Type-check API server
         run: pnpm --filter @workspace/api-server run typecheck
 
-      - name: Run PostgreSQL subscription authority regressions
-        run: >-
-          pnpm --filter @workspace/api-server exec tsx --test
-          ./tests/subscription-entitlement-postgres.integration.test.ts
-          ./tests/subscription-http-postgres-golden-journey.integration.test.ts
+      - name: Build API for owned PostgreSQL authority regressions
+        run: node scripts/ci-run-redacted.mjs --label subscription-golden-api-build -- pnpm --filter @workspace/api-server run build
+
+      - name: Run both original PostgreSQL subscription authority regressions in owned isolation
+        run: bash scripts/run-isolated-postgres-audit.sh subscription-golden
+
+      - name: Ensure owned containers and anonymous volumes are destroyed
+        if: always()
+        run: |
+          mapfile -t audit_containers < <(docker ps -aq --filter "label=fawri.audit=${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}")
+          if [ "${#audit_containers[@]}" -gt 0 ]; then docker rm -fv "${audit_containers[@]}"; fi

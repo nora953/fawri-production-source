@@ -6,9 +6,10 @@ import type { OperationalQueryTarget } from "./operationalPostgresAuthority";
  * proved there are no active durable jobs, uncertain sends, or unresolved
  * reply refunds.
  *
- * The retained tokens intentionally derive from Fawri-owned row identifiers,
- * not from Meta/provider identifiers. They therefore preserve uniqueness and
- * historical joins without leaving a reversible Page/message namespace behind.
+ * Reuse existing internal row identifiers to preserve uniqueness and historical
+ * joins while removing the plaintext Page/message namespace. Some internal IDs
+ * were originally derived from event fingerprints; they remain linkable evidence
+ * and are not an anonymity or retention-duration guarantee.
  */
 export async function retireMerchantProviderIdentifiers(
   target: OperationalQueryTarget,
@@ -73,11 +74,13 @@ export async function retireMerchantProviderIdentifiers(
     [merchantId],
   );
 
-  // Confirmed provider message IDs are not required for internal accounting or
-  // refund linkage once irreversible deletion is allowed to proceed.
+  // The live auto:event intent embeds the provider event namespace too. Once
+  // deletion is permitted, retain the row's own identity for unique linkage;
+  // outcome, reservation and accounting timestamps remain unchanged.
   await target.query(
     `UPDATE outbound_deliveries
-        SET provider_message_id = NULL
+        SET provider_message_id = NULL,
+            reply_intent_id = 'deleted:delivery:' || id
       WHERE merchant_id = $1`,
     [merchantId],
   );

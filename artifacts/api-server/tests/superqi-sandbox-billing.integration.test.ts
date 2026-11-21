@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
-import test from "node:test";
-import { pool } from "@workspace/db";
-import {
-  createSaasBillingCheckout,
-  getSaasBillingCatalog,
-} from "../src/services/saasBillingAuthority";
-import { getCurrentSubscriptionPostgres } from "../src/services/postgresSubscriptionEntitlement";
-import { handleSuperQiSandboxWebhook } from "../src/services/superQiSandboxWebhook";
+import test, {after} from "node:test";
+import {createDisposableProviderRuntime} from "./helpers/disposable-provider-runtime.mjs";
+const runtimeFixture=await createDisposableProviderRuntime();
+const pool=runtimeFixture.admin;
+after(()=>runtimeFixture.dispose());
+const {createSaasBillingCheckout,getSaasBillingCatalog}=await import("../src/services/saasBillingAuthority");
+const {getCurrentSubscriptionPostgres}=await import("../src/services/postgresSubscriptionEntitlement");
+const {handleSuperQiSandboxWebhook}=await import("../src/services/superQiSandboxWebhook");
 import {
   type SuperQiFetch,
   superQiWebhookSigningPayload,

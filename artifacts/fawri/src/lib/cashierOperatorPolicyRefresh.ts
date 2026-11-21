@@ -1,5 +1,6 @@
 import {
   cashierOperatorHeaders,
+  persistEntitlementFromPayload,
   getCashierOperatorSession,
   getOrCreateCashierDeviceIdentity,
   invalidateCashierOperatorSession,
@@ -18,6 +19,8 @@ const ALLOWED_PERMISSIONS = new Set<CashierClientPermission>([
   'sale.view_all',
   'sale.return',
   'sale.void',
+  'sale.discount',
+  'sale.discount_override',
   'inventory.adjust',
   'reports.sales',
   'reports.profit',
@@ -195,6 +198,13 @@ export async function refreshCashierOperatorPolicyFromCloud(): Promise<CashierOp
     );
   }
 
+  return applyCashierOperatorPolicyFromPayload(session, payload);
+}
+
+export async function applyCashierOperatorPolicyFromPayload(
+  session: CashierOperatorSession,
+  payload: Record<string, unknown>,
+): Promise<CashierOperatorSession> {
   const context = refreshedContext(session, payload.operator);
   await updateLocalStationPolicy(context);
 
@@ -209,6 +219,7 @@ export async function refreshCashierOperatorPolicyFromCloud(): Promise<CashierOp
       503,
     );
   }
+  await persistEntitlementFromPayload(payload, context.station_id, context);
   sessionStorage.setItem(OPERATOR_STORAGE_KEY, JSON.stringify(refreshedSession));
   return refreshedSession;
 }

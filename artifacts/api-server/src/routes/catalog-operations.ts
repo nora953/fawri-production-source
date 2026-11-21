@@ -8,6 +8,7 @@ import {
   getMerchantIdFromSession,
   requireMerchantSession,
 } from "./auth";
+import { enforceAuthOrigin } from "../middleware/authSession";
 import { CatalogRuntimeError } from "../services/catalogInventoryRuntime";
 import {
   CATALOG_IMAGE_MAX_BYTES,
@@ -189,6 +190,7 @@ function parseCatalogImageBody(
 router.post(
   "/catalog/media/images",
   requireMerchantSession,
+  enforceAuthOrigin,
   parseCatalogImageBody,
   async (req: Request, res: Response) => {
     try {
@@ -272,6 +274,7 @@ router.get(
 router.post(
   "/catalog/promotions",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -297,6 +300,7 @@ router.post(
 router.patch(
   "/catalog/promotions/:promotionId",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -318,6 +322,7 @@ router.patch(
 router.delete(
   "/catalog/promotions/:promotionId",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -377,6 +382,7 @@ router.get(
 router.post(
   "/catalog/products",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -402,6 +408,7 @@ router.post(
 router.post(
   "/catalog/products/import",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -428,6 +435,7 @@ router.post(
 router.patch(
   "/catalog/products/:productId",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -449,6 +457,7 @@ router.patch(
 router.delete(
   "/catalog/products/:productId",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -470,6 +479,7 @@ router.delete(
 router.post(
   "/inventory/products/:productId/set",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -492,6 +502,7 @@ router.post(
 router.post(
   "/inventory/products/:productId/adjust",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);

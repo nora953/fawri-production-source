@@ -6,7 +6,9 @@ import { cleanupResources } from './helpers/cleanup-resources.mjs';
 await assertDisposablePostgres();
 process.env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY = 'required';
 process.env.FAWRI_SAAS_BILLING_PROVIDER = 'test_fake';
-const { pool } = await import('@workspace/db');
+const {createDisposableKnowledgeRuntime}=await import('./helpers/disposable-knowledge-runtime.mjs');
+const runtimeFixture=await createDisposableKnowledgeRuntime();
+const pool=runtimeFixture.admin;
 const billing = await import('../src/services/saasBillingAuthority.ts');
 
 test('verified payment SQL failure retains reconciliation evidence and supports safe retry', async t => {
@@ -21,14 +23,14 @@ test('verified payment SQL failure retains reconciliation evidence and supports 
     ['fault trigger', () => pool.query(`DROP TRIGGER IF EXISTS ${identifier} ON saas_entitlement_applications`)],
     ['fault function', () => pool.query(`DROP FUNCTION IF EXISTS ${identifier}()`)],
     ['fixture account', () => pool.query('DELETE FROM accounts WHERE id=$1', [merchantId])],
-    ['pool', () => pool.end()],
+    ['actual runtime fixture', () => runtimeFixture.dispose()],
   ]));
   await pool.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'synthetic','active',true)", [merchantId, `+1999${String(randomInt(0, 100000000)).padStart(8, '0')}`]);
   await pool.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status) VALUES($1,$1,'Synthetic','Synthetic','retail','approved','approved')", [merchantId]);
   const checkout = await billing.createSaasBillingCheckout({ merchantId, operation: 'activate', plan: 'silver', idempotencyKey: randomUUID() });
   await pool.query(`CREATE FUNCTION ${identifier}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic audit SQL fault' USING ERRCODE='P0001'; END $$`);
   await pool.query(`CREATE TRIGGER ${identifier} BEFORE INSERT ON saas_entitlement_applications FOR EACH ROW EXECUTE FUNCTION ${identifier}()`);
-  const event = { provider: 'test_fake', providerEventId: randomUUID(), orderId: checkout.order.id, eventType: 'payment_succeeded', signatureVerified: true, payloadHash: 'b'.repeat(64), occurredAt: new Date(), amountIqd: checkout.order.amount_iqd, currency: 'IQD', providerPaymentRef: randomUUID() };
+  const event = { merchantId: checkout.order.merchant_id, provider: 'test_fake', providerEventId: randomUUID(), orderId: checkout.order.id, eventType: 'payment_succeeded', signatureVerified: true, payloadHash: 'b'.repeat(64), occurredAt: new Date(), amountIqd: checkout.order.amount_iqd, currency: 'IQD', providerPaymentRef: randomUUID() };
   let errorCode;
   try { await billing.applyVerifiedSaasBillingProviderEvent(event); }
   catch (error) { errorCode = error.code; }

@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "gate": "CASHIER-SYNC-SEQUENCE-001",
+  "status": "BOUNDED_DISPOSABLE_SQL_PROPOSAL_ACCEPTED_CANONICAL_MIGRATION_PENDING",
+  "release": "NO-GO",
+  "gateClosed": false,
+  "source": "0edf291bb5d172a76ff6f840af70db710d3f6503",
+  "sourceTree": "96b9b8f3ba288321138212b5827fec043cacd8e4",
+  "checkout": "5671748106d69cd189cdd2a968dc95f104dee284",
+  "checkoutTreeMatched": true,
+  "ci": {
+    "total": 56,
+    "success": 56,
+    "target": {
+      "run": 40261736753,
+      "job": 121375378917,
+      "invocations": 14,
+      "files": 14,
+      "passed": 32,
+      "failed": 0,
+      "skipped": 0,
+      "checkout": "5671748106d69cd189cdd2a968dc95f104dee284"
+    },
+    "broader": {
+      "run": 40261736766,
+      "job": 121375380859,
+      "invocations": 93,
+      "files": 91,
+      "passed": 728,
+      "failed": 0,
+      "skipped": 0,
+      "checkout": "5671748106d69cd189cdd2a968dc95f104dee284"
+    }
+  },
+  "proposal": "evidence/seq-d2-stream-receipt-schema-proposal.sql",
+  "fixture": "artifacts/api-server/tests/cashier-stream-storage-proposal-postgres.integration.test.mjs",
+  "fixtureTap": {
+    "passed": 4,
+    "functionalSubtests": 3,
+    "failed": 0
+  },
+  "accepted": [
+    "Scoped own-tenant reads and positive peer reads; unscoped/foreign rows hidden under restricted primary LOGIN",
+    "Direct runtime insert denied; update/delete affect zero rows even with fixture DML grants",
+    "Receipt insertion and checkpoint advance must commit together; missing receipt or missing advance rejected",
+    "Initial zero checkpoint, contiguous sequence, safe integer limit, immutable receipt and stream identity",
+    "Operation uniqueness across replacement streams within merchant",
+    "Composite merchant/station/location/staff/shift foreign-key denials"
+  ],
+  "canonicalSchemaChanged": false,
+  "canonicalMigrationJournalChanged": false,
+  "liveWriterInstalled": false,
+  "hostedChanged": false,
+  "limitations": [
+    "Proposal tables are created and dropped only in owned disposable SQL fixture; outside canonical migration journal",
+    "Root fixture supplies synthetic enrollment evidence and result identifiers; not financial effect/provenance proof",
+    "No canonical financial writer, live admission, browser integration or concurrency acceptance",
+    "No DBA tamper-resistance claim",
+    "Canonical schema generation, readiness, restore and retention/deletion review remain pending",
+    "SEQ-D3 and SEQ-D4 remain unimplemented/open"
+  ],
+  "nextAction": "Reconcile proposal through canonical Drizzle schema and migration generation, then verify RLS/privacy/readiness/restore and deletion constraints before canonical acceptance; preserve legacy admission and no hosted rollout.",
+  "proposalSha256": "75def311a34c3e95d477df6d8ae48260387bbc557b12f3c256be8b4016b175eb"
+}

@@ -6,14 +6,16 @@ import { cleanupResources } from './helpers/cleanup-resources.mjs';
 await assertDisposablePostgres();
 process.env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY = 'required';
 process.env.FAWRI_SAAS_BILLING_PROVIDER = 'test_fake';
-const { pool } = await import('@workspace/db');
+const {createDisposableKnowledgeRuntime}=await import('./helpers/disposable-knowledge-runtime.mjs');
+const runtimeFixture=await createDisposableKnowledgeRuntime();
+const pool=runtimeFixture.admin;
 const billing = await import('../src/services/saasBillingAuthority.ts');
 
 test('verified SaaS payments preserve terminal state and recover after proactive expiry', { timeout: 60000 }, async t => {
   const merchantIds = [];
   t.after(async () => cleanupResources([
     ['fixture accounts', () => pool.query('DELETE FROM accounts WHERE id = ANY($1::text[])', [merchantIds])],
-    ['pool', () => pool.end()],
+    ['actual runtime fixture', () => runtimeFixture.dispose()],
   ]));
   async function checkout(now = new Date()) {
     const id = `negative-bill-${randomUUID()}`;
@@ -24,7 +26,7 @@ test('verified SaaS payments preserve terminal state and recover after proactive
     return { merchantId: id, order: result.order };
   }
   function event(order, override = {}) {
-    return { provider: 'test_fake', providerEventId: randomUUID(), orderId: order.id, eventType: 'payment_succeeded', signatureVerified: true, payloadHash: 'a'.repeat(64), occurredAt: new Date(), amountIqd: order.amount_iqd, currency: 'IQD', providerPaymentRef: randomUUID(), ...override };
+    return { merchantId: order.merchant_id, provider: 'test_fake', providerEventId: randomUUID(), orderId: order.id, eventType: 'payment_succeeded', signatureVerified: true, payloadHash: 'a'.repeat(64), occurredAt: new Date(), amountIqd: order.amount_iqd, currency: 'IQD', providerPaymentRef: randomUUID(), ...override };
   }
   await t.test('matching verified payment after list marks checkout expired must be durably reconciled', async () => {
     const fixture = await checkout(new Date(Date.now() - 60 * 60 * 1000));
@@ -36,21 +38,101 @@ test('verified SaaS payments preserve terminal state and recover after proactive
     const stored = (await pool.query('SELECT status FROM saas_billing_orders WHERE id=$1', [fixture.order.id])).rows[0];
     assert.equal(stored.status, 'paid_reconciliation_required');
     assert.equal((await pool.query('SELECT count(*)::int AS count FROM saas_entitlement_applications WHERE order_id=$1', [fixture.order.id])).rows[0].count, 0);
-    assert.equal((await pool.query('SELECT count(*)::int AS count FROM saas_billing_events WHERE provider_event_id=$1', [paidEvent.providerEventId])).rows[0].count, 1);
+    const recorded = (await pool.query('SELECT status, event_type, signature_verified FROM saas_billing_events WHERE provider_event_id=$1', [paidEvent.providerEventId])).rows;
+    assert.equal(recorded.length, 1, 'verified late payment must leave exactly one durable receipt');
+    assert.equal(recorded[0].status, 'rejected', 'expired payment must be held for reconciliation, not applied');
+    assert.equal(recorded[0].event_type, 'payment_succeeded');
+    assert.equal(recorded[0].signature_verified, true);
   });
   await t.test('new mismatched-amount event cannot rewrite already paid order', async () => {
     const fixture = await checkout();
     const first = event(fixture.order);
     assert.equal((await billing.applyVerifiedSaasBillingProviderEvent(first)).status, 'applied');
-    try {
-      await billing.applyVerifiedSaasBillingProviderEvent(event(fixture.order, { providerPaymentRef: first.providerPaymentRef, amountIqd: 1 }));
-    } catch (error) {
-      assert.ok(['SAAS_BILLING_TERMINAL_CONFLICT', 'SAAS_BILLING_AMOUNT_MISMATCH'].includes(error.code), 'only explicit terminal/amount rejection is acceptable');
-    }
+    const rejectedEvent = event(fixture.order, { providerPaymentRef: first.providerPaymentRef, amountIqd: 1 });
+    await assert.rejects(
+      billing.applyVerifiedSaasBillingProviderEvent(rejectedEvent),
+      { code: 'SAAS_BILLING_TERMINAL_CONFLICT' },
+      'conflicting payment must be rejected',
+    );
     const stored = (await pool.query('SELECT status,provider_payment_ref FROM saas_billing_orders WHERE id=$1', [fixture.order.id])).rows[0];
     assert.equal(stored.status, 'paid', 'verified terminal paid state must not be overwritten by mismatched replay');
+    const audit = (await pool.query('SELECT status, signature_verified FROM saas_billing_events WHERE provider_event_id=$1', [rejectedEvent.providerEventId])).rows;
+    assert.equal(audit.length, 1, 'terminal conflict must persist one durable rejection receipt');
+    assert.equal(audit[0].status, 'rejected');
+    assert.equal(audit[0].signature_verified, true);
     assert.equal(stored.provider_payment_ref, first.providerPaymentRef);
     assert.equal((await pool.query('SELECT count(*)::int AS count FROM saas_entitlement_applications WHERE order_id=$1', [fixture.order.id])).rows[0].count, 1);
+  });
+  await t.test('conflicting payment after refund cannot rewrite refunded terminal order', async () => {
+    const fixture = await checkout();
+    const first = event(fixture.order);
+    assert.equal((await billing.applyVerifiedSaasBillingProviderEvent(first)).status, 'applied');
+    const refund = await billing.applyVerifiedSaasBillingProviderEvent({
+      ...event(fixture.order),
+      eventType: 'refund_settled',
+      providerPaymentRef: undefined,
+      providerRefundRef: randomUUID(),
+      reasonCode: 'service_guarantee_manual_refund',
+    });
+    assert.equal(refund.status, 'refunded');
+    const rejectedEvent = event(fixture.order, { providerPaymentRef: first.providerPaymentRef, amountIqd: 1 });
+    await assert.rejects(
+      billing.applyVerifiedSaasBillingProviderEvent(rejectedEvent),
+      { code: 'SAAS_BILLING_TERMINAL_CONFLICT' },
+    );
+    const redelivery = await billing.applyVerifiedSaasBillingProviderEvent(rejectedEvent);
+    assert.equal(redelivery.status, 'duplicate', 're-delivery must be idempotent and must not apply payment');
+    const rejectedReceipts = (await pool.query('SELECT status, signature_verified FROM saas_billing_events WHERE provider_event_id=$1', [rejectedEvent.providerEventId])).rows;
+    assert.equal(rejectedReceipts.length, 1, 'refund conflict and re-delivery must preserve one durable rejection receipt');
+    assert.equal(rejectedReceipts[0].status, 'rejected');
+    assert.equal(rejectedReceipts[0].signature_verified, true);
+    const stored = (await pool.query('SELECT status,provider_payment_ref FROM saas_billing_orders WHERE id=$1', [fixture.order.id])).rows[0];
+    assert.equal(stored.status, 'refunded');
+    assert.equal(stored.provider_payment_ref, first.providerPaymentRef);
+    assert.equal((await pool.query('SELECT count(*)::int AS count FROM saas_entitlement_applications WHERE order_id=$1', [fixture.order.id])).rows[0].count, 1);
+  });
+  await t.test('failed and cancelled verified events cannot reverse paid or refunded orders and leave durable rejected receipts', async () => {
+    for (const terminalStatus of ['paid', 'refunded']) {
+      for (const eventType of ['payment_failed', 'payment_cancelled']) {
+        const fixture = await checkout();
+        const paidEvent = event(fixture.order);
+        assert.equal((await billing.applyVerifiedSaasBillingProviderEvent(paidEvent)).status, 'applied');
+        if (terminalStatus === 'refunded') {
+          const refund = await billing.applyVerifiedSaasBillingProviderEvent({
+            ...event(fixture.order),
+            eventType: 'refund_settled',
+            providerPaymentRef: undefined,
+            providerRefundRef: randomUUID(),
+            reasonCode: 'service_guarantee_manual_refund',
+          });
+          assert.equal(refund.status, 'refunded');
+        }
+        const rejectedEvent = event(fixture.order, {
+          eventType,
+          providerPaymentRef: undefined,
+        });
+        await assert.rejects(
+          billing.applyVerifiedSaasBillingProviderEvent(rejectedEvent),
+          { code: 'SAAS_BILLING_TERMINAL_CONFLICT' },
+        );
+        assert.equal((await billing.applyVerifiedSaasBillingProviderEvent(rejectedEvent)).status, 'duplicate');
+        const receipts = (await pool.query(
+          'SELECT status, event_type, signature_verified FROM saas_billing_events WHERE provider_event_id=$1',
+          [rejectedEvent.providerEventId],
+        )).rows;
+        assert.deepEqual(receipts, [{ status: 'rejected', event_type: eventType, signature_verified: true }]);
+        const stored = (await pool.query(
+          'SELECT status,provider_payment_ref FROM saas_billing_orders WHERE id=$1',
+          [fixture.order.id],
+        )).rows[0];
+        assert.equal(stored.status, terminalStatus);
+        assert.equal(stored.provider_payment_ref, paidEvent.providerPaymentRef);
+        assert.equal((await pool.query(
+          'SELECT count(*)::int AS count FROM saas_entitlement_applications WHERE order_id=$1',
+          [fixture.order.id],
+        )).rows[0].count, 1);
+      }
+    }
   });
   await t.test('simultaneous identical checkout requests return one durable order for both callers', async () => {
     for (let attempt = 0; attempt < 6; attempt++) {

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "gate": "CASHIER-SYNC-SEQUENCE-001",
+  "status": "BOUNDED_PROPOSAL_SQL_CONCURRENCY_ACCEPTED_CANONICAL_PROMOTION_PENDING",
+  "source": "4b9f9dc638e95b8b053189edf3cb6e93b48b384e",
+  "sourceTree": "e7bbd58afbc90c1ef3d817c850c1b0343c57114c",
+  "checkout": "dfb36e1c5216146fdb1820cf4829a60fd050a02a",
+  "checkoutTreeMatched": true,
+  "release": "NO-GO",
+  "gateClosed": false,
+  "proposal": "evidence/seq-d2-stream-receipt-schema-proposal.sql",
+  "fixture": "artifacts/api-server/tests/cashier-stream-storage-proposal-postgres.integration.test.mjs",
+  "observed": [
+    "Second writer observed waiting via pg_blocking_pids on first stream writer",
+    "First commit preserves exactly one receipt and checkpoint1/version2; waiter rejects23514",
+    "First rollback leaves no first receipt; waiter commits exactly one receipt and checkpoint1/version2",
+    "Separate merchant stream commits while target writer blocked",
+    "Existing peer selected stream and receipt JSON remains exactly unchanged"
+  ],
+  "limits": [
+    "Root fixture SQL writers on proposal tables, not canonical financial writers or HTTP",
+    "No canonical schema/migration/admission/hosted change",
+    "No receipt-to-financial-result provenance or restore proof",
+    "Raw device identity retention must be reconciled with current merchant deletion anonymization before promotion"
+  ],
+  "canonicalPromotionReview": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md#seq-d2-canonical-promotion-review--2026-10-26",
+  "nextAction": "Resolve proposal raw-device identity retention against current deletion anonymization before canonical schema generation; then verify readiness, restore and trusted financial writer integration.",
+  "ci": {
+    "total": 56,
+    "success": 56,
+    "target": {
+      "run": 40264134265,
+      "job": 121382683025,
+      "invocations": 14,
+      "files": 14,
+      "passed": 33,
+      "failed": 0,
+      "skipped": 0,
+      "checkout": "dfb36e1c5216146fdb1820cf4829a60fd050a02a"
+    },
+    "broader": {
+      "run": 40264134048,
+      "job": 121382681239,
+      "invocations": 93,
+      "files": 91,
+      "passed": 729,
+      "failed": 0,
+      "skipped": 0,
+      "checkout": "dfb36e1c5216146fdb1820cf4829a60fd050a02a"
+    }
+  }
+}

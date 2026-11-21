@@ -81,12 +81,18 @@ export async function updateMerchantCurrencyAuthoritative(input: {
   const nextCurrency = normalizeCurrencyCode(input.currencyCode);
 
   return withMerchantOperationalTransaction(tenantId, async client => {
+    const identity = await operationalQueryRows<{ session_login: string }>(
+      client, "SELECT session_user::text AS session_login",
+    );
+    const firstCommercial = identity.length === 1 &&
+      identity[0].session_login === "fawri_restricted_runtime";
     const merchantRows = await operationalQueryRows<MerchantRow>(
       client,
-      `SELECT id, country_code, timezone, currency_code
-         FROM merchants
-        WHERE id = $1
-        FOR UPDATE`,
+      firstCommercial
+        ? `SELECT id, country_code, timezone, currency_code
+             FROM public.fawri_v1_scoped_merchant_region($1::text,true)`
+        : `SELECT id, country_code, timezone, currency_code
+             FROM merchants WHERE id = $1 FOR UPDATE`,
       [tenantId],
     );
     if (merchantRows.length !== 1) {
@@ -153,15 +159,35 @@ export async function updateMerchantCurrencyAuthoritative(input: {
       );
     }
 
-    const updated = await operationalQueryRows<MerchantRow>(
-      client,
-      `UPDATE merchants
-          SET currency_code = $2,
-              updated_at = CURRENT_TIMESTAMP
-        WHERE id = $1
-        RETURNING id, country_code, timezone, currency_code`,
-      [tenantId, nextCurrency],
-    );
+    // The V1 SECURITY DEFINER function re-checks monetary history inside
+    // the same transaction. Direct callers may not bypass the API guard.
+    let updated: MerchantRow[];
+    try {
+      updated = await operationalQueryRows<MerchantRow>(
+        client,
+        firstCommercial
+          ? `SELECT id, country_code, timezone, currency_code
+               FROM public.fawri_v1_update_scoped_merchant_currency(
+                 $1::text,$2::text)`
+          : `UPDATE merchants
+               SET currency_code = $2, updated_at = CURRENT_TIMESTAMP
+               WHERE id = $1
+               RETURNING id, country_code, timezone, currency_code`,
+        [tenantId, nextCurrency],
+      );
+    } catch (error) {
+      if (firstCommercial &&
+          (error as { code?: string })?.code === "23514" &&
+          String((error as Error).message).includes(
+            "V1_MERCHANT_CURRENCY_MONETARY_GUARD")) {
+        throw new MerchantCurrencyAuthorityError(
+          "MERCHANT_CURRENCY_CHANGE_BLOCKED",
+          "currency cannot be changed after monetary operational data exists",
+          409,
+        );
+      }
+      throw error;
+    }
     if (updated.length !== 1) {
       throw new MerchantCurrencyAuthorityError(
         "MERCHANT_CURRENCY_UPDATE_FAILED",

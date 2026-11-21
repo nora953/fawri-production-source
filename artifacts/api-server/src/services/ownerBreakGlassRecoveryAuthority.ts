@@ -1,3 +1,4 @@
+import { authenticationDatabasePool, withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import {
   getPasswordValidationError,
@@ -5,10 +6,8 @@ import {
   verifyPassword,
 } from "./authPasswordService";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
-  withOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 
@@ -153,7 +152,7 @@ export async function getOwnerRecoveryStatus(accountId: string): Promise<{
       503,
     );
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const owner = await ownerById(pool, accountId);
   if (!owner) {
     throw new OwnerRecoveryError("OWNER_ADMIN_REQUIRED", "owner administrator is required", 403);
@@ -180,7 +179,7 @@ export async function generateOwnerRecoveryBundle(accountId: string): Promise<{
       503,
     );
   }
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const owner = await ownerById(client, accountId, true);
     if (!owner) {
       throw new OwnerRecoveryError("OWNER_ADMIN_REQUIRED", "owner administrator is required", 403);
@@ -239,7 +238,7 @@ export async function verifyOwnerRecoveryKey1(input: {
     );
   }
   const recoveryIdHash = ownerRecoveryFingerprint("recovery-id", input.recoveryId);
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const rows = await operationalQueryRows<OwnerRecoveryRow>(
       client,
       `SELECT a.id, a.phone, a.password_hash, a.metadata
@@ -293,7 +292,7 @@ export async function verifyOwnerRecoveryOldPhone(input: {
       503,
     );
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const owner = await ownerById(pool, input.ownerId);
   const recovery = owner ? recoveryFromMetadata(owner.metadata || {}) : null;
   if (
@@ -328,7 +327,7 @@ export async function ensureOwnerRecoveryPhoneAvailable(input: {
       503,
     );
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const collision = await operationalQueryRows<{ id: string }>(
     pool,
     `SELECT id FROM accounts WHERE phone = $1 AND id <> $2 LIMIT 1`,
@@ -362,7 +361,7 @@ export async function completeOwnerRecovery(input: {
       503,
     );
   }
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const owner = await ownerById(client, input.ownerId, true);
     const recovery = owner ? recoveryFromMetadata(owner.metadata || {}) : null;
     if (

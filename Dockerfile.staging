@@ -3,6 +3,11 @@
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
 
+# Build the commercial UI with the *same* manual-commerce profile as the API.
+# POS shell is removed by Vite build plugin; manual flag also disables
+# Meta/payment/AI UX at compile time. Do not rely only on runtime envVars.
+ENV FAWRI_V1_MANUAL_COMMERCE=1
+
 RUN corepack enable && corepack prepare pnpm@10.26.1 --activate
 
 COPY . .

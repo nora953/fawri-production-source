@@ -1,3 +1,4 @@
+import {authenticationDatabasePool,withAuthenticationTransaction} from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import type { AccountKind, AdminPermission, AdminRole } from "./authPolicy";
 import { parseSessionToken } from "./authSecurityDataStore";
@@ -82,11 +83,6 @@ function postgresRequired(_kind: AccountKind): boolean {
   return process.env[POSTGRES_AUTHORITY_ENV] === "required";
 }
 
-function requireDatabaseUrl(): void {
-  if (!process.env.DATABASE_URL) {
-    throw new Error(`${POSTGRES_AUTHORITY_ENV}=required requires DATABASE_URL`);
-  }
-}
 
 function envPositiveInt(name: string, fallback: number): number {
   const value = Number(process.env[name]);
@@ -170,11 +166,7 @@ function toRecord(row: SessionRow): AuthSessionRecord {
   };
 }
 
-async function databasePool(): Promise<DatabasePool> {
-  requireDatabaseUrl();
-  const module = await import("@workspace/db");
-  return module.pool;
-}
+async function databasePool(): Promise<DatabasePool> { return authenticationDatabasePool(); }
 
 async function queryRows<T>(
   target: QueryTarget,
@@ -185,22 +177,8 @@ async function queryRows<T>(
   return result.rows as unknown as T[];
 }
 
-async function withTransaction<T>(
-  work: (client: TransactionClient) => Promise<T>,
-): Promise<T> {
-  const pool = await databasePool();
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    const result = await work(client);
-    await client.query("COMMIT");
-    return result;
-  } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
-    throw error;
-  } finally {
-    client.release();
-  }
+async function withTransaction<T>(work:(client:TransactionClient)=>Promise<T>):Promise<T> {
+  return withAuthenticationTransaction(work);
 }
 
 async function lockAccount(

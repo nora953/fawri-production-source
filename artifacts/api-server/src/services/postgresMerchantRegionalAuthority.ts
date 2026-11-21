@@ -55,12 +55,19 @@ export async function getMerchantCommerceContextAuthoritative(
     );
   }
   return withMerchantOperationalTransaction(merchantId, async (client) => {
+    // Never grant the restricted merchant LOGIN global merchant reads.
+    const principal = await operationalQueryRows<{ session_login: string }>(
+      client, "SELECT session_user::text AS session_login",
+    );
+    const firstCommercial = principal.length === 1 &&
+      principal[0].session_login === "fawri_restricted_runtime";
     const rows = await operationalQueryRows<MerchantRegionalRow>(
       client,
-      `SELECT id, country_code, timezone, currency_code
-         FROM merchants
-        WHERE id = $1
-        LIMIT 2`,
+      firstCommercial
+        ? `SELECT id, country_code, timezone, currency_code
+             FROM public.fawri_v1_scoped_merchant_region($1::text,false)`
+        : `SELECT id, country_code, timezone, currency_code
+             FROM merchants WHERE id = $1 LIMIT 2`,
       [merchantId],
     );
     if (rows.length !== 1) {

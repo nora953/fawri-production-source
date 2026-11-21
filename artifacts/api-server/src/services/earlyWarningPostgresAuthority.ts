@@ -1,6 +1,6 @@
+import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import {
   operationalPostgresAuthorityRequired,
-  withOperationalTransaction,
   type OperationalSqlClient,
 } from "./operationalPostgresAuthority";
 
@@ -228,7 +228,7 @@ export async function loadEarlyWarningPostgresSnapshot(
   const since = new Date(now.getTime() - WINDOW_MS[requestedWindow]);
   const started = Date.now();
 
-  const data = await withOperationalTransaction(async (client) => {
+  const data = await withAuthenticationTransaction(async (client) => {
     await client.query("SELECT 1");
 
     const queue = await one(

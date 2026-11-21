@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "gate": "CASHIER-SYNC-SEQUENCE-001",
+  "status": "BOUNDED_CANONICAL_DELETION_SERVICE_WITH_PROPOSAL_BRIDGE_ACCEPTED_PROMOTION_PENDING",
+  "source": "3fdc89edc5500b511b3cdcd492e67bc3a5b99b80",
+  "sourceTree": "0c656744764eede236943092e1260c68afc43dac",
+  "release": "NO-GO",
+  "gateClosed": false,
+  "proposal": "evidence/seq-d2-stream-receipt-schema-proposal.sql",
+  "fixture": "artifacts/api-server/tests/cashier-stream-storage-proposal-postgres.integration.test.mjs",
+  "scope": "Unchanged actual deletion service with a proposal-only merchant retention trigger installed in owned disposable PostgreSQL; separate restricted primary and authentication LOGINs",
+  "observed": [
+    "Actual canonical deletion service executes with separate restricted authentication LOGIN and proposal trigger",
+    "Primary direct trigger invocation and merchant state mutation rejected42501",
+    "Fault after verified uncommitted retirement rolls back exact selected merchant/account/request/staff/station/shift/stream/receipt rows",
+    "Successful retry closes account and completes deletion request; active/review bindings erased and retired with expected version increments",
+    "Already retired stream untouched",
+    "All selected immutable receipt JSON and peer business/proposal snapshots preserved exactly",
+    "Deleted merchant new stream insertion and retired append rejected23514",
+    "Repeat deletion returns MERCHANT_NOT_FOUND and leaves selected target snapshot unchanged",
+    "Existing NULL retention state accepted; deleted state rejected"
+  ],
+  "priorFailedCandidate": {
+    "source": "c0120e5072f5803784e3dec68907c4e82d54aa7b",
+    "run": 40266760008,
+    "job": 121390749457,
+    "fixturePassed": 0,
+    "fixtureFailed": 1,
+    "reason": "New insertion guard used retention_status <> deleted, which excludes existing valid NULL retention state; corrected to IS DISTINCT FROM without permitting deleted targets",
+    "accepted": false
+  },
+  "limits": [
+    "Proposal trigger/functions/tables installed and removed only inside owned disposable fixture; no canonical schema/journal or hosted changes",
+    "Existing actual deletion service exercised, not owner HTTP authorization or physical media/backup deletion acceptance",
+    "Trigger SECURITY DEFINER uses root fixture owner; canonical non-login least-privilege ownership/readiness/restore plan still pending",
+    "Synthetic receipts have no proven financial result provenance",
+    "No full retained-field or retention-duration policy adoption; FIELD005 remains open"
+  ],
+  "nextAction": "Reconcile revision2 plus lifecycle bridge into canonical Drizzle generation with reviewed least-privilege function ownership, trigger/readiness checks, migration reproducibility and full dump/restore proof before any live adoption; preserve existing admission and FIELD005 policy blockers.",
+  "checkout": "49d447c01410ab783b52eace01b192eb0e41ee27",
+  "checkoutTreeMatched": true,
+  "proposalSha256": "9e7394fb98add874a8a58ce1960002a89daee5bdc07317b44dd0396eb325d7a4",
+  "fixtureSha256": "2be812b515c8da7c14ef68150775f9a58501b750fb9dd498c20179d803acfd07",
+  "proposalRevision": 2,
+  "lifecycleBridgeRevision": 1,
+  "fixtureTap": {
+    "passed": 7,
+    "functionalSubtests": 6,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "ci": {
+    "total": 56,
+    "success": 56,
+    "target": {
+      "run": 40267010329,
+      "job": 121391499858,
+      "invocations": 14,
+      "files": 14,
+      "passed": 35,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "checkout": "49d447c01410ab783b52eace01b192eb0e41ee27"
+    },
+    "broader": {
+      "run": 40267010218,
+      "job": 121391707258,
+      "invocations": 93,
+      "files": 91,
+      "passed": 731,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "checkout": "49d447c01410ab783b52eace01b192eb0e41ee27"
+    }
+  }
+}

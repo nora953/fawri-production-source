@@ -39,6 +39,11 @@ export function isPendingMerchantPathAllowed(
   const normalizedPath = String(requestPath || "").split("?", 1)[0];
 
   if (normalizedMethod === "OPTIONS") return true;
+  // Narrow identity proof path; no pending merchant commerce permissions.
+  if (normalizedPath === "/api/auth/google/phone/begin" ||
+      normalizedPath === "/api/auth/google/phone/verify") {
+    return normalizedMethod === "POST";
+  }
   if (PENDING_MERCHANT_EXACT_PATHS.has(normalizedPath)) return true;
 
   return PENDING_MERCHANT_PREFIXES.some(

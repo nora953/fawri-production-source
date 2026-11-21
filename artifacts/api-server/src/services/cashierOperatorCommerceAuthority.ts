@@ -15,6 +15,8 @@ import {
   syncCashierSaleAuthoritative,
 } from "./postgresCashierSyncAuthority";
 import { syncCashierCompensationAuthoritative } from "./postgresCashierCompensationSyncAuthority";
+import { validateCashierCompensationSyncBundle } from "./cashierCompensationSyncValidation";
+import { prepareInternalCashierStreamBody } from "./cashierStreamAdmissionAuthority";
 import type { CashierOperatorContext } from "./postgresCashierStaffAuthority";
 import {
   operationalQueryRows,
@@ -491,6 +493,7 @@ async function persistOperatorAttribution(input: {
 export async function syncCashierOperatorSaleAuthoritative(input: {
   context: CashierOperatorContext;
   body: unknown;
+  versionedStreamId?: string;
 }) {
   const identity = cashierOperatorBundleIdentity(input.body, "sale");
   assertOperatorIdentity(input.context, identity);
@@ -499,11 +502,19 @@ export async function syncCashierOperatorSaleAuthoritative(input: {
     deviceId: identity.deviceId,
     occurredAt: identity.occurredAt,
   });
+  if (historicalContext.staff_id !== input.context.staff_id || historicalContext.station_id !== input.context.station_id) {
+    throw new CashierSyncError(
+      "CASHIER_OPERATOR_HISTORICAL_OPERATOR_MISMATCH",
+      "historical cashier operation requires the original staff and station",
+      403,
+    );
+  }
   const verifiedBody = prepareOperatorSaleBody(input.context, input.body);
   const result = await syncCashierSaleAuthoritative({
     merchantId: input.context.merchant_id,
     locationId: historicalContext.location_id,
     body: verifiedBody,
+    ...(input.versionedStreamId ? {versionedStream:{streamId:input.versionedStreamId,attribution:historicalContext}} : {}),
   });
   // Attribution is deliberately idempotent and repairable. If this write fails
   // after the core sale transaction commits, the client receives no success and
@@ -520,6 +531,7 @@ export async function syncCashierOperatorSaleAuthoritative(input: {
 export async function syncCashierOperatorCompensationAuthoritative(input: {
   context: CashierOperatorContext;
   body: unknown;
+  versionedStreamId?: string;
   kind: "return" | "void";
 }) {
   const identity = cashierOperatorBundleIdentity(input.body, input.kind);
@@ -529,9 +541,35 @@ export async function syncCashierOperatorCompensationAuthoritative(input: {
     deviceId: identity.deviceId,
     occurredAt: identity.occurredAt,
   });
+  if (historicalContext.staff_id !== input.context.staff_id || historicalContext.station_id !== input.context.station_id) {
+    throw new CashierSyncError(
+      "CASHIER_OPERATOR_HISTORICAL_OPERATOR_MISMATCH",
+      "historical cashier operation requires the original staff and station",
+      403,
+    );
+  }
+  // Validate the bundle kind before any compensation mutation is attempted.
+  // The endpoint permission is kind-specific; a mismatched payload must never
+  // reach the authoritative inventory or refund transaction.
+
+  const validationBody = input.versionedStreamId
+    ? prepareInternalCashierStreamBody(input.body, {
+        streamId: input.versionedStreamId,
+        attribution: historicalContext,
+      })
+    : input.body;
+  const validated = validateCashierCompensationSyncBundle(validationBody);
+  if (validated.kind !== input.kind) {
+    throw new CashierSyncError(
+      "CASHIER_OPERATOR_SYNC_KIND_MISMATCH",
+      "cashier compensation kind does not match authorized endpoint",
+      403,
+    );
+  }
   const result = await syncCashierCompensationAuthoritative({
     merchantId: input.context.merchant_id,
     body: input.body,
+    ...(input.versionedStreamId ? {versionedStream:{streamId:input.versionedStreamId,attribution:historicalContext}} : {}),
   });
   if (result.compensation_kind !== input.kind) {
     throw new CashierSyncError(

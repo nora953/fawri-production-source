@@ -10,6 +10,8 @@ on:
       - "scripts/lib/postgresql-migration-write-readiness.mjs"
       - "scripts/run-postgresql-migration-plan-complete.mjs"
       - "scripts/tests/complete-*.test.mjs"
+      - "scripts/tests/plan-postgresql-migration.test.mjs"
+      - "scripts/tests/run-postgresql-migration-plan.test.mjs"
       - "scripts/tests/operational-overlay-write-readiness.test.mjs"
       - "scripts/tests/locked-migration-operational-safety.test.mjs"
       - "scripts/tests/validated-order-operations-gate.test.mjs"
@@ -28,6 +30,8 @@ on:
       - "scripts/lib/postgresql-migration-write-readiness.mjs"
       - "scripts/run-postgresql-migration-plan-complete.mjs"
       - "scripts/tests/complete-*.test.mjs"
+      - "scripts/tests/plan-postgresql-migration.test.mjs"
+      - "scripts/tests/run-postgresql-migration-plan.test.mjs"
       - "scripts/tests/operational-overlay-write-readiness.test.mjs"
       - "scripts/tests/locked-migration-operational-safety.test.mjs"
       - "scripts/tests/validated-order-operations-gate.test.mjs"
@@ -73,6 +77,8 @@ jobs:
           node --check scripts/run-postgresql-migration-plan-complete.mjs
           node --check lib/db/scripts/run-migration-with-operational-locks.mjs
           node --check lib/db/scripts/run-complete-migration-with-operational-locks.mjs
+          node --check scripts/tests/plan-postgresql-migration.test.mjs
+          node --check scripts/tests/run-postgresql-migration-plan.test.mjs
           node --check scripts/tests/complete-migration-operational-gates.test.mjs
           node --check scripts/tests/complete-locked-migration-safety.test.mjs
           node --check scripts/tests/operational-overlay-write-readiness.test.mjs
@@ -82,6 +88,8 @@ jobs:
       - name: Test complete migration planning and operational locks
         run: >-
           node --test
+          scripts/tests/plan-postgresql-migration.test.mjs
+          scripts/tests/run-postgresql-migration-plan.test.mjs
           scripts/tests/complete-migration-operational-gates.test.mjs
           scripts/tests/complete-locked-migration-safety.test.mjs
           scripts/tests/operational-overlay-write-readiness.test.mjs

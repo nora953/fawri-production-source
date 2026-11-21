@@ -1,0 +1,10 @@
+{
+  "index": 37,
+  "name": "audited_admin_transaction_binding",
+  "when": 1791936000009,
+  "mode": "reviewed_sql",
+  "sql_sha256": "4cd1dc730da452b47e5a269114ab771e6a2bbdfb37f511fb16a92c3ede6959e8",
+  "preimage_files": [
+    "tenant-security.ts"
+  ]
+}

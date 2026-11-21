@@ -23,6 +23,8 @@ import cashierDiscountPolicyOperationsRouter from "./routes/cashier-discount-pol
 import cashierOperatorCommerceRouter from "./routes/cashier-operator-commerce";
 import cashierSyncOperationsRouter from "./routes/cashier-sync-operations";
 import cashierSubscriptionOperationsRouter from "./routes/cashier-subscription-operations";
+import { enforceManualCommercialCutover } from "./middleware/manualCommercialCutover";
+import { enforceFirstCommercialPosCutover } from "./middleware/firstCommercialPosCutover";
 import merchantSettingsRouter from "./routes/merchant-settings";
 import merchantRegionalRouter from "./routes/merchant-regional";
 import retentionGuardRouter from "./routes/retention-guard";
@@ -66,6 +68,11 @@ import {
 } from "./middleware/metaWebhookSecurity";
 import { logger } from "./lib/logger";
 import { hasAdminPermission } from "./services/authPolicy";
+import { createProductionOtpReadinessCheck } from "./services/authOtpDelivery";
+import { createHostedV1CatalogMediaReadinessCheck } from "./services/hostedV1CatalogMediaReadiness";
+import { withAuthenticationTransaction } from "./services/authenticationPostgresAuthority";
+import { withOperatorDirectoryTransaction } from "./services/operatorDirectoryPostgresAuthority";
+import { createReadinessSnapshot } from "./observability/readiness";
 import {
   refreshMerchantRetentionPolicy,
   startMerchantRetentionPolicyScheduler,
@@ -184,9 +191,10 @@ function enforceMetaConnectionActivationGate(
   res: Response,
   next: NextFunction,
 ): void {
+  const pathname = req.path.toLowerCase().replace(/\/+$/, "");
   const isConnectionPath =
-    req.method === "GET" &&
-    (req.path === "/api/meta/login" || req.path === "/api/meta/callback");
+    (req.method === "GET" || req.method === "HEAD") &&
+    (pathname === "/api/meta/login" || pathname === "/api/meta/callback");
 
   if (!isConnectionPath || metaConnectionActivationConfigured(process.env)) {
     next();
@@ -206,11 +214,12 @@ function enforceLegacyKnowledgeCutoverGate(
   res: Response,
   next: NextFunction,
 ): void {
+  const pathname = req.path.toLowerCase();
   const isLegacyKnowledgePath =
-    req.path === "/api/saved-answers" ||
-    req.path.startsWith("/api/saved-answers/") ||
-    req.path === "/api/bot-training" ||
-    req.path.startsWith("/api/bot-training/");
+    pathname === "/api/saved-answers" ||
+    pathname.startsWith("/api/saved-answers/") ||
+    pathname === "/api/bot-training" ||
+    pathname.startsWith("/api/bot-training/");
 
   if (!isLegacyKnowledgePath) {
     next();
@@ -284,8 +293,56 @@ app.use(
   }),
 );
 app.use(cookieParser());
+// Fail closed before every API/auth/legacy cashier route and static fallback.
+// Production V1 deliberately cannot be re-enabled by a cloud env flag.
+// No financial rows, IndexedDB stores or verified receipts are deleted.
+app.use(enforceFirstCommercialPosCutover);
+app.use(enforceManualCommercialCutover);
 app.get("/healthz", (_req, res) => {
   res.status(200).json({ ok: true, service: "fawri" });
+});
+// Render's G3 infrastructure gate is intentionally distinct from the wider
+// /ops/readiness release gate. WhatsApp delivery belongs to G4 and must stay
+// independently blocked there; G3 checks actual SQL authorities and disk.
+app.get("/readyz", async (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  try {
+    const snapshot = await createReadinessSnapshot([
+      createPostgresAuthorityReadinessCheck(),
+      createHostedV1CatalogMediaReadinessCheck(),
+      {
+        name: "production_release_configuration",
+        check() { assertProductionRuntimeConfiguration(process.env); },
+      },
+      {
+        name: "authentication_sql",
+        timeoutMs: 3_000,
+        async check() {
+          await withAuthenticationTransaction(async client => {
+            const row = await client.query<{ healthy: number }>(
+              "SELECT 1::integer AS healthy",
+            );
+            if (row.rows[0]?.healthy !== 1) throw new Error("AUTH_SQL_NOT_READY");
+          });
+        },
+      },
+      {
+        name: "operator_sql",
+        timeoutMs: 3_000,
+        async check() {
+          await withOperatorDirectoryTransaction(async client => {
+            const row = await client.query<{ healthy: number }>(
+              "SELECT 1::integer AS healthy",
+            );
+            if (row.rows[0]?.healthy !== 1) throw new Error("OPERATOR_SQL_NOT_READY");
+          });
+        },
+      },
+    ]);
+    res.status(snapshot.status === "ready" ? 200 : 503).json(snapshot);
+  } catch {
+    res.status(503).json({ status: "not_ready", checks: [] });
+  }
 });
 app.use(
   "/ops",
@@ -294,6 +351,8 @@ app.use(
     version: observabilityVersion(),
     readinessChecks: [
       createPostgresAuthorityReadinessCheck(),
+      createProductionOtpReadinessCheck(),
+      createHostedV1CatalogMediaReadinessCheck(),
       {
         name: "production_release_configuration",
         check() {

@@ -1,0 +1,34 @@
+name: P0 operational notification dedupe identity negative
+on:
+  pull_request:
+    paths:
+      - 'artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts'
+      - 'artifacts/api-server/tests/operational-notification-conflict-identity-postgres.integration.test.mjs'
+      - 'scripts/run-isolated-postgres-audit.sh'
+      - 'scripts/execute-disposable-postgres-audit.mjs'
+      - '.github/workflows/p0-operational-notification-dedupe-negative.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  negative-dedupe-pg:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Run only P0 operational notification foreign-ID/payload collision test with actual isolated PostgreSQL
+        run: bash scripts/run-isolated-postgres-audit.sh notification-dedupe-negative
+      - name: Dispose owned audit containers and anonymous volumes
+        if: always()
+        run: |
+          mapfile -t audit_containers < <(docker ps -aq --filter "label=fawri.audit=${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}")
+          if [ "${#audit_containers[@]}" -gt 0 ]; then docker rm -fv "${audit_containers[@]}"; fi

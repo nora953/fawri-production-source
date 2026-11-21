@@ -1,11 +1,10 @@
+import assert from 'node:assert/strict';
 import { assertDisposablePostgres } from '../../../../scripts/lib/disposable-postgres-test-guard.mjs';
 await assertDisposablePostgres();
 process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = 'required';
 process.env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY = 'required';
 process.env.FAWRI_SAAS_BILLING_PROVIDER = 'test_fake';
-const { pool } = await import('@workspace/db');
-pool.options.max = 1;
-pool.on('error', () => {}); // A deliberately terminated owned backend may emit after query rejection.
+let pool;
 let handled = false;
 let wireProxy;
 async function send(message) {
@@ -16,7 +15,19 @@ process.on('message', async task => {
   handled = true;
   try {
     if (!['saas', 'cashier'].includes(task.kind) || !/^receipt-owned-[a-f0-9-]+$/.test(task.marker)) throw new Error('invalid synthetic child task');
+    const bootstrap=new URL(process.env.DATABASE_URL),runtime=new URL(process.env.FAWRI_TEST_BILLING_DATABASE_URL);
+    assert.equal(runtime.host,bootstrap.host);assert.equal(runtime.pathname,bootstrap.pathname);
+    assert.match(decodeURIComponent(runtime.username),/^knowledge_app_[a-f0-9]{32}$/);
+    process.env.DATABASE_URL=runtime.toString();delete process.env.FAWRI_TEST_BILLING_DATABASE_URL;
+    ({pool}=await import('@workspace/db'));pool.options.max=1;
+    pool.on('error',()=>{}); // The owned test deliberately terminates backends.
     pool.options.application_name = task.marker;
+    assert.deepEqual((await pool.query('SELECT session_user::text AS login,current_user::text AS active')).rows[0],{login:decodeURIComponent(runtime.username),active:decodeURIComponent(runtime.username)});
+    const {assertProductionDatabaseRlsReady}=await import('../../src/services/postgresRuntimeRlsSecurity.ts');
+    await assertProductionDatabaseRlsReady({NODE_ENV:'production',FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_AUTH_DATABASE_URL:process.env.FAWRI_AUTH_DATABASE_URL,FAWRI_OPERATOR_DATABASE_URL:'postgresql://operator@127.0.0.1/fawri_ci'},pool);
+    // Startup uses an unarmed direct connection. Discard it so both existing
+    // acknowledgment fault modes attach to the next actual application client.
+    const startup=await pool.connect();startup.release(true);
     if (task.wireCommitAcknowledgmentLoss) {
       if (task.commitAcknowledgmentLoss || ![1,2].includes(task.wireCommitAcknowledgmentLoss)) throw new Error('invalid synthetic wire boundary');
       const { startOwnedCommitResponseProxy } = await import('./postgres-commit-response-proxy.mjs');
@@ -58,7 +69,8 @@ process.on('message', async task => {
     await send({type:'failure', code:/^[A-Z0-9_]{1,80}$/.test(error?.code || '') ? error.code : 'APPLICATION_FAILURE'});
     process.exitCode = 1;
   } finally {
-    await pool.end().catch(() => {});
+    await (await import('../../src/services/authenticationPostgresAuthority.ts')).closeAuthenticationPool();
+    if(pool)await pool.end().catch(() => {});
     if (wireProxy) await wireProxy.close();
     if (process.connected) process.disconnect();
   }

@@ -1,0 +1,103 @@
+# FAWRI V1 G3 — plan-only gated service proposal.
+# DO NOT approve/apply until all 3 role URLs, manifest, onrender origin,
+# owner admin, POS-off guard and recovery requirements are independently ready.
+# No automatic deploys. No Meta/payment/POS/AI. No plaintext credentials.
+services:
+  - type: web
+    name: fawri-v1-commercial-gated
+    runtime: docker
+    repo: https://github.com/nora953/fawri-production-source
+    branch: fix/p0-provider-receipt-order-discovery-20261015
+    region: frankfurt
+    plan: starter
+    dockerfilePath: ./Dockerfile.staging
+    dockerContext: .
+    autoDeployTrigger: off
+    # /healthz is liveness only. /readyz verifies all three database
+    # authorities, production config and actual persistent-media mount.
+    # G4 WhatsApp configuration remains a separate /ops/readiness gate;
+    # it must not prevent the earlier G3 infrastructure acceptance.
+    healthCheckPath: /readyz
+    maintenanceMode:
+      enabled: true
+    disk:
+      name: fawri-catalog-media
+      mountPath: /var/data
+      sizeGB: 5
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FAWRI_DEPLOYMENT_MODE
+        value: production
+      - key: FAWRI_V1_MANUAL_COMMERCE
+        value: "1"
+      - key: PORT
+        value: "8080"
+      - key: FAWRI_WEB_DIST_DIR
+        value: /app/artifacts/fawri/dist/public
+      - key: FAWRI_OPERATIONAL_POSTGRES_AUTHORITY
+        value: required
+      - key: FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY
+        value: required
+      - key: FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY
+        value: required
+      - key: FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE
+        value: fawri_restricted_runtime
+      # Exact first-commercial POS-off startup selection; source-pinned,
+      # without granting cashier privileges or enabling cashier routes.
+      - key: FAWRI_CASHIER_STORAGE_PROFILE
+        value: first-commercial-invoker-v1
+      - key: FAWRI_FT01_REVIEWED_INVOKER_0052_SHA256
+        value: 4879d09310a651580a23efcae60bba71b14ceae43b5cc84840f2e53a2bbfed09
+      - key: FAWRI_FT01_REVIEWED_FOUR_ROLE_SQL_SHA256
+        value: ad152346f7f02447db656bd1d04a76d1f7ba3a78ebe218dc2b4e0355b2bf152e
+      - key: FAWRI_FT01_REVIEWED_HELD_JOURNAL_SHA256
+        value: 7683b1fe807a514c0662ffb216e995492712433302f8292f9b2966582ed46339
+      - key: FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER
+        value: filesystem
+      - key: FAWRI_DATA_DIR
+        value: /var/data/fawri
+      # Must equal the ACTUAL filesystem mount, not a plausible path
+      # in the container layer. Startup refuses missing/unwritable mounts.
+      - key: FAWRI_PERSISTENT_MEDIA_MOUNT_PATH
+        value: /var/data
+      # Keep the required merchant media-deletion retry worker active.
+      # The deferred Meta webhook worker is separately disabled by the
+      # MANUAL_COMMERCE and META_CUTOVER_READY guards in index.ts.
+      - key: FAWRI_DISABLE_JOB_WORKERS
+        value: "0"
+      - key: FAWRI_META_CUTOVER_READY
+        value: "0"
+      - key: FAWRI_META_REPLY_TRANSPORT
+        value: disabled
+      - key: FAWRI_META_CREDENTIAL_PROVIDER
+        value: disabled
+      - key: FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER
+        value: disabled
+      - key: FAWRI_KNOWLEDGE_TRANSLATION_PROVIDER
+        value: ""
+      - key: FAWRI_KNOWLEDGE_AI_PROVIDER
+        value: ""
+      - key: FAWRI_SERVICE_VERSION
+        value: v1-g3-gated
+      - key: FAWRI_AUTH_SECURITY_SECRET
+        generateValue: true
+      # Admin bootstrap hashes depend on this pepper. Must be the SAME
+      # privately retained value used during the one-shot GitHub bootstrap;
+      # never generate a different value during Render provisioning.
+      - key: FAWRI_PASSWORD_SALT
+        sync: false
+      - key: FAWRI_OBSERVABILITY_BEARER_TOKEN
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: FAWRI_AUTH_DATABASE_URL
+        sync: false
+      - key: FAWRI_OPERATOR_DATABASE_URL
+        sync: false
+      - key: FAWRI_ALLOWED_ORIGINS
+        sync: false
+      # Deterministic source policy is non-secret and does NOT constitute GO.
+      # The live Neon tenant RLS + backup and app startup gates still decide.
+      - key: FAWRI_FIRST_COMMERCIAL_SOURCE_MANIFEST_JSON
+        value: '{"intent":"first_commercial_launch","project_id":"crimson-cherry-65705041","target_branch_id":"br-holy-waterfall-b993zglb","source_mode":"fresh_schema_migrations_only","source_branch_id":null,"source_backup_id":null,"data_import_requested":false,"restore_requested":false}'

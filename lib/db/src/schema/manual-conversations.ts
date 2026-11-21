@@ -82,7 +82,7 @@ export const manualReplyRequests = pgTable(
       sql`${table.status} not in ('failed', 'uncertain') or ${table.errorCode} is not null`,
     ),
   }),
-);
+).enableRLS();
 
 export type ManualReplyRequest = typeof manualReplyRequests.$inferSelect;
 export type NewManualReplyRequest = typeof manualReplyRequests.$inferInsert;

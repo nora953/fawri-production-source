@@ -1,0 +1,43 @@
+# P0 audit authority: transaction binding and remaining trust boundaries
+
+## Verified baseline
+
+Source `c5225acbeec5cfc2e0411c11cd17737ab1ae6dad`: 43/43 completed SUCCESS workflows. Schema run [39353024854](https://github.com/nora953/fawri-production-source/actions/runs/39353024854) proves committed SQL/snapshot reproducibility and disposable migration application through 0036. Isolated run [39353024803](https://github.com/nora953/fawri-production-source/actions/runs/39353024803), job 118401631953, proves audit forgery and active-window replay persist, while suspended actor reuse is denied. Admin boundary 5 PASS, production tenant RLS 30 PASS, merchant-management RLS 6 PASS. Full run inventory is in evidence/P0-0036-VALIDATION-20261020.json. This baseline evidence is not evidence for 0037.
+
+## Bounded remediation
+
+Migration 0037 adds `authority_transaction_id bigint`. Historical rows receive 0 and cannot authorize access. New rows default to PostgreSQL `txid_current()`, including its wraparound epoch. The SECURITY DEFINER predicate accepts an audit only in its issuing transaction, in addition to the actor/profile, lifetime and merchant checks from 0036. The transaction ID comes from PostgreSQL, not a GUC or actor argument. A known committed audit ID does not match a fresh transaction, including a new transaction on the same pooled connection. Retained logs remain readable by their separately authorized audit consumers.
+
+`listManagedMerchantsPostgres` already inserts and consumes the audit inside one `withOperationalTransaction`; no new connection or cloud dependency is introduced. Receipt reader 0030 inserts its audit and returns bounded receipt results in the same function call; it does not consume the tenant predicate. Existing receipt/billing suites must still pass. This change intentionally ends cross-transaction authority reuse; no legitimate application consumer of such reuse was found in repository source search.
+
+The regression test now checks issuing-transaction success, account suspension, disabled profile, password-change requirement, expiry, rollback of settings and audit row, and three concurrent replay attempts (issuer's later transaction and two separate restricted LOGINs). Each rejected replay still permits the explicitly configured own tenant. Existing audit-writer forgery characterization remains, with releaseAccepted=false; it is not converted into a passing security acceptance test. The new tenant-GUC characterization records that a shared SQL login can set a foreign tenant ID directly.
+
+## Explicit unresolved boundaries — NO-GO
+
+1. Audit INSERT/UPDATE privilege still permits a caller to manufacture authority, including an explicit current transaction ID; transaction binding does not authenticate the issuer. No live GRANT/REVOKE or role provisioning is performed here.
+2. Admin identities/permissions remain writable under the previously inspected shared grants. Replacing direct INSERT with a SECURITY DEFINER function accepting an arbitrary actor ID would preserve this flaw. Receipt-reader EXECUTE remains operator-only in intent but is shared in the inspected hosted grant state.
+3. `fawri.tenant_id` is chosen by the shared runtime SQL session. A compromised runtime login can select a foreign tenant directly without using an admin audit. Neither the existing RLS tests (which use a trusted tenant context) nor transaction binding certify isolation against arbitrary SQL using that login. This is a distinct database-role threat boundary, not a demonstrated HTTP exploit.
+4. Active actor/profile changes are observed under READ COMMITTED; PostgreSQL snapshot isolation may retain an earlier view inside a long-running REPEATABLE READ transaction. Do not claim immediate revocation for all isolation levels.
+5. Hosted restricted LOGIN acceptance and deployment/grants remain unverified. Production/default/staging/Neon/Railway unchanged; PR remains DRAFT; no merge/deploy.
+
+## Required next architecture increment
+
+Separate tenant and trusted operator authenticated roles/pools. Tenant runtime must have no audit or admin-identity DML, operator capability EXECUTE, or inherited/SET-reachable operator role. Bind operator issuance to authenticated PostgreSQL session identity with fixed grants; actor permission checks remain necessary but are not a substitute for issuer authentication. Protect the issuer's own ability to modify grants, protected tables, functions and bindings. Migrate the legitimate directory and privileged receipt reader together before changing hosted grants. For the stronger compromised-tenant-runtime threat model, also bind tenant scope to a database-verified identity (for example per-tenant authenticated roles or independently signed scope); arbitrary custom GUCs are not credentials. Prove all paths using restricted direct LOGINs and preserve authenticated admin workflows.
+
+## Execution status — verified source 4fe28acd0d83d17fc2f133bc6096e0d620e3d3f0
+
+All 43 workflows completed SUCCESS. Isolated run 39354615625/job118406437488 confirms admin-boundary 7 PASS /0 FAIL /0 SKIP, committed replay denied across three transactions, audit-writer forgery and tenant-GUC trust still exposed. Directory6, production RLS30, inbox18, replay execution20, review20 and operator wire recovery17 passed. Schema run39354615431 proves standard canonical reproduction and disposable application through0037. Exact run links, markers and all60 invocation summaries: evidence/P0-0037-TRANSACTION-BINDING-20261020.json. Local guard/summary19 and readiness12 passed; DB typecheck exit0. No local PostgreSQL/Docker is available. Existing installed Drizzle CLI can be executed directly for local generation; pnpm's attempted dependency refresh was blocked by the environment supply-chain policy for the pre-existing xlsx tarball integrity entry. No lockfile or policy is changed, no unverified dependency installed. CI uses its frozen dependency environment and the unmodified canonical generator.
+
+## Issuance/consumption inventory verified during CI
+
+| Path | Authority operation | Current database connection | Required isolated trust boundary |
+| --- | --- | --- | --- |
+| `postgresMerchantManagementAuthority.ts:listManagedMerchantsPostgres` | Direct audit INSERT + local admin GUC + cross-tenant directory | `withOperationalTransaction` / shared `DATABASE_URL` | Operator pool; bounded issuer; no tenant membership/SET reachability |
+| `verifiedReceiptOperatorRead.ts:readVerifiedReceiptsForOperator` / migration 0030 | Definer reads active actor/permissions; INSERT audit; bounded receipt output | `operationalDatabasePool` / shared `DATABASE_URL` | Operator-only EXECUTE and operator pool; actor permission checks retained |
+| `verifiedReceiptReplayReview.ts` / migration 0031 | Definer reviews one receipt/order; INSERT audit | Shared operational pool | Same operator boundary; tenant SQL must not supply an arbitrary actor and invoke this capability |
+| `verifiedReceiptReplayExecution.ts` / migration 0032 | Definer calls 0031, locks session/device/permission records, writes execution audit | Shared pool, then tenant billing transaction callback | Operator authorization must be preserved at BOTH autocommit admission and transaction callback, without giving tenant sessions general operator EXECUTE |
+| `superQiSandboxWebhook.ts` / migration 0029 | Privileged admission after signature/gateway verification | Shared operational pool | Provider-admission capability is distinct from operator authority; do not accidentally grant it to tenant or operator data paths |
+
+The execution callback is a concrete migration dependency: moving only the first replay call to a separate pool leaves the second authorization call broken or requires regranting the forbidden capability to tenant runtime. Preserve the existing durable provider admission and entitlement commit boundaries and revalidate actor authorization immediately before settlement through a properly constrained mechanism. No live grant change is safe until this path is covered. Existing replay wire-recovery and billing suites must remain green.
+
+Runtime role separation requires tracing auth/bootstrap/session/password and admin lifecycle writes to `accounts`, `admin_profiles`, `admin_permissions`, `account_sessions` and `trusted_devices`, not only the audit table. Add an explicit privilege/ownership/column-grant/SET-reachability inventory for the new tenant pool, including protected function owners and PUBLIC/default privileges. A role name or a second pool variable alone does not create an isolation boundary. Use direct authenticated LOGINs for negative evidence; a privileged bootstrap connection doing SET ROLE is not certification.

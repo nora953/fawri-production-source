@@ -42,7 +42,9 @@ Object.assign(process.env, {
   AUTH_OTP_RESEND_MS: "1",
 });
 
-const { pool } = await import("@workspace/db");
+const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+    const runtimeFixture=await createDisposableKnowledgeRuntime();
+    const pool=runtimeFixture.admin;
 const { hashPassword, verifyPassword } =
   await import("../src/services/authPasswordService.js");
 const { authPostgresSessionAuthority } =
@@ -127,7 +129,7 @@ test(
       ["fixture login attempts", () => pool.query("DELETE FROM login_attempts WHERE account_id=$1", [merchantId])],
       ["fixture OTP challenges", () => pool.query("DELETE FROM auth_otp_challenges WHERE account_id=$1", [merchantId])],
       ["fixture identity", () => pool.query("DELETE FROM accounts WHERE id=$1 OR phone=$2", [merchantId, phone])],
-      ["pool", () => pool.end()],
+      ["actual runtime fixture", () => runtimeFixture.dispose()],
       ["runtime directory", () => runtimeDirectory ? rm(runtimeDirectory, { recursive: true, force: true }) : undefined],
     ]));
     await seedMerchant();
