@@ -225,7 +225,10 @@ router.get(
         merchantId,
         storageKey: parameter(req.query.storage_key),
       });
-      res.setHeader("Cache-Control", "private, max-age=300");
+      // G3 tenant isolation: a shared browser must not replay merchant A's
+      // cached image to merchant B after a logout/account switch. This response
+      // is authenticated per session and must never be cached by the browser.
+      res.setHeader("Cache-Control", "private, no-store");
       res.setHeader("Content-Type", asset.mime_type);
       res.setHeader("ETag", `\"${asset.sha256}\"`);
       res.setHeader("X-Content-Type-Options", "nosniff");
