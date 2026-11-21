@@ -155,7 +155,7 @@ export async function deliverAuthOtpWithProviderReceipt(
     const messages = body && typeof body === "object" && "messages" in body
       ? (body as { messages?: unknown }).messages : undefined;
     if (!Array.isArray(messages) || typeof messages[0]?.id !== "string" ||
-        !messages[0].id.startsWith("wamid.")) {
+        !/^wamid\.[A-Za-z0-9._+\/=-]{8,500}$/.test(messages[0].id)) {
       return { ok: false, code: "OTP_DELIVERY_FAILED", message: "Unable to deliver the verification code" };
     }
     return { ok: true, providerReceipt: {
