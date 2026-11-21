@@ -1,5 +1,16 @@
 # FAWRI V1 — G3 Render hosted checkpoint, 2026-11-21 (Asia/Baghdad)
 
+## Update 2026-11-21 — actual Render redeploy and exact PR CI
+
+**Read-only evidence verified 2026-11-21:** The previous observation of a 2026-11-19 last live deploy is **historical**, no longer the current Render state. The existing service `srv-dbv0kvm8bjmc73av6fm0` (`fawri-v1-commercial-gated-k9yj`) now reports `healthCheckPath=/readyz`, maintenance **ON**, auto deploy **OFF**, attached `/var/data` 5GB disk, one Frankfurt Starter instance. Render deployment `dep-dc0dno2vcj2c7387l9lg` succeeded `2026-11-20T23:47:30Z` and reports `live` at source commit [`729f27a6`](https://github.com/nora953/fawri-production-source/commit/729f27a6c9aeccab104395d9ad78fc9d20fd98b4), not at the PR HEAD. Previous deploys on the same SHA were superseded; their earlier failure/status is not evidence of current acceptance.
+
+**Newer PR HEAD source:** [`6faf47f7`](https://github.com/nora953/fawri-production-source/commit/6faf47f74f651792402f65594f5b771132170369) changed only `scripts/fawri-native-indexeddb-audit.mjs`, increasing native Chrome startup contention allowance and preserving assertions. GitHub Actions API for that exact source SHA shows **84/84 completed workflows with conclusion SUCCESS**, including [cashier native IndexedDB audit #44898195467](https://github.com/nora953/fawri-production-source/actions/runs/44898195467), [Final quality #44898197583](https://github.com/nora953/fawri-production-source/actions/runs/44898197583), and [production-image smoke NO DEPLOY #44898197444](https://github.com/nora953/fawri-production-source/actions/runs/44898197444). The commit's check-runs list had **93 successes plus 7 skipped owner-opt-in live jobs**; skipped jobs are *not* live production acceptance. Earlier 82/84 browser failures at `8a855be` are historical and fixed in newer source CI.
+
+**Bounded conclusion:** The actual service configuration and a successful deployment at `729f27a6` are independently confirmed. The PR HEAD `6faf47f7` is **NOT the deployed revision**, and there is no independently observed live `/readyz` 200 from the new source, two-merchant hosted SQL+HTTP isolation, Google/WhatsApp OTP receipt/redeem, product-photo checksum across restart+redeploy, or independently restored DB **and** catalog-media backup. Read-only Render logs could not be inspected in this pass because the connector required a selected workspace; no secrets, host configuration or runtime state were modified. The next gated step remains an **owner-authorized deployment of a specifically reviewed revision while maintenance remains ON**, then hosted G3→G4/G5 acceptance. Draft PR #550 and **NO-GO** are unchanged; historical P0 **29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED** (not commercial readiness). Do not trigger a new deploy or promote these checks to hosted PASS without authorization.
+
+---
+
+
 **Gate:** G3 partial deployed evidence only; **NOT HOSTED-ACCEPTED / NO-GO**.
 **Scope:** read-only Render inspection and exact committed GitHub CI; no provider modifications.
 **PR:** [#550](https://github.com/nora953/fawri-production-source/pull/550) remains Draft and unmerged.
