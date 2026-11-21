@@ -80,7 +80,12 @@ try {
  localStorage.setItem('fawri_subscriptions_migrated_v1_synthetic-admin','done');
  globalThis.auditAdmin=getAdminSupportText('en');globalThis.auditText=getAdminText('en');
  createRoot(document.getElementById('root')).render(React.createElement(I18nProvider,null,React.createElement(AdminPage)));`;
- const bundle=await build({stdin:{contents:entry,loader:'tsx',resolveDir:process.cwd()},bundle:true,format:'iife',platform:'browser',write:false,outfile:'audit-admin.js',jsx:'automatic',alias:{'@':resolve('artifacts/fawri/src')},nodePaths:[resolve('artifacts/fawri/node_modules')],define:{'process.env.NODE_ENV':'"production"'}});
+ const bundle=await build({stdin:{contents:entry,loader:'tsx',resolveDir:process.cwd()},bundle:true,format:'iife',platform:'browser',write:false,outfile:'audit-admin.js',jsx:'automatic',alias:{'@':resolve('artifacts/fawri/src')},nodePaths:[resolve('artifacts/fawri/node_modules')],define:{'process.env.NODE_ENV':'"production"',
+ // This is a NON-V1 synthetic support-permission audit. The real commercial
+ // V1 has Support disabled separately; never change that production gate.
+ // esbuild's IIFE loopback harness must explicitly provide Vite's env object,
+ // otherwise the actual page crashes before /api/auth/admin/me is requested.
+ 'import.meta.env':JSON.stringify({PROD:false,DEV:true,VITE_FAWRI_V1_MANUAL_COMMERCE:'0'})}});
  const assets=resolve('artifacts/fawri/dist/public/assets'),css=(await readdir(assets)).filter(n=>n.endsWith('.css'));assert.ok(css.length);
  const styles=(await Promise.all(css.map(n=>readFile(join(assets,n),'utf8')))).join('\n');
  server=createServer(async(req,res)=>{
