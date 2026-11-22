@@ -155,7 +155,11 @@ async function prepareGoogleMerchantIdentity(
 ): Promise<() => void> {
   const clientId = configuredClientId();
   const api = await loadGoogleIdentity();
-  const challenge = challengeFrom(await postGoogle('/api/auth/google/begin', {}));
+  // Intent distinguishes a new merchant registration from a returning
+  // Google-linked login; only the former requires current published legal
+  // policy version pins. An unlinked login can never create a merchant.
+  const intent = profile ? 'signup' : 'login';
+  const challenge = challengeFrom(await postGoogle('/api/auth/google/begin', { intent }));
   let active = true;
   let used = false;
 
@@ -179,6 +183,7 @@ async function prepareGoogleMerchantIdentity(
             challenge_id: challenge.id,
             nonce: challenge.nonce,
             id_token: token,
+            intent,
             ...profile,
           });
           const account = accountFrom(result);
