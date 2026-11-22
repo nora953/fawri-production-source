@@ -54,6 +54,26 @@ jobs:
             *) echo 'state=UNEXPECTED_PROBE_ERROR' >> "${GITHUB_OUTPUT}" ;;
           esac
           echo "exit_code=${code}" >> "${GITHUB_OUTPUT}"
+      - name: Diagnose CAA, DNSSEC and independent TLS on apex/www/Render baseline
+        # Public DNS/certificate data only; no service/admin APIs, merchant data,
+        # credentials, redirects, or cloud mutations.
+        shell: bash
+        run: |
+          set +e
+          for type in A AAAA CAA NS DS; do
+            echo "::group::APEX public DNS ${type}"
+            dig +time=3 +tries=1 +short fawrireply.com "${type}"
+            echo "::endgroup::"
+          done
+          echo "::group::WWW CNAME"
+          dig +time=3 +tries=1 +short www.fawrireply.com CNAME
+          echo "::endgroup::"
+          for host in fawrireply.com www.fawrireply.com fawri-v1-commercial-gated-k9yj.onrender.com; do
+            echo "::group::TLS certificate handshake: ${host}"
+            timeout 10 bash -c "echo | openssl s_client -connect '${host}:443' -servername '${host}' -brief 2>&1" | head -n 25
+            echo "::endgroup::"
+          done
+          exit 0
       - name: Record the bounded result, never automatic commercial GO
         env:
           STATE: ${{ steps.probe.outputs.state }}
