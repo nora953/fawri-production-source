@@ -37,10 +37,18 @@ export function googleMerchantHttpReady(env: NodeJS.ProcessEnv = process.env): b
     env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY === "required" &&
     env.FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY === "required" &&
     Boolean(env.FAWRI_AUTH_DATABASE_URL) &&
-    // Every Google begin/complete request requires an explicit allowed origin.
-    // Do not report the HTTP surface ready when all requests would be 403.
-    String(env.FAWRI_ALLOWED_ORIGINS || "").split(",")
-      .some(origin => origin.trim().length > 0) &&
+    // The first commercial browser is hosted at the canonical owner-approved
+    // domain. An allowlist containing only an unrelated/prelaunch origin must
+    // not report Google as production-ready while every real merchant gets 403.
+    // Nonproduction review still accepts any explicit origin for local tests.
+    (() => {
+      const origins = String(env.FAWRI_ALLOWED_ORIGINS || "").split(",")
+        .map(origin => origin.trim()).filter(Boolean);
+      return origins.length > 0 && (
+        (env.NODE_ENV !== "production" && env.FAWRI_DEPLOYMENT_MODE !== "production") ||
+        origins.includes("https://fawrireply.com")
+      );
+    })() &&
     /^[0-9]+-[a-z0-9-]+\.apps\.googleusercontent\.com$/.test(
       String(env.FAWRI_GOOGLE_OAUTH_CLIENT_ID || ""),
     ) &&
