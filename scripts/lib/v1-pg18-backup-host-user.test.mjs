@@ -27,7 +27,8 @@ test('real disposable Docker PG18 dump remains owned/readable by the runner', ()
     const args = [
       'run','--rm','--network=host',hostOwnedPg18DockerUser(),
       '-v',volume,...vars.flatMap(x=>['-e',x]),
-      'postgres:18-alpine','pg_dump','--format=custom','--no-password',
+      'postgres:18-alpine','sh','-c','umask 077; exec "$@"','fawri-pg-client',
+      'pg_dump','--format=custom','--no-password',
       '--file=/safe-out/synthetic.pgcustom',
     ];
     const result = spawnSync('docker',args,{
