@@ -31,7 +31,7 @@ jobs:
         run: |
           node --check scripts/v1-production-media-g5-archive.mjs
           node --check scripts/v1-production-media-g5-archive.test.mjs
-      - name: Test encrypted media restore AND EEXIST archive preservation
+      - name: Test encryption, overwrite denial, and dangling restore symlink preservation
         run: node --test scripts/v1-production-media-g5-archive.test.mjs
       - name: Do not conflate source test with hosted media recovery
         run: |
