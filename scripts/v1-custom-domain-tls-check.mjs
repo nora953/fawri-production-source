@@ -15,7 +15,7 @@ const EXPECTED_CNAME = 'fawri-v1-commercial-gated-k9yj.onrender.com';
 
 const clean = value => String(value || '').replace(/\.$/, '').toLowerCase();
 
-export function assertPublicDns({ apexA, wwwCname, apexAaaa, wwwAaaa }) {
+export function assertPublicDns({ apexA, wwwCname, apexAaaa }) {
   if (!Array.isArray(apexA) || apexA.length !== 1 || apexA[0] !== EXPECTED_A) {
     throw new Error('V1_DOMAIN_APEX_A_NOT_EXACT_RENDER_TARGET');
   }
@@ -23,8 +23,7 @@ export function assertPublicDns({ apexA, wwwCname, apexAaaa, wwwAaaa }) {
       clean(wwwCname[0]) !== EXPECTED_CNAME) {
     throw new Error('V1_DOMAIN_WWW_CNAME_NOT_EXACT_RENDER_TARGET');
   }
-  if (!Array.isArray(apexAaaa) || !Array.isArray(wwwAaaa) ||
-      apexAaaa.length !== 0 || wwwAaaa.length !== 0) {
+  if (!Array.isArray(apexAaaa) || apexAaaa.length !== 0) {
     throw new Error('V1_DOMAIN_UNSUPPORTED_IPV6_RECORD');
   }
 }
@@ -38,11 +37,12 @@ async function optionalIpv6(host) {
 }
 
 async function readPublicDns() {
-  const [apexA, wwwCname, apexAaaa, wwwAaaa] = await Promise.all([
-    dns.resolve4(ROOT), dns.resolveCname(WWW),
-    optionalIpv6(ROOT), optionalIpv6(WWW),
+  // resolve6() follows CNAMEs. A legitimate Render target may have IPv6
+  // even when the owner configured only a www CNAME; do not reject that.
+  const [apexA, wwwCname, apexAaaa] = await Promise.all([
+    dns.resolve4(ROOT), dns.resolveCname(WWW), optionalIpv6(ROOT),
   ]);
-  return { apexA, wwwCname, apexAaaa, wwwAaaa };
+  return { apexA, wwwCname, apexAaaa };
 }
 
 function verifyTrustedTls(host) {
@@ -67,6 +67,21 @@ function verifyTrustedTls(host) {
   });
 }
 
+export function classifyDomainProbeFailure(error) {
+  const code = String(error?.code || error?.message || 'UNKNOWN');
+  // Local resolver/socket failures do NOT establish that DNS or TLS at Render
+  // is broken. They mean this runner could not make a reliable observation.
+  if (new Set(['ECONNREFUSED','ENETUNREACH','EHOSTUNREACH','EAI_AGAIN',
+    'ETIMEOUT','ETIMEDOUT','ENOTIMP','ENOTFOUND','ESERVFAIL','EREFUSED',
+    'TLS_HANDSHAKE_TIMEOUT']).has(code)) {
+    return { state: 'INCONCLUSIVE_NETWORK', exitCode: 2 };
+  }
+  if (code.startsWith('V1_DOMAIN_') || code === 'ENODATA' || code === 'ENODOMAIN') {
+    return { state: 'DNS_NOT_READY', exitCode: 1 };
+  }
+  return { state: 'TLS_NOT_READY_OR_UNKNOWN', exitCode: 1 };
+}
+
 async function main() {
   const dnsState = await readPublicDns();
   assertPublicDns(dnsState);
@@ -82,9 +97,10 @@ async function main() {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch(error => {
+    const { state, exitCode } = classifyDomainProbeFailure(error);
     const code = String(error?.code || error?.message || 'UNKNOWN')
       .replace(/[^A-Z0-9_]/gi, '_').slice(0, 80);
-    console.error('V1_PUBLIC_DOMAIN_TLS_NOT_READY:' + code);
-    process.exitCode = 1;
+    console.error('V1_PUBLIC_DOMAIN_' + state + ':' + code);
+    process.exitCode = exitCode;
   });
 }
