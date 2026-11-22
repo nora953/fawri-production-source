@@ -92,6 +92,14 @@ test('backup denies empty media, symlink escapes, unsafe output and overwrite',(
     fs.writeFileSync(marker,'must-survive');
     assert.notEqual(run(['restore',f.archive,f.target],f.root).status,0);
     assert.equal(fs.readFileSync(marker,'utf8'),'must-survive');
+    const original=fs.readFileSync(f.archive);
     assert.notEqual(run(['export',f.source,f.archive],f.root).status,0);
+    assert.equal(fs.existsSync(f.archive),true,
+      'refusing overwrite must never delete an existing encrypted backup');
+    assert.deepEqual(fs.readFileSync(f.archive),original,
+      'refusing overwrite must preserve every original ciphertext byte');
+    const recover=path.join(f.root,'previous-archive-recovered');
+    assert.equal(run(['restore',f.archive,recover],f.root).status,0,
+      'original encrypted backup must still be independently restorable');
   }finally{fs.rmSync(f.root,{recursive:true,force:true})}
 });
