@@ -143,7 +143,9 @@ router.get("/lifecycle", async (req, res) => {
     ...(deviceId ? { deviceId } : {}),
   });
   if (!validated) {
-    clearAuthSessionCookie(res, "merchant");
+    // A stale request may race with a successful session-token rotation.
+    // Do not clear the browser cookie: its newer token may already be valid.
+    // Invalid credentials still fail closed; explicit revocation clears cookies.
     sendAuthError(
       res,
       401,
