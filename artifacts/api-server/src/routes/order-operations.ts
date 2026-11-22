@@ -157,6 +157,7 @@ router.get(
 
 router.patch(
   "/orders/:orderId/status",
+  enforceAuthOrigin,
   requireMerchantSession,
   async (req: Request, res: Response) => {
     try {
@@ -179,6 +180,7 @@ router.patch(
 
 router.patch(
   "/orders/:orderId/payment-status",
+  enforceAuthOrigin,
   requireMerchantSession,
   async (req: Request, res: Response) => {
     try {
@@ -201,6 +203,7 @@ router.patch(
 
 router.post(
   "/orders/:orderId/payment/confirm",
+  enforceAuthOrigin,
   requireMerchantSession,
   async (req: Request, res: Response) => {
     try {
@@ -234,6 +237,7 @@ router.post(
 
 router.post(
   "/orders/:orderId/payment/reject",
+  enforceAuthOrigin,
   requireMerchantSession,
   async (req: Request, res: Response) => {
     try {
@@ -258,6 +262,7 @@ router.post(
 
 router.post(
   "/orders/:orderId/payment/conflict/resolve",
+  enforceAuthOrigin,
   requireMerchantSession,
   async (req: Request, res: Response) => {
     try {
