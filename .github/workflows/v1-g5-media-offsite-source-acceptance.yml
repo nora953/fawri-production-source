@@ -1,0 +1,43 @@
+name: FAWRI V1 G5 authenticated media archive restore (DISPOSABLE ONLY)
+# No Render disk, live media, Neon, OAuth, GitHub secrets or paid services.
+on:
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - .github/workflows/v1-g5-media-offsite-source-acceptance.yml
+      - scripts/v1-production-media-g5-archive.mjs
+      - scripts/v1-production-media-g5-archive.test.mjs
+  pull_request:
+    paths:
+      - .github/workflows/v1-g5-media-offsite-source-acceptance.yml
+      - scripts/v1-production-media-g5-archive.mjs
+      - scripts/v1-production-media-g5-archive.test.mjs
+permissions:
+  contents: read
+jobs:
+  media-disposable-source:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Syntax-check only new dedicated G5 files
+        run: |
+          node --check scripts/v1-production-media-g5-archive.mjs
+          node --check scripts/v1-production-media-g5-archive.test.mjs
+      - name: Disposable local media ciphertext export and authenticated restore
+        run: node --test scripts/v1-production-media-g5-archive.test.mjs
+      - name: Do not conflate source test with hosted media recovery
+        run: |
+          {
+            echo '## G5 media archive candidate (source/fixture only)'
+            echo 'All fixture checks passed. Never ran on live Render media.'
+            echo 'No offsite media upload, hosted merchant photo or restore was accepted.'
+            echo 'Maintaining Render maintenance ON and commercial NO-GO.'
+          } >> "$GITHUB_STEP_SUMMARY"
