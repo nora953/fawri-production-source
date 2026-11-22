@@ -100,3 +100,23 @@ test('Render Docker build passes Google-only PUBLIC flags to Vite and fails clos
     if (!accepted) assert.match(result.stderr, /V1_GOOGLE_BUILD_CONFIGURATION_INVALID/);
   }
 });
+
+test('Google begin is reachable after an intentional role switch, not while old role cookies remain', () => {
+  assert.match(server, /noMixedSession\(req\)/);
+  assert.match(server, /!req\.cookies\?\.\[ADMIN_SESSION_COOKIE\] && !req\.cookies\?\.\[MERCHANT_SESSION_COOKIE\]/);
+
+  for (const [page, name, before, call] of [
+    [login, 'login', 'const handleGoogleLogin = async () => {', 'const dispose = await prepareGoogleMerchantLogin('],
+    [signup, 'signup', 'const handleGoogleSignup = async () => {', 'const dispose = await prepareGoogleMerchantSignup('],
+  ]) {
+    const start = page.indexOf(before);
+    const challenge = page.indexOf(call, start);
+    assert.ok(start >= 0 && challenge > start, name + ': Google click must initiate challenge');
+    const click = page.slice(start, challenge);
+    const admin = click.indexOf('await secureAdminLogout();');
+    const merchant = click.indexOf('await secureMerchantLogout();');
+    const clear = click.indexOf('clearMerchantTabSession();');
+    assert.ok(admin >= 0 && merchant > admin && clear > merchant,
+      name + ': revoke both previous role cookies before the Google begin call');
+  }
+});

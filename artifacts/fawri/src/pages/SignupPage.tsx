@@ -32,6 +32,7 @@ import {
   type GoogleSignupProfile,
 } from '@/lib/googleMerchantSignup';
 import { PolicyModal, type PolicyTab } from '@/components/PolicyModal';
+import { secureAdminLogout, secureMerchantLogout } from '@/lib/authClientCutover';
 
 type RequestedPlan = 'silver' | 'gold' | 'diamond';
 
@@ -225,6 +226,11 @@ export default function SignupPage() {
         confirm_legal: true,
         ...(requestedPlan ? { requested_plan: requestedPlan } : {}),
       };
+      // /google/begin rejects both admin and prior merchant cookies. Switching
+      // identities must revoke them before requesting a new OIDC challenge.
+      await secureAdminLogout();
+      await secureMerchantLogout();
+      clearMerchantTabSession();
       const dispose = await prepareGoogleMerchantSignup(
         googleButtonHost.current,
         profile,

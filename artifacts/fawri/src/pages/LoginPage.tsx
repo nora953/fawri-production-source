@@ -133,6 +133,12 @@ export default function LoginPage() {
     setGoogleBusy(true);
     setGooglePrepared(false);
     try {
+      // /google/begin rejects mixed/old role cookies before issuing the nonce.
+      // An explicit Google login click must end either previous role session
+      // before its challenge, not after the Google callback succeeds.
+      await secureAdminLogout();
+      await secureMerchantLogout();
+      clearMerchantTabSession();
       const dispose = await prepareGoogleMerchantLogin(
         googleButtonHost.current,
         (account) => {
