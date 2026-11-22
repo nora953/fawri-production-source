@@ -13,8 +13,8 @@
 3. Connect to the **running production web service** through Render Dashboard → service → **Shell**, or authorized SSH attached to the running instance. **Do not use a build step, pre-deploy, one-off job, separate Render service or ephemeral shell instance:** those do not have access to the existing persistent disk. Render official references: https://render.com/docs/disks and https://render.com/docs/ssh.
 4. Preconditions in the running service Shell, without printing secrets:
    ```sh
-   test -f /app/scripts/v1-production-media-g5-archive.mjs || echo 'STOP: CLI_NOT_IN_LIVE_IMAGE'
-   test -d /var/data/fawri/catalog-media || echo 'STOP: NO_REAL_MEDIA_DIR'
+   test -f /app/scripts/v1-production-media-g5-archive.mjs || { echo 'STOP: CLI_NOT_IN_LIVE_IMAGE'; exit 1; }
+   test -d /var/data/fawri/catalog-media || { echo 'STOP: NO_REAL_MEDIA_DIR'; exit 1; }
    node --check /app/scripts/v1-production-media-g5-archive.mjs
    ```
    **Stop** on either failed `test`. If there are **zero real catalog objects**, the CLI intentionally refuses to claim a successful real media backup. Do not invent merchant data to make a gate green.
