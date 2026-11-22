@@ -1,4 +1,12 @@
 # FAWRI V1 G5 — one-time Render catalog-media offsite acceptance handoff
+
+## 2026-11-23 — Zero-reference preflight; NO further owner shell command requested now
+
+- **Real current read-only production Neon counts:** `public.merchants=0`, `public.catalog_image_references=0`, `public.products=0`, `public.orders=0`, and `public.accounts=1` (existing primary administration). This was read from the actual commercial Neon database `fawri` on `br-holy-waterfall-b993zglb` using a single aggregate SELECT. It retrieved no personal information and changed no rows. Consequently there is **no evidenced merchant-owned catalog image data to back up at present**.
+- **Decision that avoids wasting the owner's time:** **Do not ask the owner to paste another Render Shell command now**. The new media exporter intentionally refuses an empty media directory and thus could not produce a valid nonempty commercial merchant-image recovery acceptance on the current zero-merchant state. No images in *the DB ledger* does **not** prove the disk has zero orphan objects; only mounted-disk inspection can establish that separately. The baseline encrypted production **database** recovery sub-gate remains accepted independently.
+- **Next action priority:** Finish legitimate G4 Google/WhatsApp provider approval and safe controlled merchant onboarding, followed by real G3 first-image and two-merchant storage/tenant validation. At the first owner-authorized real image, carry out the gated G5 **media ciphertext export → private external custody → independent isolated restore** using the present live CLI and the documented secure Shell/SSH procedure. Do not create artificial merchants, order rows or media records in production solely to make a backup acceptance green. Do not waive media recovery for commercial GO.
+- The last Render deployment `be32d2788a229782cc3fb73f9eebd96362ccda59` remains LIVE with the media CLI packaged, `/readyz=200`, synthetic disk canary verified, maintenance ON, autoDeploy OFF. Read-only Render review after this deployment showed no app-level error logs or new deploy failure events. **NO-GO** continues until G3/G4 and actual offsite catalog-media proof are accepted. Only interrupt the owner for an unavoidable external authorization or new privileged-access step.
+
 **Date:** 2026-11-22 · **Decision:** SOURCE READY / HOSTED MEDIA RECOVERY **NOT ACCEPTED** · **Commercial:** NO-GO
 
 ## Why this is the next actual gate
