@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
-import { googleMerchantHttpReady, googleOriginAllowed, googleMerchantIntentPolicyReady } from "../src/routes/auth-google-merchant-routes";
+import { googleMerchantHttpReady, googleOriginAllowed, googleMerchantIntentPolicyReady, googleMerchantIntentPhoneReady } from "../src/routes/auth-google-merchant-routes";
 import { googleMerchantSignupLegalVersionsReady } from "../src/services/googleMerchantAdmissionAuthority";
 import { isGoogleMerchantIdentityLinked } from "../src/services/googleMerchantIdentityAssurance";
 
@@ -96,4 +97,34 @@ test("Google-only identity assurance is false until explicit release approval", 
   delete process.env.FAWRI_GOOGLE_OIDC_HTTP_READY;
   assert.equal(await isGoogleMerchantIdentityLinked("merchant-"+ "1".repeat(36)),false);
   assert.equal(await isGoogleMerchantIdentityLinked("admin-one"),false);
+});
+
+
+test("new merchant Google signup refuses to strand the user when WhatsApp phone proof is OFF", () => {
+  assert.equal(googleMerchantIntentPhoneReady("signup", false), false);
+  assert.equal(googleMerchantIntentPhoneReady("signup", true), true);
+  // Existing linked Google logins must remain usable even if WhatsApp
+  // authentication or its production sender is temporarily unavailable.
+  assert.equal(googleMerchantIntentPhoneReady("login", false), true);
+  assert.equal(googleMerchantIntentPhoneReady("login", true), true);
+  assert.equal(googleMerchantIntentPhoneReady(undefined, true), false);
+  assert.equal(googleMerchantIntentPhoneReady("other", true), false);
+});
+
+test("WhatsApp signup readiness is checked before OIDC challenge issue and completion", () => {
+  const route = readFileSync(new URL("../src/routes/auth-google-merchant-routes.ts", import.meta.url), "utf8");
+  const begin = route.slice(route.indexOf('router.post("/google/begin"'), route.indexOf('router.post("/google/complete"'));
+  const complete = route.slice(route.indexOf('router.post("/google/complete"'), route.indexOf('router.post("/google/phone/begin"'));
+  assert.match(route, /phoneReady: boolean = googlePhoneClaimSourceReady\(\)/);
+  for (const [part, action] of [
+    [begin, "await issueGoogleOidcChallenge"],
+    [complete, "const csrfProof = String"],
+  ]) {
+    const legal = part.indexOf('googleMerchantIntentPolicyReady(req.body?.intent)');
+    const phone = part.indexOf('googleMerchantIntentPhoneReady(req.body?.intent)');
+    const actionStart = part.indexOf(action);
+    assert.ok(legal >= 0 && phone > legal && actionStart > phone,
+      "new signup must reject before challenge issuance/consumption, without harming returning logins");
+    assert.match(part, /GOOGLE_SIGNUP_PHONE_NOT_READY/);
+  }
 });

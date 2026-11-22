@@ -65,6 +65,16 @@ export function googleMerchantIntentPolicyReady(
   return intent === "login" || (intent === "signup" && googleMerchantSignupLegalVersionsReady(env));
 }
 
+// New Google merchants cannot finish the required first-phone WhatsApp proof
+// if that provider path is deliberately OFF or unconfigured. Stop before
+// issuing/consuming an OIDC nonce, while keeping existing linked login usable.
+export function googleMerchantIntentPhoneReady(
+  intent: unknown,
+  phoneReady: boolean = googlePhoneClaimSourceReady(),
+): boolean {
+  return intent === "login" || (intent === "signup" && phoneReady);
+}
+
 export function googleOriginAllowed(req: Pick<Request,"headers"|"method">, env: NodeJS.ProcessEnv = process.env): boolean {
   if (req.method !== "POST") return false;
   const origin = String(req.headers.origin || "").trim();
@@ -108,6 +118,10 @@ router.post("/google/begin", async (req, res) => {
     sendAuthError(res, 503, "GOOGLE_SIGNUP_POLICY_NOT_READY", "New merchant registration is temporarily unavailable");
     return;
   }
+  if (!googleMerchantIntentPhoneReady(req.body?.intent)) {
+    sendAuthError(res, 503, "GOOGLE_SIGNUP_PHONE_NOT_READY", "New merchant registration is temporarily unavailable");
+    return;
+  }
   try {
     const issued = await issueGoogleOidcChallenge(requestIp(req).slice(0,128), req.body.intent);
     // Server sets the proof as an HttpOnly cookie; the proof is never in JSON.
@@ -137,6 +151,10 @@ router.post("/google/complete", async (req, res) => {
   // only to fail later on missing policy version configuration.
   if (!googleMerchantIntentPolicyReady(req.body?.intent)) {
     sendAuthError(res, 503, "GOOGLE_SIGNUP_POLICY_NOT_READY", "New merchant registration is temporarily unavailable");
+    return;
+  }
+  if (!googleMerchantIntentPhoneReady(req.body?.intent)) {
+    sendAuthError(res, 503, "GOOGLE_SIGNUP_PHONE_NOT_READY", "New merchant registration is temporarily unavailable");
     return;
   }
   // Terminal attempt clears the browser proof, even after signed token failure.
