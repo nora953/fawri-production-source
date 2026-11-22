@@ -55,6 +55,16 @@ export function googleMerchantHttpReady(env: NodeJS.ProcessEnv = process.env): b
     String(env.FAWRI_AUTH_SECURITY_SECRET || "").length >= 32;
 }
 
+// Separate the first-time legal-consent preflight from returning Google
+// logins: a missing newly published version must not block a linked user
+// from authenticating without creating a new policy acceptance.
+export function googleMerchantIntentPolicyReady(
+  intent: unknown,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return intent !== "signup" || googleMerchantSignupLegalVersionsReady(env);
+}
+
 export function googleOriginAllowed(req: Pick<Request,"headers"|"method">, env: NodeJS.ProcessEnv = process.env): boolean {
   if (req.method !== "POST") return false;
   const origin = String(req.headers.origin || "").trim();
@@ -94,7 +104,7 @@ router.post("/google/begin", async (req, res) => {
   }
   // Fail before creating a nonce if first-time signup cannot persist approved
   // terms/privacy consent. Existing Google-linked login remains available.
-  if (req.body?.intent === "signup" && !googleMerchantSignupLegalVersionsReady()) {
+  if (!googleMerchantIntentPolicyReady(req.body?.intent)) {
     sendAuthError(res, 503, "GOOGLE_SIGNUP_POLICY_NOT_READY", "New merchant registration is temporarily unavailable");
     return;
   }
@@ -125,7 +135,7 @@ router.post("/google/complete", async (req, res) => {
   }
   // An explicit new-signup request must not consume its one-use Google proof
   // only to fail later on missing policy version configuration.
-  if (req.body?.intent === "signup" && !googleMerchantSignupLegalVersionsReady()) {
+  if (!googleMerchantIntentPolicyReady(req.body?.intent)) {
     sendAuthError(res, 503, "GOOGLE_SIGNUP_POLICY_NOT_READY", "New merchant registration is temporarily unavailable");
     return;
   }
