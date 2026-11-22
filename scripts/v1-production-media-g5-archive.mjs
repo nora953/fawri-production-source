@@ -131,9 +131,13 @@ async function exportMedia(source, output) {
   const key=crypto.scryptSync(pass,salt,32);
   const cipher=crypto.createCipheriv('aes-256-gcm',key,iv);
   let fd;
+  let createdByThisAttempt=false;
   try{
     fd=fs.openSync(realOutput,fs.constants.O_WRONLY|fs.constants.O_CREAT|
       fs.constants.O_EXCL|fs.constants.O_NOFOLLOW,0o600);
+    // O_EXCL refuses an existing archive. Cleanup MUST NOT unlink that
+    // pre-existing file when openSync fails with EEXIST.
+    createdByThisAttempt=true;
     writeAll(fd,Buffer.concat([MAGIC,salt,iv]));
     for await(const chunk of records(files)) writeAll(fd,cipher.update(chunk));
     writeAll(fd,cipher.final());
@@ -146,7 +150,9 @@ async function exportMedia(source, output) {
       objectCount:files.length,archiveBytes:stat.size,offsite:false,restoreAccepted:false})+'\n');
   }catch(error){
     if(fd!==undefined) fs.closeSync(fd);
-    fs.rmSync(realOutput,{force:true});
+    // Only remove a partially written archive created by THIS invocation.
+    // Never delete an older encrypted backup when O_EXCL denies overwrite.
+    if(createdByThisAttempt) fs.rmSync(realOutput,{force:true});
     throw error;
   }
 }
