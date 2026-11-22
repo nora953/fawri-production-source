@@ -16,6 +16,7 @@ export async function proveManualCommercialOrders({ ownerPool, tenantUrl, authUr
     LOG_LEVEL: "silent",
     FAWRI_DATA_DIR: dataDirectory,
     FAWRI_V1_MANUAL_COMMERCE: "1",
+    FAWRI_ALLOWED_ORIGINS: "https://fawri.example.test",
     FAWRI_AUTH_SECURITY_SECRET: "synthetic-local-only-auth-key-for-testing",
     FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: "required",
     FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required",
@@ -109,6 +110,43 @@ export async function proveManualCommercialOrders({ ownerPool, tenantUrl, authUr
     assert.equal(results[1].order.id, created.id);
     assert.equal(created.total_price, 3000);
     assert.equal(created.payment_status, "cash_on_delivery");
+    // Cross-origin browser requests must be rejected before any order/financial DML.
+    // CORS headers alone do not stop a state-changing HTTP request.
+    for (const [method, endpoint] of [
+      ["POST", "/api/orders"],
+      ["PATCH", `/api/orders/${created.id}/status`],
+      ["PATCH", `/api/orders/${created.id}/payment-status`],
+      ["POST", `/api/orders/${created.id}/payment/confirm`],
+      ["POST", `/api/orders/${created.id}/payment/reject`],
+      ["POST", `/api/orders/${created.id}/payment/conflict/resolve`],
+    ]) {
+      const response = await fetch(base + endpoint, {
+        method,
+        headers: {
+          Cookie: session,
+          Origin: "https://foreign-merchant.example.test",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...order,
+          idempotency_key: "cross-origin-rejected",
+          expected_version: created.version,
+          status: "cancelled",
+          payment_status: "paid",
+          reason: "synthetic",
+          resolution_note: "synthetic",
+        }),
+        signal: AbortSignal.timeout(15000),
+      });
+      const denied = await response.json();
+      assert.equal(response.status, 403, `${method} ${endpoint}: cross-origin request must be forbidden`);
+      assert.equal(denied.code, "AUTH_ORIGIN_FORBIDDEN",
+        `${method} ${endpoint}: cross-origin request must fail at origin middleware`);
+    }
+    const preserved = await request(`/api/order/${created.id}`, session, 200);
+    assert.equal(preserved.order.version, created.version,
+      "rejected cross-origin requests must not mutate an order");
+
     await request("/api/orders", session, 409, "POST", { ...order, customer_name: "Different request" });
     await request(`/api/order/${created.id}`, otherSession, 404);
     const cancelled = await request(`/api/orders/${created.id}/status`, session, 200, "PATCH", {
