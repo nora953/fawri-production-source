@@ -372,6 +372,15 @@ export function getProductionRuntimeConfigurationIssues(
   if (!isSafeAllowedOrigins(env.FAWRI_ALLOWED_ORIGINS)) {
     issues.push(issue("http", "HTTP_ALLOWED_ORIGINS_REQUIRED"));
   }
+  // V1 is now hosted at the owner-selected custom root domain. A deployment
+  // allowed only at an old Render/staging origin would pass /readyz but reject
+  // browser POSTs from the actual customer hostname (auth, orders and billing).
+  // Reject this *before* the production listener; never weaken origin checks.
+  if (manualCommercialRelease(env) &&
+      !text(env.FAWRI_ALLOWED_ORIGINS).split(",").map(value => value.trim())
+        .includes("https://fawrireply.com")) {
+    issues.push(issue("http", "V1_CANONICAL_DOMAIN_ORIGIN_REQUIRED"));
+  }
   // Catalog images and media deletion retry manifests must not go into the
   // ephemeral application layer of the first commercial hosted deployment.
   if (text(env.FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER || "filesystem").toLowerCase() !== "filesystem" ||
