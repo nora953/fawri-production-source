@@ -98,6 +98,20 @@ test('backup denies empty media, symlink escapes, unsafe output and overwrite',(
       'refusing overwrite must never delete an existing encrypted backup');
     assert.deepEqual(fs.readFileSync(f.archive),original,
       'refusing overwrite must preserve every original ciphertext byte');
+    // Node existsSync() follows symlinks. It returns false for a dangling
+    // link, so a naive preflight can overwrite it during renameSync().
+    const linkTarget=path.join(f.root,'dangling-restore-target');
+    const missing=path.join(f.root,'nonexistent-external-destination');
+    fs.symlinkSync(missing,linkTarget);
+    assert.equal(fs.existsSync(linkTarget),false);
+    assert.equal(fs.lstatSync(linkTarget).isSymbolicLink(),true);
+    const symlinkRestore=run(['restore',f.archive,linkTarget],f.root);
+    assert.notEqual(symlinkRestore.status,0,
+      'a dangling symlink must reserve its filename against restore');
+    assert.equal(fs.lstatSync(linkTarget).isSymbolicLink(),true,
+      'refusing restore must not replace the dangling symlink');
+    assert.equal(fs.readlinkSync(linkTarget),missing);
+    assert.equal(fs.existsSync(missing),false);
     const recover=path.join(f.root,'previous-archive-recovered');
     assert.equal(run(['restore',f.archive,recover],f.root).status,0,
       'original encrypted backup must still be independently restorable');
