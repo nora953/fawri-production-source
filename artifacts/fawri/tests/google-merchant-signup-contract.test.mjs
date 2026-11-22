@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { runInNewContext } from 'node:vm';
 import test from 'node:test';
 
 const client = readFileSync(new URL('../src/lib/googleMerchantSignup.ts', import.meta.url), 'utf8');
@@ -118,5 +119,33 @@ test('Google begin is reachable after an intentional role switch, not while old 
     const clear = click.indexOf('clearMerchantTabSession();');
     assert.ok(admin >= 0 && merchant > admin && clear > merchant,
       name + ': revoke both previous role cookies before the Google begin call');
+  }
+});
+
+test('Google merchant local cache preserves phone-less accounts when switching identities', () => {
+  for (const [page, name] of [[login, 'login'], [signup, 'signup']]) {
+    const declaration = /function cacheMerchantLocally\(merchant: any\) \{[\s\S]*?\n\}/.exec(page)?.[0];
+    assert.ok(declaration, name + ': local account cache helper is present');
+    // Exercise the actual page helper in isolation without mounting a browser.
+    const cache = declaration.replace('merchant: any', 'merchant');
+    const reconcile = (prior, next) => {
+      let saved = null;
+      runInNewContext(cache + '\ncacheMerchantLocally(next)', {
+        next,
+        getMerchants: () => prior,
+        saveMerchants: value => { saved = value; },
+      });
+      return Array.from(saved, value => value.id);
+    };
+    const prior = [
+      { id: 'google-a', phone: null },
+      { id: 'legacy-c', phone: '+15551234567' },
+    ];
+    assert.deepEqual(reconcile(prior, { id: 'google-b', phone: null }),
+      ['google-b', 'google-a', 'legacy-c'], name + ': distinct unverified Google merchants must coexist');
+    assert.deepEqual(reconcile(prior, { id: 'google-a', phone: null }),
+      ['google-a', 'legacy-c'], name + ': same account must be replaced exactly once');
+    assert.deepEqual(reconcile(prior, { id: 'legacy-d', phone: '+15551234567' }),
+      ['legacy-d', 'google-a'], name + ': a real matching phone still deduplicates');
   }
 });
