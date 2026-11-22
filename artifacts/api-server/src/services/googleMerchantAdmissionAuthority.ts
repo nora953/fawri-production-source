@@ -51,6 +51,17 @@ function disabled(): never {
   throw new Error("GOOGLE_MERCHANT_ADMISSION_NOT_READY");
 }
 
+// A new merchant must have the published, immutable legal policy version
+// identifiers before Google authentication starts. Returning linked merchants
+// must still be able to sign in without creating a new policy acceptance.
+const LEGAL_VERSION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$/;
+export function googleMerchantSignupLegalVersionsReady(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return LEGAL_VERSION_PATTERN.test(String(env.FAWRI_V1_TERMS_VERSION || "")) &&
+    LEGAL_VERSION_PATTERN.test(String(env.FAWRI_V1_PRIVACY_VERSION || ""));
+}
+
 export async function admitPendingGoogleMerchant(input: Registration): Promise<GoogleMerchantAdmission> {
   // Render has no declared opt-in; this function is not routed or reachable.
   if (process.env.FAWRI_GOOGLE_MERCHANT_ADMISSION_ENABLED !== "1" ||
@@ -126,11 +137,9 @@ export async function admitPendingGoogleMerchant(input: Registration): Promise<G
     // and the HELD consent schema have not been approved and provisioned.
     // Existing linked merchants are not blocked by changed policy versions;
     // an independent re-consent flow must handle future material revisions.
-    const legalVersionPattern = /^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$/;
     const termsVersion = String(process.env.FAWRI_V1_TERMS_VERSION || "");
     const privacyVersion = String(process.env.FAWRI_V1_PRIVACY_VERSION || "");
-    if (!legalVersionPattern.test(termsVersion) ||
-        !legalVersionPattern.test(privacyVersion)) {
+    if (!googleMerchantSignupLegalVersionsReady()) {
       throw new Error("GOOGLE_MERCHANT_LEGAL_VERSION_NOT_READY");
     }
 
