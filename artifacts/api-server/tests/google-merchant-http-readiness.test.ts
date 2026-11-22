@@ -22,6 +22,8 @@ test("Google merchant HTTP entry is securely disabled by default and if any prer
     delete (incomplete as Record<string,string>)[key];
     assert.equal(googleMerchantHttpReady(incomplete), false, key);
   }
+  assert.equal(googleMerchantHttpReady({...ready, FAWRI_ALLOWED_ORIGINS:undefined}), false);
+  assert.equal(googleMerchantHttpReady({...ready, FAWRI_ALLOWED_ORIGINS:" ,  , "}), false);
   assert.equal(googleMerchantHttpReady({...ready, FAWRI_GOOGLE_OAUTH_CLIENT_ID:"attacker"}), false);
 });
 
