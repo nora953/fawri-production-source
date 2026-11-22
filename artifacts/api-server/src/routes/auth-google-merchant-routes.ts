@@ -109,7 +109,7 @@ router.post("/google/begin", async (req, res) => {
     return;
   }
   try {
-    const issued = await issueGoogleOidcChallenge(requestIp(req).slice(0,128));
+    const issued = await issueGoogleOidcChallenge(requestIp(req).slice(0,128), req.body.intent);
     // Server sets the proof as an HttpOnly cookie; the proof is never in JSON.
     res.cookie(CSRF_COOKIE, issued.csrfProof, cookieOptions());
     res.json({

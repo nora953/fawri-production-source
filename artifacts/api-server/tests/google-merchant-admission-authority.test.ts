@@ -67,6 +67,7 @@ test("Google callback consumes its cookie-bound nonce before any remote signing-
   // Nonce still MUST be validated in the signed ID token, not merely consumed.
   assert.match(source.slice(verify, admit), /input\.idToken,\s*clientId,\s*input\.expectedNonce/);
   assert.match(source.slice(consume, verify), /csrfProof: input\.csrfProofFromCookie/);
+  assert.match(source.slice(consume, verify), /intent: input\.intent/);
 });
 
 test("returning Google merchant needs only signed subject, never a new-store profile", () => {

@@ -83,6 +83,7 @@ export async function admitPendingGoogleMerchant(input: Registration): Promise<G
     challengeId: input.challengeId,
     nonce: input.expectedNonce,
     csrfProof: input.csrfProofFromCookie,
+    intent: input.intent,
   });
   if (!consumed) throw new Error("GOOGLE_OIDC_CHALLENGE_INVALID");
   const identity = await verifyGoogleIdTokenSignature(

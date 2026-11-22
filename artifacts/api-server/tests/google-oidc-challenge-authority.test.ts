@@ -8,8 +8,8 @@ test("Google challenge cannot issue or consume without enabled production admiss
   const previous=process.env[key];
   t.after(()=>{if(previous===undefined)delete process.env[key];else process.env[key]=previous;});
   delete process.env[key];
-  await assert.rejects(issueGoogleOidcChallenge("test-ip"),/GOOGLE_OIDC_CHALLENGE_NOT_READY/);
-  await assert.rejects(consumeGoogleOidcChallenge({challengeId:"11aabbcc-1111-4111-8111-112233445566",nonce:"A".repeat(43),csrfProof:"B".repeat(43)}),/GOOGLE_OIDC_CHALLENGE_NOT_READY/);
+  await assert.rejects(issueGoogleOidcChallenge("test-ip", "login"),/GOOGLE_OIDC_CHALLENGE_NOT_READY/);
+  await assert.rejects(consumeGoogleOidcChallenge({challengeId:"11aabbcc-1111-4111-8111-112233445566",nonce:"A".repeat(43),csrfProof:"B".repeat(43),intent:"login"}),/GOOGLE_OIDC_CHALLENGE_NOT_READY/);
 });
 
 test("challenge source uses HMAC-only storage and atomic one-time cookie binding",()=>{
@@ -29,4 +29,20 @@ test("held source grants only auth issuer and enables row-level security",()=>{
   assert.match(sql,/ENABLE ROW LEVEL SECURITY/);
   assert.match(sql,/FOR ALL TO fawri_auth_issuer/);
   assert.match(sql,/REVOKE ALL ON TABLE public\.google_oidc_challenges FROM PUBLIC/);
+});
+
+test("Google one-use challenge cryptographically binds the original login/signup intent",()=>{
+  const challenge=readFileSync(new URL("../src/services/googleOidcChallengeAuthority.ts",import.meta.url),"utf8");
+  const http=readFileSync(new URL("../src/routes/auth-google-merchant-routes.ts",import.meta.url),"utf8");
+  const service=readFileSync(new URL("../src/services/googleMerchantAdmissionAuthority.ts",import.meta.url),"utf8");
+  assert.match(challenge, /function validIntent\(value: unknown\)/);
+  assert.match(challenge, /return value === "login" \|\| value === "signup"/);
+  assert.match(challenge, /!validIntent\(intent\)/);
+  assert.match(challenge, /!validIntent\(input.intent\)/);
+  assert.match(challenge, /challengeId \+ ":" \+ intent \+ ":" \+ nonce/);
+  assert.match(challenge, /input.challengeId \+ ":" \+ input.intent \+ ":" \+ input.nonce/);
+  assert.match(http, /issueGoogleOidcChallenge\(requestIp\(req\)\.slice\(0,128\), req.body.intent\)/);
+  assert.match(service, /csrfProof: input.csrfProofFromCookie,\s*intent: input.intent,/);
+  // No database migration, no new grant, no plaintext intent in persistence.
+  assert.doesNotMatch(challenge, /ALTER TABLE|CREATE TABLE/);
 });

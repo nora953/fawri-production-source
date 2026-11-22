@@ -19,6 +19,11 @@ import { operationalPostgresAuthorityRequired } from "./operationalPostgresAutho
 const ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PROOF_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 const TTL_MS = 5 * 60 * 1000;
+type GoogleOidcIntent = "login" | "signup";
+
+function validIntent(value: unknown): value is GoogleOidcIntent {
+  return value === "login" || value === "signup";
+}
 
 export type IssuedGoogleOidcChallenge = Readonly<{
   challengeId: string;
@@ -49,14 +54,16 @@ function fingerprint(key: string, domain: string, value: string): string {
     .update(domain + ":" + value).digest("base64url");
 }
 
-export async function issueGoogleOidcChallenge(ip: string): Promise<IssuedGoogleOidcChallenge> {
+export async function issueGoogleOidcChallenge(ip: string, intent: GoogleOidcIntent): Promise<IssuedGoogleOidcChallenge> {
   const key = gated();
-  if (typeof ip !== "string" || !ip || ip.length > 128) unavailable();
+  if (typeof ip !== "string" || !ip || ip.length > 128 || !validIntent(intent)) unavailable();
   const challengeId = crypto.randomUUID();
   const nonce = crypto.randomBytes(32).toString("base64url");
   const csrfProof = crypto.randomBytes(32).toString("base64url");
   const ipHash = fingerprint(key, "google-oidc-ip", ip);
-  const nonceHash = fingerprint(key, "google-oidc-nonce", challengeId + ":" + nonce);
+  // Bind the explicit signup/login intent to this one-use challenge without
+  // changing the database schema or storing the intent in plaintext.
+  const nonceHash = fingerprint(key, "google-oidc-nonce", challengeId + ":" + intent + ":" + nonce);
   const csrfHash = fingerprint(key, "google-oidc-csrf", challengeId + ":" + csrfProof);
   const expiresAt = new Date(Date.now() + TTL_MS);
 
@@ -88,12 +95,13 @@ export async function consumeGoogleOidcChallenge(input: {
   challengeId: string;
   nonce: string;
   csrfProof: string;
+  intent: GoogleOidcIntent;
 }): Promise<boolean> {
   const key = gated();
-  if (!input || !ID_PATTERN.test(input.challengeId || "") ||
+  if (!input || !validIntent(input.intent) || !ID_PATTERN.test(input.challengeId || "") ||
       !PROOF_PATTERN.test(input.nonce || "") ||
       !PROOF_PATTERN.test(input.csrfProof || "")) return false;
-  const nonceHash = fingerprint(key, "google-oidc-nonce", input.challengeId + ":" + input.nonce);
+  const nonceHash = fingerprint(key, "google-oidc-nonce", input.challengeId + ":" + input.intent + ":" + input.nonce);
   const csrfHash = fingerprint(key, "google-oidc-csrf", input.challengeId + ":" + input.csrfProof);
   return withAuthenticationTransaction(async client => {
     const result = await client.query<{ id: string }>(
