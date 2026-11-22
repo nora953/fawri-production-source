@@ -167,6 +167,7 @@ test("order APIs enforce tenant isolation and optimistic concurrency", async t =
     env: {
       ...process.env,
       NODE_ENV: "test",
+      FAWRI_ALLOWED_ORIGINS: "https://fawri.example.test",
       PORT: String(port),
       LOG_LEVEL: "silent",
       BOT_DEBUG: "false",
@@ -236,6 +237,40 @@ test("order APIs enforce tenant isolation and optimistic concurrency", async t =
   );
   assert.equal(crossTenantOrder.response.status, 404);
   assert.equal(crossTenantOrder.body.code, "ORDER_NOT_FOUND");
+
+  // A browser from another origin must not mutate order or payment state even
+  // with a valid merchant cookie. The browser's CORS denial alone is not enough.
+  for (const [method, route] of [
+    ["PATCH", "/api/orders/order-a/status"],
+    ["PATCH", "/api/orders/order-a/payment-status"],
+    ["POST", "/api/orders/order-a/payment/confirm"],
+    ["POST", "/api/orders/order-a/payment/reject"],
+    ["POST", "/api/orders/order-a/payment/conflict/resolve"],
+  ]) {
+    const attempted = await jsonResponse(await apiFetch(route, {
+      method,
+      headers: {
+        ...headers,
+        "Content-Type": "application/json",
+        Origin: "https://untrusted.example.test",
+      },
+      body: JSON.stringify({
+        expected_version: 1,
+        status: "cancelled",
+        payment_status: "paid",
+        reason: "synthetic",
+        resolution_note: "synthetic",
+      }),
+    }));
+    assert.equal(attempted.response.status, 403, `${method} ${route}`);
+    assert.equal(attempted.body?.code, "AUTH_ORIGIN_FORBIDDEN",
+      `${method} ${route}: reject before order/financial authority`);
+  }
+  const unchanged = await jsonResponse(await apiFetch("/api/order/order-a", { headers }));
+  assert.equal(unchanged.response.status, 200);
+  assert.equal(unchanged.body.order.version, 1);
+  assert.equal(unchanged.body.order.payment_status, "electronic_pending");
+
 
   const confirm = await jsonResponse(
     await apiFetch("/api/orders/order-a/payment/confirm", {
