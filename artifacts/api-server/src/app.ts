@@ -70,6 +70,7 @@ import { logger } from "./lib/logger";
 import { hasAdminPermission } from "./services/authPolicy";
 import { createProductionOtpReadinessCheck } from "./services/authOtpDelivery";
 import { createHostedV1CatalogMediaReadinessCheck } from "./services/hostedV1CatalogMediaReadiness";
+import { configureRenderIngressProxyTrust } from "./services/renderIngressProxyTrust";
 import { withAuthenticationTransaction } from "./services/authenticationPostgresAuthority";
 import { withOperatorDirectoryTransaction } from "./services/operatorDirectoryPostgresAuthority";
 import { createReadinessSnapshot } from "./observability/readiness";
@@ -84,6 +85,9 @@ import {
 import "./services/manualConversationDeletion";
 
 const app: Express = express();
+// Render's edge/load balancer supplies X-Forwarded-For. Trust the immediate
+// proxy hop only on a Render web service; never trust arbitrary full chains.
+configureRenderIngressProxyTrust(app);
 
 function allowedCorsOrigins(): string[] {
   return String(process.env.FAWRI_ALLOWED_ORIGINS || "")
