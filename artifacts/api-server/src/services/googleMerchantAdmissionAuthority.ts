@@ -61,15 +61,20 @@ export async function admitPendingGoogleMerchant(input: Registration): Promise<G
 
   // Client-submitted email and sub are NEVER accepted here. The future route
   // MUST pass csrfProofFromCookie from an HttpOnly cookie, not the request body.
-  const identity = await verifyGoogleIdTokenSignature(
-    input.idToken, clientId, input.expectedNonce,
-  );
+  // Redeem the cookie-bound, single-use nonce BEFORE expensive Google JWKS
+  // retrieval / RSA verification. Even an invalid ID token consumes its own
+  // challenge; replay and malformed-token attempts cannot reuse it to trigger
+  // repeated cryptographic work. The verified Google subject remains the only
+  // authority for admission, never the cookie, nonce or browser email.
   const consumed = await consumeGoogleOidcChallenge({
     challengeId: input.challengeId,
     nonce: input.expectedNonce,
     csrfProof: input.csrfProofFromCookie,
   });
   if (!consumed) throw new Error("GOOGLE_OIDC_CHALLENGE_INVALID");
+  const identity = await verifyGoogleIdTokenSignature(
+    input.idToken, clientId, input.expectedNonce,
+  );
 
   return withAuthenticationTransaction(async client => {
     const existing = await operationalQueryRows<{

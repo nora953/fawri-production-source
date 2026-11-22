@@ -52,6 +52,23 @@ test("Google account admission is subject-scoped, pending only, never an automat
   assert.doesNotMatch(source, /INSERT INTO public\.subscriptions/);
 });
 
+test("Google callback consumes its cookie-bound nonce before any remote signing-key or RSA work", () => {
+  const source = readFileSync(
+    new URL("../src/services/googleMerchantAdmissionAuthority.ts", import.meta.url), "utf8",
+  );
+  const begin = source.indexOf("export async function admitPendingGoogleMerchant");
+  const consume = source.indexOf("const consumed = await consumeGoogleOidcChallenge({", begin);
+  const refuse = source.indexOf('if (!consumed) throw new Error("GOOGLE_OIDC_CHALLENGE_INVALID")', consume);
+  const verify = source.indexOf("const identity = await verifyGoogleIdTokenSignature(", begin);
+  const admit = source.indexOf("return withAuthenticationTransaction(async client =>", verify);
+  assert.ok(begin >= 0 && consume > begin && refuse > consume &&
+    verify > refuse && admit > verify,
+    "invalid/replayed nonce must be rejected before a Google JWKS fetch or RSA signature check");
+  // Nonce still MUST be validated in the signed ID token, not merely consumed.
+  assert.match(source.slice(verify, admit), /input\.idToken,\s*clientId,\s*input\.expectedNonce/);
+  assert.match(source.slice(consume, verify), /csrfProof: input\.csrfProofFromCookie/);
+});
+
 test("returning Google merchant needs only signed subject, never a new-store profile", () => {
   const source = readFileSync(
     new URL("../src/services/googleMerchantAdmissionAuthority.ts", import.meta.url), "utf8",
