@@ -7,6 +7,22 @@
 - Approved encrypted media CLI source: `/app/scripts/v1-production-media-g5-archive.mjs` in built candidate image (actual Docker build [#45063540813](https://github.com/nora953/fawri-production-source/actions/runs/45063540813)). Source protection now includes prior-backup `EEXIST` preservation and dangling-restoration-symlink denial, focused [#45067429812](https://github.com/nora953/fawri-production-source/actions/runs/45067429812), **3/3 PASS**.
 - **As of this handoff, the live Render deploy is STILL `9eed007943e1d93d960f360723b8ce7becc8f93a`, which predates the media CLI.** Merely having a newer GitHub commit or CI Docker build does **not** mean the live service Shell contains the CLI.
 
+> **2026-11-22 latest read-only provider-attested instance connectivity:** Render `get_service` itself reports this service's configured SSH address as `srv-dbv0kvm8bjmc73av6fm0@ssh.frankfurt.render.com`, dashboard URL `https://dashboard.render.com/web/srv-dbv0kvm8bjmc73av6fm0`, region `frankfurt`, Starter plan, Docker runtime and persistent `/var/data` disk. These are service metadata, **not** an authenticated session and **not** evidence of actual disk access. The existing Render connector has no Shell/SSH command execution. Do not expose SSH private keys or put merchant images in chat. The fastest safe next owner action is Render dashboard → this service → **Shell**, run the following read-only command and report ONLY its short result (no filenames/PII):
+>
+> ```sh
+> if test -f /app/scripts/v1-production-media-g5-archive.mjs && test -d /var/data/fawri; then
+>   if test -d /var/data/fawri/catalog-media; then
+>     echo 'G5_SHELL_CLI_AND_MEDIA_DIRECTORY_PRESENT'
+>   else
+>     echo 'G5_SHELL_CLI_PRESENT_MEDIA_DIRECTORY_ABSENT'
+>   fi
+> else
+>   echo 'G5_SHELL_PREREQUISITE_MISSING'
+> fi
+> ```
+>
+> No export, plaintext media read, privilege elevation or environment variable inspection occurs in this preflight. Production encrypted media export still requires separate scoped owner authorization.
+
 ## Mandatory gates before touching a real disk
 1. Obtain separately scoped owner approval for a **controlled, maintenance-ON service deploy** of the accepted candidate. Verify maintenance=ON, autoDeploy=no, pinned source SHA, successful `/readyz`, and that the mounted disk survived redeploy. A deploy is not approved by this packet.
 2. Obtain separately scoped owner approval to read/export `/var/data/fawri/catalog-media` **read-only** and to transfer *encrypted ciphertext only* to the already owner-controlled **private Google Drive backup folder** (or approved independent vault). Owner must create/retain an unrelated strong media-archive passphrase outside Render/GitHub/Drive ciphertext folder. **Never place passphrase in GitHub secrets, code, issue comments, logs or shell history.**
