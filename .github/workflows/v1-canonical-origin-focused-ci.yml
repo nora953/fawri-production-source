@@ -1,0 +1,60 @@
+name: FAWRI V1 canonical-origin + Google readiness (FOCUSED SOURCE CI)
+# Tests only the newly changed release guards, not the accepted full suite.
+# No public deployment, production DB credentials, payment or merchant data.
+on:
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - .github/workflows/v1-canonical-origin-focused-ci.yml
+      - artifacts/api-server/src/routes/auth-google-merchant-routes.ts
+      - artifacts/api-server/src/services/productionReleaseReadiness.ts
+      - artifacts/api-server/tests/google-merchant-http-readiness.test.ts
+      - artifacts/api-server/tests/production-release-readiness.test.ts
+  pull_request:
+    paths:
+      - .github/workflows/v1-canonical-origin-focused-ci.yml
+      - artifacts/api-server/src/routes/auth-google-merchant-routes.ts
+      - artifacts/api-server/src/services/productionReleaseReadiness.ts
+      - artifacts/api-server/tests/google-merchant-http-readiness.test.ts
+      - artifacts/api-server/tests/production-release-readiness.test.ts
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fawri-v1-origin-acceptance-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  canonical-origin-source:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: corepack enable
+      - name: Install exact locked workspace dependencies (no lifecycle scripts)
+        run: node scripts/ci-run-redacted.mjs --label origin-gate-install -- pnpm install --frozen-lockfile --ignore-scripts
+      - name: Execute the two changed release-policy test suites
+        run: >-
+          pnpm --filter @workspace/api-server exec tsx --test --test-concurrency=1
+          ./tests/google-merchant-http-readiness.test.ts
+          ./tests/production-release-readiness.test.ts
+      - name: Typecheck actual API server after new startup guards
+        run: pnpm --filter @workspace/api-server run typecheck
+      - name: Record source-only acceptance boundary
+        run: |
+          {
+            echo '## FAWRI V1 source acceptance only'
+            echo 'The two changed Google/custom-origin test suites and API TypeScript checks passed.'
+            echo 'TLS certification, real Google/WhatsApp, merchant-isolation HTTP, media, and DB restore remain separate hosted gates.'
+            echo 'NO commercial GO, no deploy, no production data writes.'
+          } >> "${GITHUB_STEP_SUMMARY}"
