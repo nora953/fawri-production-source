@@ -27,6 +27,31 @@ test("Google merchant HTTP entry is securely disabled by default and if any prer
   assert.equal(googleMerchantHttpReady({...ready, FAWRI_GOOGLE_OAUTH_CLIENT_ID:"attacker"}), false);
 });
 
+test("production Google readiness requires the exact canonical Fawri origin", () => {
+  // This gate is relevant to the first commercial HTTPS hostname only; it
+  // cannot be satisfied by the default Render/test origin or by www alone.
+  const hosted = { ...ready, NODE_ENV: "production", FAWRI_DEPLOYMENT_MODE: "production" };
+  assert.equal(googleMerchantHttpReady(hosted), false);
+  assert.equal(googleMerchantHttpReady({
+    ...hosted, FAWRI_ALLOWED_ORIGINS: "https://www.fawrireply.com,https://fawri-v1-commercial-gated-k9yj.onrender.com",
+  }), false);
+  assert.equal(googleMerchantHttpReady({
+    ...hosted, FAWRI_ALLOWED_ORIGINS: "https://fawrireply.com",
+  }), true);
+  assert.equal(googleMerchantHttpReady({
+    ...hosted, FAWRI_ALLOWED_ORIGINS: "https://fawrireply.com,https://www.fawrireply.com",
+  }), true);
+  assert.equal(googleMerchantHttpReady({
+    ...hosted, FAWRI_ALLOWED_ORIGINS: "https://fawrireply.com.attacker.invalid",
+  }), false);
+  assert.equal(googleMerchantHttpReady({
+    ...hosted, FAWRI_ALLOWED_ORIGINS: "http://fawrireply.com",
+  }), false);
+  assert.equal(googleMerchantHttpReady({
+    ...ready, FAWRI_DEPLOYMENT_MODE: "staging",
+  }), true);
+});
+
 test("Google merchant callback requires a POST with explicitly allowed browser origin", () => {
   const good = { method:"POST", headers:{origin:"https://merchant.fawri.example"} };
   assert.equal(googleOriginAllowed(good,ready), true);
