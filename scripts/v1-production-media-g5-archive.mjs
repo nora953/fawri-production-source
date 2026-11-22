@@ -219,7 +219,10 @@ async function restoreMedia(archive,target) {
   const root=getFixtureRoot(),dest=path.resolve(target);
   if(!inside(root,dest)||dest.startsWith('/var/data/'))fail('MEDIA_RESTORE_TARGET_NOT_DISPOSABLE');
   assertRealTree(path.dirname(dest));
-  if(fs.existsSync(dest))fail('MEDIA_RESTORE_REFUSES_EXISTING_TARGET');
+  // existsSync follows symlinks and returns false for a dangling link.
+  // Refuse any existing directory entry, including a broken symlink, before
+  // restoring. This archive must never overwrite an operator-owned target.
+  if(fs.lstatSync(dest,{throwIfNoEntry:false}))fail('MEDIA_RESTORE_REFUSES_EXISTING_TARGET');
   const archivePath=path.resolve(archive);
   if(archivePath.startsWith('/var/data/'))fail('MEDIA_ARCHIVE_NOT_ALLOWED');
   const stat=fs.statSync(archivePath);
@@ -242,7 +245,7 @@ async function restoreMedia(archive,target) {
     for await(const chunk of input) parser.feed(decipher.update(chunk));
     parser.feed(decipher.final()); // no files can be accepted before GCM authentication
     parser.finish();
-    if(fs.existsSync(dest))fail('MEDIA_RESTORE_TARGET_RACE');
+    if(fs.lstatSync(dest,{throwIfNoEntry:false}))fail('MEDIA_RESTORE_TARGET_RACE');
     fs.renameSync(stage,dest);
     process.stdout.write(JSON.stringify({state:'ISOLATED_MEDIA_RESTORE_VERIFIED',
       files:parser.files,bytes:parser.bytes,productionUntouched:true})+'\n');
