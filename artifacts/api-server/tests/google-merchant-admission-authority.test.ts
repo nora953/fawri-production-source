@@ -109,7 +109,9 @@ test("new Google merchant persists approved legal revisions transactionally, ret
     new URL("../../../lib/db/first-commercial/held/v1_google_merchant_legal_consent_source.sql", import.meta.url), "utf8",
   );
   const existing = source.indexOf("if (existing[0])");
-  const versions = source.indexOf("FAWRI_V1_TERMS_VERSION");
+  // The shared readiness helper appears earlier in the file; assert the
+  // actual transaction-local policy pin is after linked-account lookup.
+  const versions = source.indexOf("const termsVersion = String(process.env.FAWRI_V1_TERMS_VERSION", existing);
   const insert = source.indexOf("INSERT INTO public.merchants");
   assert.ok(existing >= 0 && versions > existing && insert > versions);
   assert.match(source, /GOOGLE_MERCHANT_LEGAL_VERSION_NOT_READY/);
