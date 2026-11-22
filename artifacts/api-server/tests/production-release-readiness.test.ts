@@ -384,6 +384,27 @@ test("FIELD002 production startup config requires an explicit approved tenant ru
   }), []);
 });
 
+test("first-commercial custom domain is admitted for every merchant mutation, not Google alone", () => {
+  const isBlocked = (origins: string, manual = "1") =>
+    getProductionRuntimeConfigurationIssues(productionEnv({
+      FAWRI_V1_MANUAL_COMMERCE: manual,
+      FAWRI_ALLOWED_ORIGINS: origins,
+    })).some(item => item.code === "V1_CANONICAL_DOMAIN_ORIGIN_REQUIRED");
+  assert.equal(isBlocked("https://app.fawri.example"), true);
+  assert.equal(isBlocked("https://www.fawrireply.com"), true);
+  assert.equal(isBlocked("https://fawrireply.com.attacker.invalid"), true);
+  assert.equal(isBlocked("http://fawrireply.com"), true);
+  assert.equal(isBlocked("https://fawrireply.com"), false);
+  assert.equal(isBlocked("https://www.fawrireply.com, https://fawrireply.com"), false);
+  assert.equal(isBlocked("https://app.fawri.example", "0"), false);
+  assert.equal(isBlocked("https://app.fawri.example", ""), false);
+  // A missing canonical root does not pass even if some other valid origin is allowed.
+  assert.throws(() => assertProductionRuntimeConfiguration(productionEnv({
+    FAWRI_V1_MANUAL_COMMERCE: "1",
+    FAWRI_ALLOWED_ORIGINS: "https://www.fawrireply.com",
+  })), /production release configuration is incomplete/);
+});
+
 test("staging must opt out explicitly from production-only provider requirements", () => {
   const env = {
     NODE_ENV: "production",
