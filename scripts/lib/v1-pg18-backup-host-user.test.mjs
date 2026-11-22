@@ -9,7 +9,7 @@ import { hostOwnedPg18DockerUser } from './v1-pg18-backup-host-user.mjs';
 test('production PG18 exporter uses the nonroot host runner identity', () => {
   assert.equal(hostOwnedPg18DockerUser(() => 1001, () => 121), '--user=1001:121');
   for (const pair of [[()=>0,()=>121],[()=>1001,()=>0],
-    [undefined,()=>121],[()=>1001,undefined]]) {
+    [()=>NaN,()=>121],[()=>1001,()=>NaN]]) {
     assert.throws(() => hostOwnedPg18DockerUser(...pair),
       /V1_PG18_BACKUP_RUNNER_IDENTITY_UNSAFE/);
   }
