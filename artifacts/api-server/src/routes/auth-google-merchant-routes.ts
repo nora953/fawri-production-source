@@ -8,7 +8,7 @@ import {
   verifyMerchantOtpChallengeAuthoritative,
 } from "../services/postgresMerchantAuthSecurityAuthority";
 import { deliverAuthOtpWithProviderReceipt } from "../services/authOtpDelivery";
-import { admitPendingGoogleMerchant } from "../services/googleMerchantAdmissionAuthority";
+import { admitPendingGoogleMerchant, googleMerchantSignupLegalVersionsReady } from "../services/googleMerchantAdmissionAuthority";
 import { issueGoogleOidcChallenge } from "../services/googleOidcChallengeAuthority";
 import { isGoogleMerchantIdentityLinked } from "../services/googleMerchantIdentityAssurance";
 import { findMerchantByIdAuthoritative } from "../services/postgresMerchantAccountAuthority";
@@ -92,6 +92,12 @@ router.post("/google/begin", async (req, res) => {
     sendAuthError(res, 403, "GOOGLE_AUTH_FORBIDDEN", "Google sign-in request is forbidden");
     return;
   }
+  // Fail before creating a nonce if first-time signup cannot persist approved
+  // terms/privacy consent. Existing Google-linked login remains available.
+  if (req.body?.intent === "signup" && !googleMerchantSignupLegalVersionsReady()) {
+    sendAuthError(res, 503, "GOOGLE_SIGNUP_POLICY_NOT_READY", "New merchant registration is temporarily unavailable");
+    return;
+  }
   try {
     const issued = await issueGoogleOidcChallenge(requestIp(req).slice(0,128));
     // Server sets the proof as an HttpOnly cookie; the proof is never in JSON.
@@ -115,6 +121,12 @@ router.post("/google/complete", async (req, res) => {
   }
   if (!googleOriginAllowed(req) || !req.is("application/json") || !noMixedSession(req)) {
     sendAuthError(res, 403, "GOOGLE_AUTH_FORBIDDEN", "Google sign-in request is forbidden");
+    return;
+  }
+  // An explicit new-signup request must not consume its one-use Google proof
+  // only to fail later on missing policy version configuration.
+  if (req.body?.intent === "signup" && !googleMerchantSignupLegalVersionsReady()) {
+    sendAuthError(res, 503, "GOOGLE_SIGNUP_POLICY_NOT_READY", "New merchant registration is temporarily unavailable");
     return;
   }
   // Terminal attempt clears the browser proof, even after signed token failure.
