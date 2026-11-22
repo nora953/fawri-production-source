@@ -1,5 +1,12 @@
 # FAWRI V1 G5 — one-time Render catalog-media offsite acceptance handoff
 
+## 2026-11-23 — Owner Shell screenshot interpreted correctly, no repeat command
+
+- **Screenshot-derived evidence (owner provided):** Browser Render Web Shell shows a pasted check containing `&& echo G5_READY || echo G5_NOT_READY`, followed by a new shell prompt. The strings `G5_READY` and `G5_NOT_READY` appear **as command text**, and there is **no separately visible result line**. Therefore the screenshot is **inconclusive**, and must not be recorded as a verified `G5_NOT_READY` result. No user repetition requested.
+- **Other independently verified facts:** Exact approved live Render source `be32d2788a229782cc3fb73f9eebd96362ccda59` includes the encrypted media CLI in the Docker runtime (`#21 COPY` DONE), `/readyz=200`, mounted `/var/data` 5GB and verified synthetic G3 canary. The mounted `/var/data/fawri/catalog-media` directory is **created lazily** by the first product-image upload (`filesystemProvider.put` calls `fs.promises.mkdir(directory, { recursive:true })`); its absence on an empty first launch would be normal, not proof of missing persistent storage. Live Neon production aggregates found **0 merchants, 0 products and 0 catalog image references**, but do not prove absence of unreferenced bytes on disk.
+- **Operational decision:** No repeat Shell commands or speculative empty-media archives. `G5 production DB offsite` accepted independently; `G5 Render media offsite` remains unaccepted until real media exists and can be exported via authorized Shell/SSH, independently stored and restored. Focus next on provider-authorized G4 merchant onboarding and real G3 merchant image E2E, then run controlled G5 media offsite acceptance. No fabricated merchant data, no production SQL writes, no public file-transfer endpoint, no shell secrets in chat; maintenance stays ON, autoDeploy OFF, NO-GO.
+
+
 ## 2026-11-23 — Zero-reference preflight; NO further owner shell command requested now
 
 - **Real current read-only production Neon counts:** `public.merchants=0`, `public.catalog_image_references=0`, `public.products=0`, `public.orders=0`, and `public.accounts=1` (existing primary administration). This was read from the actual commercial Neon database `fawri` on `br-holy-waterfall-b993zglb` using a single aggregate SELECT. It retrieved no personal information and changed no rows. Consequently there is **no evidenced merchant-owned catalog image data to back up at present**.
