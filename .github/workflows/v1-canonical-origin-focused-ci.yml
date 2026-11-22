@@ -36,11 +36,11 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - run: corepack enable
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
           cache: pnpm
-      - run: corepack enable
       - name: Install exact locked workspace dependencies (no lifecycle scripts)
         run: node scripts/ci-run-redacted.mjs --label origin-gate-install -- pnpm install --frozen-lockfile --ignore-scripts
       - name: Execute the two changed release-policy test suites
