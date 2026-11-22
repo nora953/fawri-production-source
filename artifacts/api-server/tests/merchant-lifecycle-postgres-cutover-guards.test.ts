@@ -115,3 +115,20 @@ test("closed merchant tombstones are the only accounts allowed without a phone",
   assert.match(managementSchema, /merchant_channel_overrides/);
   assert.match(managementSchema, /merchant_deletion_requests/);
 });
+
+test("merchant lifecycle polling rejects stale sessions without deleting a newer rotated cookie", () => {
+  const route = source("../src/routes/auth-session-routes.ts");
+  const start = route.indexOf('router.get("/lifecycle", async (req, res) => {');
+  const end = route.indexOf('router.get("/me", requireSecureMerchantSession', start);
+  assert.ok(start >= 0 && end > start, "lifecycle handler must be mounted");
+  const lifecycle = route.slice(start, end);
+  const invalid = lifecycle.indexOf('if (!validated) {');
+  const account = lifecycle.indexOf('const account = await findMerchantByIdAuthoritative(', invalid);
+  assert.ok(invalid >= 0 && account > invalid, "invalid-token rejection must precede account lookup");
+  const invalidTokenBranch = lifecycle.slice(invalid, account);
+  assert.match(invalidTokenBranch, /sendAuthError\(\s*res,\s*401,\s*"SESSION_INVALID"/);
+  assert.doesNotMatch(invalidTokenBranch, /clearAuthSessionCookie\(/,
+    "stale lifecycle polling must not erase the cookie installed by a concurrent session rotation");
+  // Actual account disablement and security-version revocation remain terminal.
+  assert.match(lifecycle.slice(account), /clearAuthSessionCookie\(res, "merchant"\)/);
+});
