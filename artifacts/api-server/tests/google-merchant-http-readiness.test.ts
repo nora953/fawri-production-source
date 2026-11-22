@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { googleMerchantHttpReady, googleOriginAllowed } from "../src/routes/auth-google-merchant-routes";
+import { googleMerchantHttpReady, googleOriginAllowed, googleMerchantIntentPolicyReady } from "../src/routes/auth-google-merchant-routes";
+import { googleMerchantSignupLegalVersionsReady } from "../src/services/googleMerchantAdmissionAuthority";
 import { isGoogleMerchantIdentityLinked } from "../src/services/googleMerchantIdentityAssurance";
 
 const ready = {
@@ -13,6 +14,28 @@ const ready = {
   FAWRI_AUTH_SECURITY_SECRET: "A".repeat(40),
   FAWRI_ALLOWED_ORIGINS: "https://fawri.example,https://merchant.fawri.example",
 };
+
+test("new Google merchant admission never begins without published legal policy versions", () => {
+  assert.equal(googleMerchantSignupLegalVersionsReady({}), false);
+  assert.equal(googleMerchantIntentPolicyReady("signup", {}), false);
+  // Returning signed-in Google subject is not prevented by missing
+  // versions; it creates no new merchant or legal acceptance.
+  assert.equal(googleMerchantIntentPolicyReady("login", {}), true);
+  const pinned = {
+    FAWRI_V1_TERMS_VERSION: "terms-2026-11",
+    FAWRI_V1_PRIVACY_VERSION: "privacy-2026-11",
+  };
+  assert.equal(googleMerchantSignupLegalVersionsReady(pinned), true);
+  assert.equal(googleMerchantIntentPolicyReady("signup", pinned), true);
+  for (const invalid of [
+    { ...pinned, FAWRI_V1_TERMS_VERSION: "" },
+    { ...pinned, FAWRI_V1_PRIVACY_VERSION: "?" },
+    { ...pinned, FAWRI_V1_PRIVACY_VERSION: "a" },
+  ]) {
+    assert.equal(googleMerchantIntentPolicyReady("signup", invalid), false);
+    assert.equal(googleMerchantIntentPolicyReady("login", invalid), true);
+  }
+});
 
 test("Google merchant HTTP entry is securely disabled by default and if any prerequisite is missing", () => {
   assert.equal(googleMerchantHttpReady({}), false);
