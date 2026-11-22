@@ -512,6 +512,10 @@ test("commercial catalog media requires configured nonvolatile filesystem locati
 test("V1 manual commerce omits only deferred providers, never backup or durable storage", () => {
   const env = productionEnv({
     FAWRI_V1_MANUAL_COMMERCE: "1",
+    // This production fixture must satisfy the newly enforced real hostname,
+    // so this test isolates provider/backup scope rather than failing origin
+    // preflight for the old synthetic example domain.
+    FAWRI_ALLOWED_ORIGINS: "https://fawrireply.com",
     FAWRI_META_CUTOVER_READY: "",
     FAWRI_META_REPLY_TRANSPORT: "",
     FAWRI_META_CREDENTIAL_PROVIDER: "",
