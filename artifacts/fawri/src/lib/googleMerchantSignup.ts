@@ -60,6 +60,14 @@ export function googleMerchantSignupBuildReady(): boolean {
     CLIENT_ID_PATTERN.test(String(import.meta.env.VITE_FAWRI_GOOGLE_OAUTH_CLIENT_ID || ''));
 }
 
+// A new merchant must be able to complete the separate WhatsApp phone
+// proof step. Returning linked Google merchants need only the Google sign-in
+// flag; temporarily disabling WhatsApp must not hide their login option.
+export function googleMerchantNewSignupBuildReady(): boolean {
+  return googleMerchantSignupBuildReady() &&
+    import.meta.env.VITE_FAWRI_GOOGLE_PHONE_CLAIM === '1';
+}
+
 function configuredClientId(): string {
   if (!googleMerchantSignupBuildReady()) throw new Error('GOOGLE_SIGNUP_DISABLED');
   return String(import.meta.env.VITE_FAWRI_GOOGLE_OAUTH_CLIENT_ID || '');
@@ -219,6 +227,9 @@ export function prepareGoogleMerchantSignup(
   onSuccess: (account: GoogleSignupResult) => void,
   onFailure: () => void,
 ): Promise<() => void> {
+  if (!googleMerchantNewSignupBuildReady()) {
+    return Promise.reject(new Error('GOOGLE_SIGNUP_DISABLED'));
+  }
   return prepareGoogleMerchantIdentity(container, profile, 'signup_with', onSuccess, onFailure);
 }
 

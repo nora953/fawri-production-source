@@ -27,7 +27,7 @@ import {
 } from '@/lib/authOtpChallenge';
 import { toast } from 'sonner';
 import {
-  googleMerchantSignupBuildReady,
+  googleMerchantNewSignupBuildReady,
   prepareGoogleMerchantSignup,
   type GoogleSignupProfile,
 } from '@/lib/googleMerchantSignup';
@@ -202,7 +202,7 @@ export default function SignupPage() {
   const googleCopy = GOOGLE_MERCHANT_AUTH_COPY[lang].signup;
 
   const handleGoogleSignup = async () => {
-    if (!googleMerchantSignupBuildReady() || !googleProfileReady ||
+    if (!googleMerchantNewSignupBuildReady() || !googleProfileReady ||
         googlePreparing || !googleButtonHost.current) return;
 
     googleDispose.current?.();
@@ -623,7 +623,7 @@ export default function SignupPage() {
             {loading ? '...' : t.create_account}
           </Button>
 
-          {googleMerchantSignupBuildReady() && (
+          {googleMerchantNewSignupBuildReady() && (
             <section className="mt-6 space-y-3 border-t pt-5" aria-label={googleCopy.title} data-testid="google-merchant-signup">
               <p className="text-sm font-semibold">{googleCopy.title}</p>
               <Button

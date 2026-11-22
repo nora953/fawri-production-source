@@ -34,7 +34,7 @@ test('Google signup is nonce/CSRF server-bound without browser JWT persistence',
 });
 
 test('Google signup UX is separately gated and retains normal password-OTP signup', () => {
-  assert.match(signup, /googleMerchantSignupBuildReady\(\) &&/);
+  assert.match(signup, /googleMerchantNewSignupBuildReady\(\) &&/);
   assert.match(signup, /disabled=\{loading \|\| googlePreparing \|\| !googleProfileReady\}/);
   assert.match(signup, /formData\.agree_terms && formData\.confirm_legal/);
   assert.match(signup, /type="button"[\s\S]*?onClick=\{handleGoogleSignup\}/);
@@ -148,4 +148,17 @@ test('Google merchant local cache preserves phone-less accounts when switching i
     assert.deepEqual(reconcile(prior, { id: 'legacy-d', phone: '+15551234567' }),
       ['legacy-d', 'google-a'], name + ': a real matching phone still deduplicates');
   }
+});
+
+test('new Google signup UI requires phone-claim build switch, but returning login does not', () => {
+  assert.match(client, /export function googleMerchantNewSignupBuildReady\(\): boolean/);
+  assert.match(client, /return googleMerchantSignupBuildReady\(\) &&\s*import\.meta\.env\.VITE_FAWRI_GOOGLE_PHONE_CLAIM === '1'/);
+  assert.match(signup, /if \(!googleMerchantNewSignupBuildReady\(\) \|\| !googleProfileReady/);
+  assert.match(signup, /\{googleMerchantNewSignupBuildReady\(\) && \(/);
+  assert.doesNotMatch(signup, /googleMerchantSignupBuildReady\(\)/);
+  assert.match(client, /if \(!googleMerchantNewSignupBuildReady\(\)\) \{\s*return Promise\.reject\(new Error\('GOOGLE_SIGNUP_DISABLED'\)\)/);
+  // A provider pause may prevent first phone proof, but must not hide a
+  // returning merchant's linked Google sign-in.
+  assert.match(login, /\{googleMerchantSignupBuildReady\(\) && \(/);
+  assert.match(client, /export function prepareGoogleMerchantLogin/);
 });
