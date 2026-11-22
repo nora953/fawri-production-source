@@ -37,6 +37,10 @@ export function googleMerchantHttpReady(env: NodeJS.ProcessEnv = process.env): b
     env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY === "required" &&
     env.FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY === "required" &&
     Boolean(env.FAWRI_AUTH_DATABASE_URL) &&
+    // Every Google begin/complete request requires an explicit allowed origin.
+    // Do not report the HTTP surface ready when all requests would be 403.
+    String(env.FAWRI_ALLOWED_ORIGINS || "").split(",")
+      .some(origin => origin.trim().length > 0) &&
     /^[0-9]+-[a-z0-9-]+\.apps\.googleusercontent\.com$/.test(
       String(env.FAWRI_GOOGLE_OAUTH_CLIENT_ID || ""),
     ) &&
