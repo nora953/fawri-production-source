@@ -64,6 +64,10 @@ jobs:
               echo 'V1_ROOT_OWNED_BACKUP_ARCHIVE_FORBIDDEN'
               exit 1
             fi
+            if ! grep -Fq 'umask 077; exec "$@"' "$source"; then
+              echo 'V1_PG18_ARCHIVE_PRIVATE_MODE_REQUIRED'
+              exit 1
+            fi
           done
       - name: Test host identity and real disposable Docker PG18 archive ownership
         env:
