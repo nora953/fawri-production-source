@@ -21,7 +21,7 @@ test("Google account admission cannot activate without approved environment gate
   delete process.env.FAWRI_GOOGLE_OAUTH_CLIENT_ID;
   await assert.rejects(
     admitPendingGoogleMerchant({
-      idToken: "fake", expectedNonce: "client-nonce",
+      intent: "signup", idToken: "fake", expectedNonce: "client-nonce",
       challengeId: "fake", csrfProofFromCookie: "fake",
       ownerName: "Owner", storeName: "Shop", activityType: "retail",
       countryCode: "US", language: "en",
@@ -126,4 +126,22 @@ test("new Google merchant persists approved legal revisions transactionally, ret
   assert.doesNotMatch(sql, /UPDATE public\.merchants\s+SET/);
   assert.doesNotMatch(sql, /DEFAULT\s+(true|now\(\))/i);
   assert.equal(sql.split("COMMIT;").length, 2);
+});
+
+
+test("login-only Google challenge cannot create an unlinked merchant even with a crafted full profile", () => {
+  const service = readFileSync(
+    new URL("../src/services/googleMerchantAdmissionAuthority.ts", import.meta.url), "utf8",
+  );
+  const route = readFileSync(
+    new URL("../src/routes/auth-google-merchant-routes.ts", import.meta.url), "utf8",
+  );
+  const existing = service.indexOf("if (existing[0])");
+  const loginGuard = service.indexOf('if (input.intent !== "signup")', existing);
+  const consent = service.indexOf("input.agreeTerms !== true || input.confirmLegal !== true", loginGuard);
+  const insert = service.indexOf("INSERT INTO public.accounts", consent);
+  assert.ok(existing >= 0 && loginGuard > existing && consent > loginGuard && insert > consent,
+    "login-only admission must reject before new merchant insert/consent path");
+  assert.match(service, /GOOGLE_MERCHANT_SIGNUP_INTENT_REQUIRED/);
+  assert.match(route, /intent: req\.body\.intent/);
 });

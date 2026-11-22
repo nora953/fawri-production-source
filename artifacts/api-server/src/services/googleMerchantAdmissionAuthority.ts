@@ -15,6 +15,8 @@ import type { RequestedPlan } from "./authAccountRepository";
  * Requires a separately approved HELD PG18 migration on the target database.
  */
 type Registration = Readonly<{
+  // Server-enforced: a returning-login request may never create a new account.
+  intent: "signup" | "login";
   idToken: string;
   expectedNonce: string;
   challengeId: string;
@@ -110,6 +112,13 @@ export async function admitPendingGoogleMerchant(input: Registration): Promise<G
       // Returning merchants must not need to re-enter or overwrite store
       // details. Only the signed and nonce-bound Google subject is authority.
       return { accountId: existing[0].id, created: false, trialActivated: false };
+    }
+
+    // Never turn a login-only challenge into merchant creation, even if a
+    // crafted client includes a complete profile and consent flags. This
+    // check is authoritative; the browser created=false guard is too late.
+    if (input.intent !== "signup") {
+      throw new Error("GOOGLE_MERCHANT_SIGNUP_INTENT_REQUIRED");
     }
 
     // Client-side checkboxes are insufficient: first-time merchant admission

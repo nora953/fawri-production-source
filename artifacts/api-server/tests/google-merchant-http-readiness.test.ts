@@ -21,12 +21,17 @@ test("new Google merchant admission never begins without published legal policy 
   // Returning signed-in Google subject is not prevented by missing
   // versions; it creates no new merchant or legal acceptance.
   assert.equal(googleMerchantIntentPolicyReady("login", {}), true);
+  // Missing, malformed and unknown intent cannot skip signup policy readiness.
+  assert.equal(googleMerchantIntentPolicyReady(undefined, {}), false);
+  assert.equal(googleMerchantIntentPolicyReady("", {}), false);
   const pinned = {
     FAWRI_V1_TERMS_VERSION: "terms-2026-11",
     FAWRI_V1_PRIVACY_VERSION: "privacy-2026-11",
   };
   assert.equal(googleMerchantSignupLegalVersionsReady(pinned), true);
   assert.equal(googleMerchantIntentPolicyReady("signup", pinned), true);
+  assert.equal(googleMerchantIntentPolicyReady("unknown", pinned), false);
+  assert.equal(googleMerchantIntentPolicyReady(undefined, pinned), false);
   for (const invalid of [
     { ...pinned, FAWRI_V1_TERMS_VERSION: "" },
     { ...pinned, FAWRI_V1_PRIVACY_VERSION: "?" },

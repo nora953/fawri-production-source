@@ -62,7 +62,7 @@ export function googleMerchantIntentPolicyReady(
   intent: unknown,
   env: NodeJS.ProcessEnv = process.env,
 ): boolean {
-  return intent !== "signup" || googleMerchantSignupLegalVersionsReady(env);
+  return intent === "login" || (intent === "signup" && googleMerchantSignupLegalVersionsReady(env));
 }
 
 export function googleOriginAllowed(req: Pick<Request,"headers"|"method">, env: NodeJS.ProcessEnv = process.env): boolean {
@@ -153,6 +153,7 @@ router.post("/google/complete", async (req, res) => {
       return;
     }
     const admitted = await admitPendingGoogleMerchant({
+      intent: req.body.intent,
       idToken: req.body.id_token,
       expectedNonce: req.body.nonce,
       challengeId: req.body.challenge_id,
