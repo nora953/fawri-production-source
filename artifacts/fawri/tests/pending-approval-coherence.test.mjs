@@ -31,6 +31,12 @@ test("PendingPage refreshes server status, backs off, cleans polling, and uses s
   const pending = await source("src/pages/PendingPage.tsx");
 
   assert.match(pending, /checkMerchantLifecycle\(controller\.signal\)/);
+  assert.match(pending, /SESSION_401_CONFIRM_DELAYS_MS = \[150, 650\]/);
+  assert.match(pending, /if \(!result\.ok && result\.reason === 'unauthenticated'\)/);
+  assert.match(pending, /for \(const delay of SESSION_401_CONFIRM_DELAYS_MS\)/);
+  assert.match(pending, /result = await checkMerchantLifecycle\(controller\.signal\)/);
+  assert.match(pending, /if \(result\.ok \|\| result\.reason !== 'unauthenticated'\) break;/);
+  assert.match(pending, /if \(cancelled\) return;[\s\S]*if \(!result\.ok\)/);
   assert.match(pending, /lifecyclePollDelay/);
   assert.match(pending, /window\.setTimeout/);
   assert.match(pending, /window\.clearTimeout/);
