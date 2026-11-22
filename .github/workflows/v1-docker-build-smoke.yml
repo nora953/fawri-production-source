@@ -25,7 +25,7 @@ jobs:
           persist-credentials: false
       - name: Compile V1 full-stack Docker image using actual Render recipe (NO secrets)
         run: docker build --progress=plain --file Dockerfile.staging --tag fawri-v1-g3-source:preflight .
-      - name: Verify React+API runtime artifacts and no cashier shell
+      - name: Verify React+API runtime and dormant protected media recovery CLI
         run: |
-          docker run --rm --entrypoint sh fawri-v1-g3-source:preflight -c 'test -f /app/artifacts/fawri/dist/public/index.html && test ! -f /app/artifacts/fawri/dist/public/cashier.html && test -f /app/artifacts/api-server/dist/index.mjs && echo V1_DOCKER_BUILD_NO_CASHIER_SHELL_ACCEPTED'
+          docker run --rm --entrypoint sh fawri-v1-g3-source:preflight -c 'test -f /app/artifacts/fawri/dist/public/index.html && test ! -f /app/artifacts/fawri/dist/public/cashier.html && test -f /app/artifacts/api-server/dist/index.mjs && test -f /app/scripts/v1-production-media-g5-archive.mjs && node --check /app/scripts/v1-production-media-g5-archive.mjs && echo V1_DOCKER_BUILD_NO_CASHIER_SHELL_AND_G5_TOOL_ACCEPTED'
           echo NO_RENDER_SERVICE_NO_CUSTOMER_DEPLOY_NO_NEON_WRITES
