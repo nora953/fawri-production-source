@@ -2,6 +2,7 @@ name: V1 production POST-G4+POS-OFF encrypted backup (OWNER ONESHOT)
 # One-shot owner authorization: source-only guarded export of exact post-G4 DB, no automatic live read.
 # No real export until a SEPARATE owner opt-in on POSTG4; PREGO approval does not transfer.
 # Do not assume earlier pre-G4 ciphertext protects the new schema.
+# 2026-11-22: owner acknowledged POSTG4 variable 1; exact one-shot trigger only.
 on:
   pull_request:
     paths:
