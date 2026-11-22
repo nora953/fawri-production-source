@@ -44,7 +44,9 @@ function getRequestedPlanFromSearch(search: string): RequestedPlan | null {
 function cacheMerchantLocally(merchant: any) {
   if (!merchant?.id) return;
   const merchants = getMerchants();
-  const cleaned = merchants.filter(item => item.id !== merchant.id && item.phone !== merchant.phone);
+  const cleaned = merchants.filter(item =>
+    item.id !== merchant.id && (!merchant.phone || item.phone !== merchant.phone),
+  );
   saveMerchants([merchant, ...cleaned]);
 }
 
