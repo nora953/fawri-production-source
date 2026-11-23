@@ -6,6 +6,12 @@
 **Work branch:** `fix/p0-provider-receipt-order-discovery-20261015` (Draft PR #550).  
 **No production policy/env/provider/Neon/Render change is authorized by this packet.**
 
+## Owner-confirmed provisional operator facts (drafting evidence, not legal signoff)
+
+- As of 2026-11-23 the owner confirmed FAWRI operates **personally**, from **Iraq**, while incorporation of a **U.S. company is in progress**; the not-yet-formed U.S. entity **must not** be advertised as the current contracting service provider. Draft wording must describe an individual operator until the actual legal entity and effective transfer are verified. Official spelling, service address, applicable law and legal review remain unverified; do **not** infer they are settled.
+- The owner chose an eventual professional domain mailbox for public support, but expressly **deferred purchasing/setting it up** until critical launch blockers are addressed. Do not invent or publish an operational `support@fawrireply.com` mailbox or treat a hypothetical address as reachable. Existing private Google Cloud support/developer email is not evidence of an approved publicly operated support channel.
+- The Google OAuth owner-console setup and maintenance-ON Render deployment are recorded in `PROGRESS.md` (2026-11-23), but neither approves these legal texts nor makes `/privacy` or `/terms` public while service maintenance is enabled.
+
 ## Why this is a concrete G4 release dependency
 
 The first-party signup UI displays three localized versions of the same Terms and Privacy material through `PolicyContent` and `getPolicyText`, sourced from `artifacts/fawri/src/lib/translations/features/content/policies.ts`. The currently shown text is a **short legacy statement**, not an independently signed-off versioned merchant contract for the actual Google/WhatsApp/manual-commerce service. For example:
