@@ -2,9 +2,10 @@ import type { NextFunction, Request, Response } from "express";
 
 /** Public prelaunch surface only. This is not commercial release authority. */
 function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, char => ({
+  const escapes: Record<string, string> = {
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  })[char]!);
+  };
+  return value.replace(/[&<>"']/g, char => escapes[char]!);
 }
 
 export function createPublicPrelaunchGate(env: NodeJS.ProcessEnv) {
