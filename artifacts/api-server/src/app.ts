@@ -23,6 +23,7 @@ import cashierDiscountPolicyOperationsRouter from "./routes/cashier-discount-pol
 import cashierOperatorCommerceRouter from "./routes/cashier-operator-commerce";
 import cashierSyncOperationsRouter from "./routes/cashier-sync-operations";
 import cashierSubscriptionOperationsRouter from "./routes/cashier-subscription-operations";
+import { createPublicPrelaunchGate } from "./middleware/publicPrelaunchGate";
 import { enforceManualCommercialCutover } from "./middleware/manualCommercialCutover";
 import { enforceFirstCommercialPosCutover } from "./middleware/firstCommercialPosCutover";
 import merchantSettingsRouter from "./routes/merchant-settings";
@@ -290,6 +291,8 @@ app.use(
 );
 app.use(recordHttpTelemetry);
 app.use(enforceHttpSecurityHeaders);
+// The prelaunch surface must run before CORS, cookies, body parsing and all API routes.
+app.use(createPublicPrelaunchGate(process.env));
 app.use(
   cors({
     origin: corsOriginAllowed,
