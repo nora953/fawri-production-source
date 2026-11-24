@@ -22,7 +22,7 @@ try {
  run(["run","--detach","--name",name,"--network","none","-e","POSTGRES_HOST_AUTH_METHOD=trust","postgres:18-alpine"]);
  let ready=false;
  for(let i=0;i<30;i++){
-  const r=spawnSync("docker",["exec",name,"pg_isready","-U","postgres"],{timeout:3000});
+  const r=spawnSync("docker",["exec",name,"pg_isready","-h","127.0.0.1","-U","postgres"],{timeout:3000});
   if(r.status===0 && spawnSync("docker",["exec",name,"psql","-X","-U","postgres","-d","postgres","-Atq","-c","SELECT 1"],{timeout:3000}).status===0){ready=true;break;}
   spawnSync("sleep",["1"]);
  }
