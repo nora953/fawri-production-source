@@ -1,0 +1,30 @@
+name: FAWRI V1 G5 independent offsite restore (FOCUSED SOURCE CI)
+on:
+  pull_request:
+    paths:
+      - .github/workflows/v1-postg4-offsite-restore.yml
+      - scripts/v1-postg4-offsite-restore.mjs
+      - scripts/tests/v1-postg4-offsite-restore.test.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  archive-guard:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - run: node --check scripts/v1-postg4-offsite-restore.mjs
+      - run: node --test scripts/tests/v1-postg4-offsite-restore.test.mjs
+      - name: Refuse live invocation without explicit authorization
+        run: |
+          if node scripts/v1-postg4-offsite-restore.mjs nonexistent.json nonexistent.enc; then
+            echo "Unexpectedly admitted an unapproved restore"
+            exit 1
+          fi
