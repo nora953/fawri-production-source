@@ -5,6 +5,7 @@ on:
       - .github/workflows/v1-recurring-encrypted-db-backup.yml
       - scripts/v1-recurring-encrypted-db-backup.mjs
       - scripts/tests/v1-recurring-encrypted-db-backup.test.mjs
+      - scripts/v1-recurring-backup-pg18-fixture.mjs
 permissions:
   contents: read
 jobs:
@@ -26,3 +27,19 @@ jobs:
           if node scripts/v1-recurring-encrypted-db-backup.mjs; then
             exit 1
           fi
+
+  recurring-pg18-fixture:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - run: docker pull postgres:18-alpine
+      - run: node scripts/v1-recurring-backup-pg18-fixture.mjs
+        env:
+          FAWRI_G5_DISPOSABLE_READER_DRILL: '1'
