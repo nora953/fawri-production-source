@@ -1,5 +1,12 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-25 — owner authorized isolated offsite archive restoration; private input required
+
+- Owner approved the specific isolated restore of the existing encrypted Drive archive, not production restoration, new provider credentials, public sharing or commercial launch. Drive metadata readback confirmed original `FAWRI-Neon-Production-PostG4-Encrypted-2026-11-22.zip` still private (shared=false), 671797 bytes, ID 1zcUz54-BWbF6Z6namaVo9iPx-qgO8qo3. Prior independently verified ZIP SHA-256 remains the expected identity; metadata alone is not a fresh content hash. GitHub Actions source artifact no longer listed.
+- A private owner-run disposable recovery notebook was prepared outside the repository as an optional browser-based handoff: original encrypted ZIP upload, pinned ZIP SHA-256 and scope verification, hidden original passphrase prompt, authenticated decryption, fresh PG18 Unix-socket-only restore, exact catalog checks and cleanup. The optional Google Colab runtime is a separate cloud execution environment; owner must choose whether to use it privately or use the existing local Docker CLI instead. No plaintext backup or passphrase in chat/repository; no Drive sharing changes. Notebook syntax checked only, not executed against actual archive. Owner-held decryption secret is not available through the connected tools; actual restore evidence still required.
+- G5 remains BLOCKED; no production connection, new deploy, P0 closure, or paid service authorized.
+
+
 ## 2026-11-25 Baghdad — G5 recurring backup real disposable PG18 acceptance prepared (HELD)
 
 - Previous focused recurring source run [#45485937083](https://github.com/nora953/fawri-production-source/actions/runs/45485937083) was still QUEUED at readback, not accepted. Added [real disposable PG18 integration fixture](scripts/v1-recurring-backup-pg18-fixture.mjs) and wired it into the same focused CI at [1cc73ffe](https://github.com/nora953/fawri-production-source/commit/1cc73ffe3100a48d208f329d9915e348ace8fc19). It uses a network-disabled Docker container, synthetic two-merchant order rows behind forced RLS, rejects missing BYPASSRLS, column-level write privilege and callable SECURITY DEFINER, then attempts complete custom dump, encryption/decryption and restore into a different disposable DB. No live credentials or provider connection; actual result pending. This directly addresses the new recurring export's unproven nonempty RLS behavior; do not repeat accepted prelaunch one-shot backups or prior guard tests independently.
