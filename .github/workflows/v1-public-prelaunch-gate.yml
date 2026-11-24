@@ -1,0 +1,30 @@
+name: FAWRI V1 public prelaunch gate (FOCUSED SOURCE CI)
+on:
+  pull_request:
+    paths:
+      - .github/workflows/v1-public-prelaunch-gate.yml
+      - artifacts/api-server/src/middleware/publicPrelaunchGate.ts
+      - artifacts/api-server/src/app.ts
+      - artifacts/api-server/tests/public-prelaunch-gate.test.ts
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-prelaunch:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: node scripts/ci-run-redacted.mjs --label public-prelaunch-install -- pnpm install --frozen-lockfile --ignore-scripts
+      - name: Test isolated HTTP gate
+        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/public-prelaunch-gate.test.ts
+      - name: Typecheck actual API server
+        run: pnpm --filter @workspace/api-server run typecheck
