@@ -43,7 +43,7 @@ export function backupClientEnv(env) {
     PATH: env.PATH, HOME: env.HOME,
     PGHOST: BACKUP_TARGET.host, PGPORT: "5432", PGDATABASE: BACKUP_TARGET.database,
     PGUSER: BACKUP_TARGET.role, PGPASSWORD: decodeURIComponent(url.password),
-    PGSSLMODE: "verify-full", PGCHANNELBINDING: "require",
+    PGSSLMODE: "verify-full", PGSSLROOTCERT: "system", PGCHANNELBINDING: "require",
     PGCONNECT_TIMEOUT: "10", PGOPTIONS: "-c default_transaction_read_only=on",
   };
 }
@@ -65,22 +65,22 @@ SELECT CASE WHEN
  AND NOT EXISTS (SELECT 1 FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.member WHERE r.rolname=session_user)
  AND NOT has_database_privilege(current_database(),'CREATE')
  AND NOT EXISTS (SELECT 1 FROM pg_namespace n
-   WHERE n.nspname NOT LIKE 'pg_%' AND n.nspname <> 'information_schema'
+   WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema'
    AND has_schema_privilege(n.oid,'CREATE'))
  AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-   WHERE n.nspname NOT LIKE 'pg_%' AND n.nspname <> 'information_schema'
+   WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema'
    AND c.relkind IN ('r','p','m','f')
    AND (has_table_privilege(c.oid,'INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER')
    OR has_any_column_privilege(c.oid,'INSERT,UPDATE,REFERENCES')
    OR NOT has_table_privilege(c.oid,'SELECT')))
  AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-   WHERE n.nspname NOT LIKE 'pg_%' AND n.nspname <> 'information_schema'
+   WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema'
    AND c.relkind='S' AND (has_sequence_privilege(c.oid,'UPDATE,USAGE') OR NOT has_sequence_privilege(c.oid,'SELECT')))
  AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
    JOIN pg_roles r ON c.relowner=r.oid
-   WHERE n.nspname NOT LIKE 'pg_%' AND n.nspname <> 'information_schema' AND r.rolname=session_user)
+   WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema' AND r.rolname=session_user)
  AND NOT EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
-   WHERE n.nspname NOT LIKE 'pg_%' AND n.nspname <> 'information_schema'
+   WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema'
    AND p.prosecdef AND has_function_privilege(p.oid,'EXECUTE'))
  THEN 'G5_READER_ACCEPTED' ELSE 'G5_READER_DENIED' END;
 `;
