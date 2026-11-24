@@ -1,0 +1,28 @@
+name: FAWRI V1 G5 recurring backup admission (SOURCE ONLY)
+on:
+  pull_request:
+    paths:
+      - .github/workflows/v1-recurring-encrypted-db-backup.yml
+      - scripts/v1-recurring-encrypted-db-backup.mjs
+      - scripts/tests/v1-recurring-encrypted-db-backup.test.mjs
+permissions:
+  contents: read
+jobs:
+  recurring-archive-source:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - run: node --check scripts/v1-recurring-encrypted-db-backup.mjs
+      - run: node --test scripts/tests/v1-recurring-encrypted-db-backup.test.mjs
+      - name: Unapproved invocation fails closed
+        run: |
+          if node scripts/v1-recurring-encrypted-db-backup.mjs; then
+            exit 1
+          fi
