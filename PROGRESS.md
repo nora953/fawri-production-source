@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-25 — G5 PostG4 ACL recovery metadata capture prepared (HELD)
+
+- Added [read-only PostgreSQL 18 catalog capture](docs/final-audit/evidence/sql/P0-V1-G5-POSTG4-ACL-RECOVERY-CATALOG-HELD.sql) at [`ed7131df`](https://github.com/nora953/fawri-production-source/commit/ed7131dfe17b179fa76d50c5f8bf9a746bf4a711). Requires independent explicit owner approval, verified exact endpoint and owner login; guarded by 102 tables / 84 RLS / 83 policies and read-only repeatable-read transaction. Collects application role attributes/memberships, database/schema/relation/column/routine/type/default ACLs, ownership and policy role mapping, without merchant rows or credential verifiers. Raw metadata must stay private and encrypted. Never replay provider-internal privileged memberships.
+- Source prepared only; SQL not executed or PostgreSQL-tested. Prior 99-table independent synthetic role recovery and 102-table offsite catalog recovery remain accepted within their original scope. Next: authorize a single read-only hosted metadata capture, match it to the archived catalog/ACL state, then restore only approved roles with fresh credentials in isolation. No recurring reader/schedule, media recovery, production write, expense, deployment or new P0 closure. G5 BLOCKED; PR #550 DRAFT; NO-GO.
+
+
 ## 2026-11-25 — G5 recurring encrypted DB backup source ACCEPTED; operational dependency narrowed
 
 - Read actual GitHub jobs: [#45485937083](https://github.com/nora953/fawri-production-source/actions/runs/45485937083) recurring-archive-source completed SUCCESS, including syntax, focused unit tests and unapproved invocation denial; [#45486284589](https://github.com/nora953/fawri-production-source/actions/runs/45486284589) both recurring-archive-source and recurring-pg18-fixture completed SUCCESS, including actual Docker PG18 fixture. Fixture proves nonempty two-merchant synthetic RLS export, rejection without BYPASSRLS / with column UPDATE / callable SECURITY DEFINER, and restored fixture rows. Source-only acceptance; no production connection, reader, scheduler, offsite transfer or media consistency proven. Do not rerun these accepted checks unchanged.
