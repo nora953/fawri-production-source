@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-25 — G5 private encrypted ACL sidecar prepared (HELD; CI pending)
+
+- Added [private capture and offline verification CLI](scripts/v1-g5-private-acl-capture.mjs) at `58b945ecb438abae4027ca2a4c903e52ed0d18b3`. Requires explicit opt-in outside CI, exact owner/direct endpoint, PG18 client, verify-full TLS/channel binding and exact Git blob of accepted read-only capture SQL. Captures catalog in memory, checks known schema/role bounds, seals with scrypt/AES-256-GCM, verifies authenticated round trip, writes ciphertext exclusively (0600) without overwriting and checks local readback. No raw catalog printed, no credential stored in GitHub. The archive SHA-256 is embedded inside the authenticated envelope as a reference only, not proof that ACLs were unchanged since archive creation.
+- Added [synthetic tests](scripts/v1-g5-private-acl-capture.test.mjs) `3a35efa8` and [dedicated source CI](.github/workflows/v1-g5-private-acl-sidecar.yml) `39346aea8`; correct key, wrong key/tampering/truncation, drift and restricted endpoint/CI admission covered by assertions, not yet accepted execution. Owner-controlled private execution still needs the direct connection credential and separate strong passphrase outside chat/CI. No real sidecar created, offsite readback, ACL restore, recurring backup activation or media proof. No new production connection/write, cost or deploy. G5/P0-HOSTED-RECOVERY remains BLOCKED; no new P0 closure, PR #550 DRAFT, NO-GO.
+
+
 ## 2026-11-25 — G5 ACL catalog capture exact PG18 fixture ACCEPTED
 
 - [Corrected focused CI #45665687825](https://github.com/nora953/fawri-production-source/actions/runs/45665687825), job 139387091542, completed SUCCESS; actual log ends in `G5_ACL_CATALOG_FIXTURE_PASS_READ_ONLY_NO_PRODUCTION`. Fix `5616f3f4f98a4900e11402106fcc2fcf2d347106` resolves the earlier database-startup race. Exact HELD capture SQL remains unchanged; synthetic 102/84/83 shape, role/edge/column/default ACL/routine/policy capture, denial of missing approval, wrong role/database and schema drift, and no synthetic row/password material all pass. No need to rerun unchanged.
