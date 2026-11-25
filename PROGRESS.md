@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-25 — G5 independent Drive archive authenticated decryption confirmed; isolated restore failed
+
+- Owner supplied actual Colab output: original private Drive ZIP uploaded, 671797 bytes; notebook printed "ZIP and encrypted archive integrity verified." and "Authenticated decryption verified." This confirms pinned ZIP/ciphertext integrity, correct original passphrase and authenticated plaintext PG custom archive identity under the notebook checks. No passphrase disclosed in chat. Prior independent archive custody acceptance unchanged.
+- Actual catalog restore NOT accepted: output "G5_RESTORE_NOT_ACCEPTED — stage: ISOLATED_PG18". The old notebook collapsed initdb/start/role provisioning/restore/catalog errors into one stage; specific root cause unknown. Revised private recovery notebook V2 prepared and Python syntax checked outside repo: fixed diagnostic categories only (no raw stderr or row data), direct local postgres UID execution, private seekable temporary archive, exact catalog checks and cleanup. No successful V2 execution claimed. No production connection or DB mutation. G5 remains BLOCKED pending actual restoration, media recovery and recurring backup acceptance.
+
+
 ## 2026-11-25 — owner authorized isolated offsite archive restoration; private input required
 
 - Owner approved the specific isolated restore of the existing encrypted Drive archive, not production restoration, new provider credentials, public sharing or commercial launch. Drive metadata readback confirmed original `FAWRI-Neon-Production-PostG4-Encrypted-2026-11-22.zip` still private (shared=false), 671797 bytes, ID 1zcUz54-BWbF6Z6namaVo9iPx-qgO8qo3. Prior independently verified ZIP SHA-256 remains the expected identity; metadata alone is not a fresh content hash. GitHub Actions source artifact no longer listed.
