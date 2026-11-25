@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-25 — G5 ACL catalog capture focused PG18 verification queued
+
+- Added [disposable PG18 catalog workflow](.github/workflows/v1-g5-acl-catalog-pg18.yml) at [`3aaabf25`](https://github.com/nora953/fawri-production-source/commit/3aaabf2563996f694db7494a7bf16e8e16c747c0). Network-disabled synthetic fixture uses exact 102/84/83 shape, validates role membership, column/default ACLs, routine and policy metadata, denies missing approval/wrong database/wrong login/schema drift, and checks absence of synthetic row and password material. No production credentials or connection. [Actual CI #45664324651](https://github.com/nora953/fawri-production-source/actions/runs/45664324651) job catalog-capture-fixture was QUEUED at readback; no success claimed. Existing PR workflows were automatically queued as well; no manual rerun of accepted tests. No hosted read/write or new expense authorized in this round. G5 BLOCKED, zero new P0 closures; next obtain focused result and explicit bounded live metadata capture authorization.
+
+
 ## 2026-11-25 — G5 PostG4 ACL recovery metadata capture prepared (HELD)
 
 - Added [read-only PostgreSQL 18 catalog capture](docs/final-audit/evidence/sql/P0-V1-G5-POSTG4-ACL-RECOVERY-CATALOG-HELD.sql) at [`ed7131df`](https://github.com/nora953/fawri-production-source/commit/ed7131dfe17b179fa76d50c5f8bf9a746bf4a711). Requires independent explicit owner approval, verified exact endpoint and owner login; guarded by 102 tables / 84 RLS / 83 policies and read-only repeatable-read transaction. Collects application role attributes/memberships, database/schema/relation/column/routine/type/default ACLs, ownership and policy role mapping, without merchant rows or credential verifiers. Raw metadata must stay private and encrypted. Never replay provider-internal privileged memberships.
