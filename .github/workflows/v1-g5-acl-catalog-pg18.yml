@@ -34,10 +34,21 @@ jobs:
           }
           trap cleanup EXIT
           cid=$(docker run -d --network none -e POSTGRES_USER=fawri_owner -e POSTGRES_PASSWORD=fixture-only-password -e POSTGRES_DB=fawri postgres:18-alpine)
+          # The image starts a temporary socket-only server during initdb.
+          # Wait for a real authenticated query on the final TCP server and target DB,
+          # not pg_isready (which can succeed even if the requested DB is absent).
+          ready=0
           for i in $(seq 1 60); do
-            if docker exec "$cid" pg_isready -U fawri_owner -d fawri >/dev/null 2>&1; then break; fi
+            if [ "$(docker exec -e PGPASSWORD=fixture-only-password "$cid" psql -X -w -h 127.0.0.1 -U fawri_owner -d fawri -Atq -v ON_ERROR_STOP=1 -c "SELECT current_database() || ':' || current_user" 2>/dev/null)" = "fawri:fawri_owner" ]; then
+              ready=1
+              break
+            fi
             sleep 1
           done
+          if [ "$ready" != 1 ]; then
+            echo G5_ACL_FIXTURE_DATABASE_NOT_READY
+            exit 1
+          fi
           docker exec -i "$cid" psql -X -q -v ON_ERROR_STOP=1 -U fawri_owner -d fawri <<'SQL'
           CREATE ROLE fawri_fixture_reader LOGIN NOINHERIT;
           CREATE ROLE fawri_fixture_group NOLOGIN;
