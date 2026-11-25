@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-25 — G5 ACL catalog capture exact PG18 fixture ACCEPTED
+
+- [Corrected focused CI #45665687825](https://github.com/nora953/fawri-production-source/actions/runs/45665687825), job 139387091542, completed SUCCESS; actual log ends in `G5_ACL_CATALOG_FIXTURE_PASS_READ_ONLY_NO_PRODUCTION`. Fix `5616f3f4f98a4900e11402106fcc2fcf2d347106` resolves the earlier database-startup race. Exact HELD capture SQL remains unchanged; synthetic 102/84/83 shape, role/edge/column/default ACL/routine/policy capture, denial of missing approval, wrong role/database and schema drift, and no synthetic row/password material all pass. No need to rerun unchanged.
+- This accepts the capture source only; previously accepted live aggregate/fingerprint is separate. No private encrypted full ACL inventory or independent ACL-preserving restore has been performed. The remaining dependency is owner-controlled private capture and archive decryption/role reconstruction with new isolated credentials; do not store raw production ACL metadata in GitHub or ask for backup passphrase in chat. G5 BLOCKED; no production connection or mutation in this round, new paid service, deployment or new parent P0 closure. PR #550 DRAFT, NO-GO.
+
+
 ## 2026-11-25 — G5 focused ACL catalog fixture startup corrected; CI acceptance pending
 
 - Actual [run #45664324651](https://github.com/nora953/fawri-production-source/actions/runs/45664324651), job 139382235051, completed FAILURE: `FATAL: database "fawri" does not exist` during synthetic fixture initialization, before catalog capture. The previous pg_isready socket probe could report the temporary initdb server ready before the target database existed.
