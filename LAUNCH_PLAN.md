@@ -1,5 +1,8 @@
 # فوري — خطة الإطلاق الأولى الوحيدة المعتمدة | FAWRI First Commercial Launch
 
+> **2026-11-25 — G5 independent offsite database catalog restoration ACCEPTED:** Owner-run private V2 restored the original 671,797-byte encrypted Google Drive ZIP into an isolated PG18 database. Archive integrity and authenticated decryption passed, `RESTORE_ARCHIVE: OK`, `G5_OFFSITE_ISOLATED_PG18_CATALOG_VERIFIED`, `G5_PRODUCTION_CONNECTION_NONE`. Supersedes the earlier failed notebook and the historical pending independent DB restore statements below. `ACL_AND_MEDIA_RECOVERY_NOT_ACCEPTED`; runtime deletion requested, not confirmed. Full ACL/role recovery, Render media restore, recurring backup acceptance and G4 two-merchant/provider evidence remain outstanding. G5/P0-HOSTED-RECOVERY remains BLOCKED; no new P0 closure or commercial GO. [Evidence](PROGRESS.md).
+
+
 > **أحدث دليل لإغلاق جزء G5 الخاص بقاعدة الإنتاج — 2026-11-22:** أُثبتت عبر GitHub Actions [#44970141332](https://github.com/nora953/fawri-production-source/actions/runs/44970141332) **نسخة PostgreSQL 18 الإنتاجية PostG4 المشفّرة والاستعادة في قاعدة تجريبية منفصلة**. وتم تنزيل الحزمة من [Google Drive الخاص بالمالكة](https://drive.google.com/file/d/1zcUz54-BWbF6Z6namaVo9iPx-qgO8qo3/view) ومطابقة SHA-256 الكاملة حرفياً مع أداة GitHub: `37153472fe8e8f8fb8cd1e934305aafe2db38ff1679e0b463f67eec1511ab62f`. هكذا **G5-DB production export + isolated CI restore + independent encrypted offsite custody = ACCEPTED**؛ لا تعيد نفس التصدير. **لكن G5 الأب يبقى BLOCKED:** النسخ الخارجي لصور Render واستعادتها، الاختبار من نسخة Drive نفسها، جدول النسخ المستمر، ومسار تاجرَين Google/WhatsApp/طلبات تحت الصيانة ما زالت غير مقبولة. الوضع **NO-GO**؛ لا تفك الصيانة ولا تختبر بيانات تجار دون اعتماد. [أحدث سجل موثق](PROGRESS.md).
 
 
