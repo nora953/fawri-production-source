@@ -428,11 +428,16 @@ export function isKnownHistoricalIsolatedNeonDumpFixture(
       fixture.fragment;
 }
 
-// Five retired, fabricated owner-URL strings existed in historic offline negative
-// tests as JS concatenation source, never as usable connection strings. Current
+// Retired, fabricated owner-URL strings existed in historic offline negative
+// tests, never as real credentials. Current
 // tests construct URL objects. History exemptions are EXACT Git blob, source path,
 // scanner rule, byte span and text. Every other finding still blocks the release.
 const HISTORICAL_V1_SYNTHETIC_OWNER_URLS = Object.freeze({
+  // Retired G5 test-only URL; exact immutable history finding, never a live secret.
+  "c22a6273dc27ce4c81c6e3103cfac41eb3df8436": {
+    path: "scripts/v1-g5-private-acl-capture.test.mjs", index: 2271, length: 98,
+    fragmentParts: ["postgresql://fawri_owner:", "synthetic-only", "@"+ "ep-polished-poetry-b9jpvn4r.c-7.eu-central-1.aws.neon.tech"],
+  },
   "2b6cdbee6c7d9108753105702f9e2f7eaced2a5e": {
     path: "scripts/tests/v1-g2-production-role-reservation-safety.test.mjs", index: 605, length: 44,
     fragmentParts: ["postgresql://fawri_owner:", "test-placeholder", "@'+"],
