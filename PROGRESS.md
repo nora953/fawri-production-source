@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-25 — G5 focused ACL catalog fixture startup corrected; CI acceptance pending
+
+- Actual [run #45664324651](https://github.com/nora953/fawri-production-source/actions/runs/45664324651), job 139382235051, completed FAILURE: `FATAL: database "fawri" does not exist` during synthetic fixture initialization, before catalog capture. The previous pg_isready socket probe could report the temporary initdb server ready before the target database existed.
+- [Fix `5616f3f4`](https://github.com/nora953/fawri-production-source/commit/5616f3f4f98a4900e11402106fcc2fcf2d347106) waits for a real authenticated loopback TCP query returning exact database and user on the final PG18 server, with a bounded timeout. No relaxation of the ACL SQL guard or fixture assertions. Corrected CI not yet accepted; previous hosted read-only aggregate remains independently accepted. No new production read/write, deploy, expense or parent P0 closure. G5 BLOCKED, PR #550 DRAFT, NO-GO.
+
+
 ## 2026-11-25 — G5 actual hosted ACL catalog aggregate readback ACCEPTED (not recovery)
 
 - Owner approved the narrow production catalog read in conversation. First Neon SELECT independently confirmed the exact commercial database/owner, PG18, 102 public tables, 84 RLS tables, 83 policies, five Fawri roles. A follow-up on the same pinned production project/branch/database used `SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY` and a 20s local statement timeout; returned one non-truncated aggregate result with `read_only=on`, no merchant data, no credentials, no DDL/DML. Derived the aggregate from the existing HELD catalog query (blob `25ddef2fe539c7b840288e15e943bfbb4ee6210b`), not a separate production mutation.
