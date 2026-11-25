@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-25 — G5 private ACL sidecar source CI ACCEPTED; owner-controlled capture is next
+
+- Actual [run #45666787178](https://github.com/nora953/fawri-production-source/actions/runs/45666787178), job 139390971129, completed SUCCESS at workflow source `39346aea8caeee59941d444bba03ca24bd70a56a`; logs confirm 4 tests, 4 pass, 0 fail, and explicit capture rejection inside CI with no output file. Syntax, authenticated round trip/randomization, wrong passphrase/tampering/truncation, schema/role drift and connection admission accepted in synthetic source scope. No production credentials or private catalog supplied. Do not rerun unchanged.
+- Capture CLI source blob `37cae2122b3b9c06a0b6cc9995b5c6c989e0a158` is pinned to the earlier accepted SQL blob `25ddef2fe539c7b840288e15e943bfbb4ee6210b`. The next action is a private owner-operated run with PostgreSQL 18 client and Node, verified direct owner connection and a separately held strong passphrase; save ciphertext and independently recorded hash in owner-private storage. No live credentials or passphrase in chat/GitHub. Do not bypass the tool's CI prohibition or equate a referenced archive hash with archived ACL parity. Isolated actual role reconstruction/ACL-preserving restore, recurring operational backup and real media recovery still outstanding. No new P0 closure or production changes. G5 BLOCKED, PR #550 DRAFT, NO-GO.
+
+
 ## 2026-11-25 — G5 private encrypted ACL sidecar prepared (HELD; CI pending)
 
 - Added [private capture and offline verification CLI](scripts/v1-g5-private-acl-capture.mjs) at `58b945ecb438abae4027ca2a4c903e52ed0d18b3`. Requires explicit opt-in outside CI, exact owner/direct endpoint, PG18 client, verify-full TLS/channel binding and exact Git blob of accepted read-only capture SQL. Captures catalog in memory, checks known schema/role bounds, seals with scrypt/AES-256-GCM, verifies authenticated round trip, writes ciphertext exclusively (0600) without overwriting and checks local readback. No raw catalog printed, no credential stored in GitHub. The archive SHA-256 is embedded inside the authenticated envelope as a reference only, not proof that ACLs were unchanged since archive creation.
