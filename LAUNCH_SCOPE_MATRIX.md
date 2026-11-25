@@ -1,5 +1,8 @@
 # فوري — مصفوفة موانع إطلاق النسخة التجارية الأولى (القرار التنفيذي الجاري)
 
+> **2026-11-25 — G5 independent offsite database catalog restoration ACCEPTED:** Owner-run private V2 restored the original 671,797-byte encrypted Google Drive ZIP into an isolated PG18 database. Archive integrity and authenticated decryption passed, `RESTORE_ARCHIVE: OK`, `G5_OFFSITE_ISOLATED_PG18_CATALOG_VERIFIED`, `G5_PRODUCTION_CONNECTION_NONE`. Supersedes the earlier failed notebook and the historical pending independent DB restore statements below. `ACL_AND_MEDIA_RECOVERY_NOT_ACCEPTED`; runtime deletion requested, not confirmed. Full ACL/role recovery, Render media restore, recurring backup acceptance and G4 two-merchant/provider evidence remain outstanding. G5/P0-HOSTED-RECOVERY remains BLOCKED; no new P0 closure or commercial GO. [Evidence](PROGRESS.md).
+
+
 
 > **2026-11-25 — latest operational boundary:** public informational homepage at fawrireply.com live, registration/API gated; WABA created and OTP template submitted, approvals not established; legal EN/AR/KU draft HELD. G1/G2 previously accepted; G3 real tenant-media and G4/G5 acceptance still OPEN/BLOCKED. No commercial GO. See [PROGRESS.md](PROGRESS.md) for exact evidence and the currently required owner authorization.
 
