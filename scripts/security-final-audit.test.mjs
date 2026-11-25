@@ -567,6 +567,10 @@ test("FIELD002 historical synthetic auth URL exceptions are exact-blob/span/byte
 
 test("V1 retired owner-URL history exemptions are immutable and never broaden secret scanning", () => {
   const fixtures = [
+  { blob: "c22a6273dc27ce4c81c6e3103cfac41eb3df8436", path: "scripts/v1-g5-private-acl-capture.test.mjs",
+    index: 2271, length: 98,
+    fragmentParts: ["postgresql://fawri_owner:", "synthetic-only", "@ep-polished-poetry-b9jpvn4r.c-7.eu-central-1.aws.neon.tech"],
+  },
   { blob: "2b6cdbee6c7d9108753105702f9e2f7eaced2a5e", path: "scripts/tests/v1-g2-production-role-reservation-safety.test.mjs",
     index: 605, length: 44,
     fragmentParts: ["postgresql://fawri_owner:", "test-placeholder", "@'+"],
