@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-25 — G5 independent offsite database catalog restore ACCEPTED (owner-run V2)
+
+- Owner supplied actual private Colab V2 execution output for the original 671797-byte encrypted Drive ZIP. Exact success markers: ZIP and encrypted archive integrity verified; Authenticated decryption verified; INITDB: OK; START_PRIVATE_PG18: OK; CREATE_PRIVATE_DB: OK; RESTORE_ARCHIVE: OK; G5_OFFSITE_ISOLATED_PG18_CATALOG_VERIFIED; G5_PRODUCTION_CONNECTION_NONE; ACL_AND_MEDIA_RECOVERY_NOT_ACCEPTED. This supersedes the earlier V1 ISOLATED_PG18 failure. Independent offsite archived DB decryption, isolated PG18 restore and catalog verification accepted on the supplied execution evidence; do not repeat unchanged. No secret or plaintext data supplied in chat.
+- Runtime deletion requested of owner, not yet confirmed. This is not full ACL/role recovery, media recovery, recurring backup acceptance or live two-merchant recovery. P0-HOSTED-RECOVERY / G5 parent remains BLOCKED; no new P0 closure, production changes, deploy or commercial GO. Next actionable G5 work: remaining media and recurring recovery acceptance, with hosted changes held for scoped approval.
+
+
 ## 2026-11-25 — G5 independent Drive archive authenticated decryption confirmed; isolated restore failed
 
 - Owner supplied actual Colab output: original private Drive ZIP uploaded, 671797 bytes; notebook printed "ZIP and encrypted archive integrity verified." and "Authenticated decryption verified." This confirms pinned ZIP/ciphertext integrity, correct original passphrase and authenticated plaintext PG custom archive identity under the notebook checks. No passphrase disclosed in chat. Prior independent archive custody acceptance unchanged.
