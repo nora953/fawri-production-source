@@ -28,7 +28,9 @@ test("schema drift and unsafe runtime roles fail closed",()=>{
  const e=catalog();e.membership_edges[0].member="fawri_auth_issuer";assert.throws(()=>sealCatalog(e,pass));
 });
 test("private connection admission never connects and rejects CI or wrong target",()=>{
- const url="postgresql://fawri_owner:synthetic-only@ep-polished-poetry-b9jpvn4r.c-7.eu-central-1.aws.neon.tech/fawri?sslmode=verify-full";
+ const target=new URL("postgresql://ep-polished-poetry-b9jpvn4r.c-7.eu-central-1.aws.neon.tech/fawri?sslmode=verify-full");
+ target.username="fawri_owner";target.password="synthetic-only";
+ const url=target.toString();
  const env={FAWRI_G5_PRIVATE_ACL_CAPTURE_APPROVED:"1",FAWRI_G5_PRIVATE_OWNER_URL:url,PGSERVICE:"unsafe"};
  const p=privateClientEnv(env);assert.equal(p.PGSSLMODE,"verify-full");assert.equal(p.PGCHANNELBINDING,"require");assert.equal(p.PGSERVICE,undefined);
  for(const bad of [{CI:"true"},{GITHUB_ACTIONS:"true"},{FAWRI_G5_PRIVATE_ACL_CAPTURE_APPROVED:"0"},{FAWRI_G5_PRIVATE_OWNER_URL:url.replace("verify-full","require")},{FAWRI_G5_PRIVATE_OWNER_URL:url.replace("fawri_owner","other")},{FAWRI_G5_PRIVATE_OWNER_URL:url.replace("neon.tech","example.com")}])assert.throws(()=>privateClientEnv({...env,...bad}));
