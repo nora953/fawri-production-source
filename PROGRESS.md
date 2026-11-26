@@ -1,5 +1,12 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Provider portability disposition and reuse of prior synthetic Neon reader evidence
+
+- Actual V7 bounded application authorization accepted; exact extension ownership and provider grantor parity remain explicitly unaccepted. No further owner-private restore requested merely to repeat or normalize those measured differences. See [existing G5 handoff](docs/final-audit/evidence/P0-V1-G5-RENDER-MEDIA-OFFSITE-HANDOFF-20261122.md).
+- Re-read prior 2026-11-14 hosted synthetic reader evidence: SQL-created restricted reader succeeded on child `br-rough-boat-b947xiir`, but lacked BYPASSRLS. Historical trusted owner has BYPASSRLS and CREATEROLE; current provider capability and child availability still require verification. Prepared narrowly scoped reuse of that existing child, no new branch, role/fixture isolated to child only, unchanged accepted preflight and precise cleanup. Explicit owner authorization required for the disposable hosted mutation; stop if any incremental charge or child identity uncertainty. Existing recurring source/fixture CI remains accepted, no repeat. Media still depends on approved first merchant image.
+- No production access/change, deployment, additional expense, P0 closure or commercial GO. G5 BLOCKED.
+
+
 ## 2026-11-26 — Actual V7 restored authorization probe ACCEPTED within tested scope
 
 - Owner terminal screenshot at 20:26 Baghdad, pinned `d1cbb20ddd83c9de27efad3ce83cb9267a7642b8`, shows authenticated encrypted pair, isolated socket-only PG18 restore with owners/ACLs, zero unresolved roles, no missing/extra compared catalog objects, all 13 direct ACL transitions equivalent, three independent restricted logins, `G5_LOCAL_RESTORED_ROLE_CAPABILITIES_VERIFIED`, `G5_LOCAL_AUTH_MARKER_AND_OPERATOR_UNKNOWN_ACTOR_DENIAL_VERIFIED`, `G5_LOCAL_TRUSTED_OWNER_STATS_SUBSTITUTE_APPLIED`, `G5_LOCAL_TWO_SYNTHETIC_TENANTS_PRODUCT_SCOPE_VERIFIED`, and disposable cleanup. The actual restored schema passed two synthetic merchants' product read isolation, unscoped denial, rebind refusal and transaction scope expiry, plus auth marker invocation and unknown operator actor rejection. No production connection or change. Do not repeat unchanged V7.
