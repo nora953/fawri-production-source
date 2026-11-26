@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Detached recurring archive restoration implemented and accepted in PG18 fixture
+
+- [Executable changes](https://github.com/nora953/fawri-production-source/commit/9f30137e416411d8f1b6925be2a945e62e1105dd) add `scripts/v1-recurring-offsite-restore.mjs`. In an owner-private environment with the official PG18 image already available, pass the independently retrieved `manifest.json` and `database.pgcustom.enc` as the two CLI arguments. Supply `FAWRI_G5_RECURRING_OFFSITE_RESTORE_APPROVED=1`, the separately recorded encrypted SHA-256 in `FAWRI_G5_RECURRING_EXPECTED_ENCRYPTED_SHA256`, and the owner-held backup passphrase in `FAWRI_V1_RECURRING_BACKUP_PASSPHRASE`. The tool verifies both archive hashes and authenticated decryption before starting a disposable Docker container without networking or host mounts. It checks restoration and the orders RLS catalog while leaving ACL and media acceptance to their separate drills.
+- [Focused CI #45787084152](https://github.com/nora953/fawri-production-source/actions/runs/45787084152) completed both jobs successfully at that executable SHA. The actual PG18 fixture restored two rows behind forced RLS into a separate container and the job logged `G5_NONEMPTY_RLS_FIXTURE_RESTORED; PRODUCTION_NOT_CONNECTED`. Four focused local tests also passed. This completes the source and fixture prerequisite for restoring the recurring format. Actual scheduled production export, independent encrypted custody and restore of that production archive, private ACL recovery, and media recovery still block G5. No production connections, deployment, or role changes. No new parent P0 closure.
+
+
 ## 2026-11-26 — Operational readback on the active Render release
 
 - Render reports deploy [dep-dc2ujkjl550s73c98cf0](https://dashboard.render.com/web/srv-dbv0kvm8bjmc73av6fm0/deploys/dep-dc2ujkjl550s73c98cf0) LIVE at `9efbe2326eda7aef12260dce245824ebe0f0dacd`, auto-deploy OFF and edge maintenance OFF. Read-only GETs initiated from the running Shell returned loopback `/readyz=200`, public HTTPS `/=200`, and `503` for `/signup`, `/login`, `/admin`, `/dashboard` and `/api/orders`. The application gate is active while the informational page remains available.
