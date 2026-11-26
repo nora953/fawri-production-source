@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Owner-approved synthetic Neon reader drill: metadata readback, billing guard HELD
+
+- Owner approved the narrowly scoped test on the existing synthetic child only, conditioned on zero additional expense, no production changes, and cleanup. Read-only Neon control-plane metadata confirms project `crimson-cherry-65705041` PG18, child `br-rough-boat-b947xiir` (`v1-recovery-drill-20261114`), ready/non-default/unprotected, parent `br-holy-waterfall-b993zglb`; exact previous direct read-write compute `ep-steep-star-b97qa95j` exists, idle, 0.25–2 CU. Current project compute usage returned but not plan or remaining included allowance. Organization plan lookup unavailable in the connected tool. SQL may wake the idle endpoint and incur metered compute; zero incremental cost cannot be established. Therefore stopped before any SQL, compute start, role creation or fixture mutation. No production connection, new branch, cost-incurring action, deployment or new P0 closure.
+- Next: confirm current organization plan and remaining included compute in Neon billing/usage; if sufficient and no incremental charge, proceed within existing approval and verify synthetic identity/owner attributes before any mutation. If cost is unknown or metered, hold. G5 BLOCKED, commercial NO-GO. No repeat of accepted V7.
+
+
 ## 2026-11-26 — Provider portability disposition and reuse of prior synthetic Neon reader evidence
 
 - Actual V7 bounded application authorization accepted; exact extension ownership and provider grantor parity remain explicitly unaccepted. No further owner-private restore requested merely to repeat or normalize those measured differences. See [existing G5 handoff](docs/final-audit/evidence/P0-V1-G5-RENDER-MEDIA-OFFSITE-HANDOFF-20261122.md).
