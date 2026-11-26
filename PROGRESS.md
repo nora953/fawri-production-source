@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Actual V7 restored authorization probe ACCEPTED within tested scope
+
+- Owner terminal screenshot at 20:26 Baghdad, pinned `d1cbb20ddd83c9de27efad3ce83cb9267a7642b8`, shows authenticated encrypted pair, isolated socket-only PG18 restore with owners/ACLs, zero unresolved roles, no missing/extra compared catalog objects, all 13 direct ACL transitions equivalent, three independent restricted logins, `G5_LOCAL_RESTORED_ROLE_CAPABILITIES_VERIFIED`, `G5_LOCAL_AUTH_MARKER_AND_OPERATOR_UNKNOWN_ACTOR_DENIAL_VERIFIED`, `G5_LOCAL_TRUSTED_OWNER_STATS_SUBSTITUTE_APPLIED`, `G5_LOCAL_TWO_SYNTHETIC_TENANTS_PRODUCT_SCOPE_VERIFIED`, and disposable cleanup. The actual restored schema passed two synthetic merchants' product read isolation, unscoped denial, rebind refusal and transaction scope expiry, plus auth marker invocation and unknown operator actor rejection. No production connection or change. Do not repeat unchanged V7.
+- The trusted owner stats grant was applied only in the disposable cluster; no runtime role membership was introduced. Raw exact=false and final `G5_LOCAL_PARITY_REVIEW_REQUIRED` remain: one extension owner and four internal membership grantors provider-to-bootstrap, external provider membership excluded. General operator authorization, extension ownership portability and inherited/provider privileges not established by this bounded probe. Backup and sidecar are from different dates. G5 parent still BLOCKED pending portability review, recurring backup admission and actual independent media recovery; G3/G4 and commercial NO-GO unchanged. No new parent P0 closure or cost.
+
+
 ## 2026-11-26 — Canonical functional authorization fixture ACCEPTED; private V7 handoff
 
 - [CI #45865611579](https://github.com/nora953/fawri-production-source/actions/runs/45865611579) at `d1cbb20ddd83c9de27efad3ce83cb9267a7642b8`: both focused jobs completed SUCCESS. Logs verify `G5_LOCAL_AUTH_MARKER_AND_OPERATOR_UNKNOWN_ACTOR_DENIAL_VERIFIED`, `G5_LOCAL_TWO_SYNTHETIC_TENANTS_PRODUCT_SCOPE_VERIFIED`, `G5_SYNTHETIC_CANONICAL_ISSUER_FUNCTIONAL_PROOF_PASS`. Earlier quoting failure resolved. The fixture is synthetic with canonical issuer definitions, not proof of private restored production schema behavior or general operator workflows.
