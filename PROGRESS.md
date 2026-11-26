@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — PostgreSQL direct ACL semantic review accepted on synthetic fixture
+
+- [CI #45821458635](https://github.com/nora953/fawri-production-source/actions/runs/45821458635) at `4623500da4c4a158348824b79c26c5cfa4f256e0` completed SUCCESS. Both targeted jobs passed. Next owner-private V6 uses the same encrypted backup pair and pinned launcher, reports only `G5_LOCAL_ACL_SEMANTIC_REVIEW` and terminal markers. Actual V5 field evidence is already recorded; no re-export or unchanged diagnostic retry. Direct privilege comparison is not proof of inherited rights or tenant authorization; exact ACL parity still unaccepted. No production access/change, expense, new P0 closure or GO. G5 remains BLOCKED.
+
+
 ## 2026-11-26 — Actual private V5 field evidence; semantic ACL analysis prepared
 
 - Owner screenshot at 15:32 Baghdad on pinned `07fbdee9` confirms seven relation ACLs and six routine ACLs explicit-to-NULL, one extension owner provider-to-bootstrap and four membership grantors provider-to-bootstrap. No missing/extra objects or changes to RLS flags/policy metadata in the compared fields. Three restricted logins and cleanup verified; exact ACL parity false. No assumption of default equivalence.
