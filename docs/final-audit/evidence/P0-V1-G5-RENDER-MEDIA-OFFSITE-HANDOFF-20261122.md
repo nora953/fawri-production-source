@@ -1,5 +1,20 @@
 # FAWRI V1 G5 — one-time Render catalog-media offsite acceptance handoff
 
+## 2026-11-27 — Detached six-routine ACL rehearsal passed (synthetic)
+
+The approved rehearsal ran locally on PostgreSQL 18.6, using only an ephemeral loopback listener, fresh per-role SCRAM credentials and synthetic data. Seven canonical migration files (0038–0042, 0045, 0046) and the existing preflight were checked against their Git blob IDs. The runnable fixture is [v1-g5-six-routine-acl-rehearsal.py](../../../scripts/tests/v1-g5-six-routine-acl-rehearsal.py); SHA-256 `e5edd12a4afb2575700ab69c099561df953f2377c83dbb1e347d19ebab239c0b`. A rejected Unix socket bind was resolved by using a local loopback listener. No existing database files, Neon SQL, hosted compute, secrets, new cost, CI or deployment were involved.
+
+| Probe | Observed result |
+| --- | --- |
+| Starting grants and candidate ACL | Six routines had the expected owner/PUBLIC EXECUTE. Candidate grants only the shared predicate to tenant/auth/operator, only settings lock/invalidation to auth, zero of six to recurring reader and retirement NOLOGIN. All three POS-only routines denied to four independent application/reader LOGINs. |
+| Tenant and auth | Tenant scope issued over a separate authenticated connection. Product and order read returned only the scoped merchant, and scope expired at commit; attempted rebind was denied. Trusted auth settings lock and targeted pending invalidation succeeded and preserved the other merchant and consumed record. |
+| Operator | Canonical issuer and authorized directory read succeeded; unknown actor denied. Independently scoped synthetic audit allowed its own merchant only; expired audit and post-transaction read denied. |
+| Reader | Original preflight denied before ACL correction, accepted after it and denied after rollback. Reader could copy both FORCE RLS fixture rows and could not INSERT even with an explicit read-write transaction. COPY is fixture-level evidence and no production archive was made. |
+| Rollback and scope | Reverted direct ACLs exactly and preserved role memberships, routine ownership/definitions, schema/database/table/sequence ACLs, and PUBLIC TEMPORARY. Temporary cluster deleted. The retirement role was NOLOGIN and its ACL was measured; no retirement routine was executed. |
+
+This completes only the detached SQL rehearsal. Production remains unchanged. Verify full application/POS-off HTTP and any retirement definer dependencies independently if required for the exact production grant matrix. Production ACL transaction, reader creation and backup schedule are separately approval-bound. The recurring offsite/media proof is still open. G5 BLOCKED, zero new parent P0 closure, commercial NO-GO.
+
+
 ## 2026-11-26 — Owner-approved detached ACL rehearsal: execution environment unavailable (HELD)
 
 Owner approved the isolated test only, no production modification or additional charge. Draft PR #550 head verified at `215532fcde50a81c4e390f347a5d470920778c4e`. Local execution environment has no postgres/psql/initdb or PG18 binaries; PostgreSQL package host could not resolve. Neon project lookup returned tool unavailable before any SQL or compute wake. No CI or new resource started. Do not treat source inspection as an executed test.
