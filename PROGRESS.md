@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Owner-approved private G5 ACL capture prepared
+
+- The owner approved one read-only Neon catalog capture under the existing direct-owner, TLS and private-custody controls. The operator bundle `FAWRI-G5-Private-ACL.zip` SHA-256 is `fa62cf8783778a08e609dd97cc8f69cf2b9a8f3fe76d079d303fbba51000d78f`. It packages the already accepted capture CLI and SQL at their pinned Git blob hashes, with a local interactive launcher. The launcher checks those pins, prompts privately, enforces TLS verification, and supports verifying the independently retrieved encrypted copy. Mock capture and copied-ciphertext verification passed without any Neon connection. The live capture and independent verification still require the owner's trusted terminal and private credentials. G5 remains blocked pending actual recovery evidence.
+- Work handles direct service and Shell execution. The main conversation owns general analysis, repository review, and connector-based fixes. Use this branch and PR #550 for evidence handoff. No production or privilege changes, new services, or repeated hosted checks.
+
+
 ## 2026-11-26 — Detached recurring archive restoration implemented and accepted in PG18 fixture
 
 - [Executable changes](https://github.com/nora953/fawri-production-source/commit/9f30137e416411d8f1b6925be2a945e62e1105dd) add `scripts/v1-recurring-offsite-restore.mjs`. In an owner-private environment with the official PG18 image already available, pass the independently retrieved `manifest.json` and `database.pgcustom.enc` as the two CLI arguments. Supply `FAWRI_G5_RECURRING_OFFSITE_RESTORE_APPROVED=1`, the separately recorded encrypted SHA-256 in `FAWRI_G5_RECURRING_EXPECTED_ENCRYPTED_SHA256`, and the owner-held backup passphrase in `FAWRI_V1_RECURRING_BACKUP_PASSPHRASE`. The tool verifies both archive hashes and authenticated decryption before starting a disposable Docker container without networking or host mounts. It checks restoration and the orders RLS catalog while leaving ACL and media acceptance to their separate drills.
