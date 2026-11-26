@@ -5,6 +5,7 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {recoverLocal} from '../v1-g5-private-detached-recovery.mjs';
+import {buildAclSemanticReviewSql} from '../lib/v1-g5-detached-acl-recovery.mjs';
 const BIN='/usr/lib/postgresql/18/bin';
 const root=fs.mkdtempSync('/tmp/fawri-acl-fixture-');
 const data=path.join(root,'data'),socket=path.join(root,'s'),admin='g5_detached_bootstrap';
@@ -47,6 +48,23 @@ try{
  const updatedCatalog=JSON.parse(psql(fs.readFileSync(capture),{PGUSER:'fawri_owner',PGDATABASE:'fawri'},['-v','g5_capture_approved=1']).toString());
  assert.equal(updatedCatalog.relations.find(x=>x.name==='fixture_101').owner,'cloud_admin');
  assert.match(updatedCatalog.schemas.find(x=>x.schema==='public').acl,/cloud_admin=/);
+ // Synthetic default equivalence, missing provider grant and extra PUBLIC execution.
+ const reviewSource=structuredClone(updatedCatalog), reviewTarget=structuredClone(updatedCatalog);
+ reviewSource.relations.find(x=>x.name==='fixture_100').acl=psql("SELECT acldefault('r','fawri_owner'::regrole)::text;",{PGDATABASE:'fawri'}).toString().trim();
+ reviewTarget.relations.find(x=>x.name==='fixture_100').acl=null;
+ reviewTarget.relations.find(x=>x.name==='fixture_0').acl=null;
+ psql("CREATE FUNCTION public.g5_acl_fixture() RETURNS int LANGUAGE sql AS 'SELECT 1';",{PGDATABASE:'fawri',PGUSER:'fawri_owner'});
+ const fn={schema:'public',name:'g5_acl_fixture',identity_args:'',kind:'f',owner:'fawri_owner',security_definer:false};
+ reviewSource.routines.push({...fn,acl:'{fawri_owner=X/fawri_owner}'});
+ reviewTarget.routines.push({...fn,acl:null});
+ const semantics=JSON.parse(psql(buildAclSemanticReviewSql(reviewSource,reviewTarget),{PGDATABASE:'fawri'}).toString());
+ assert.equal(semantics.sections.relations.examined,2);
+ assert.equal(semantics.sections.relations.same_direct_privileges,1);
+ assert.equal(semantics.sections.relations.different_direct_privileges,1);
+ assert.ok(semantics.delta.some(x=>x.role_class==='provider'&&x.difference==='missing_privilege'));
+ assert.ok(semantics.delta.some(x=>x.role_class==='public'&&x.difference==='extra_privilege'));
+ psql("DROP FUNCTION public.g5_acl_fixture();",{PGDATABASE:'fawri',PGUSER:'fawri_owner'});
+ console.log('G5_SYNTHETIC_ACL_DEFAULT_SEMANTICS_PASS');
  const archive=run('pg_dump',['-Fc','--dbname=fawri']);
  // Source and target are distinct local clusters. No production endpoint or
  // passphrase is available in this workflow. The private CLI remains CI-denied.

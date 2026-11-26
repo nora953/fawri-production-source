@@ -197,3 +197,25 @@ export function describeGrantorDifferences(source,target){
  }
  return transitions;
 }
+
+// Direct ACL diagnostic only; no privilege mutations or private output.
+export function buildAclSemanticReviewSql(source,target){
+ const rows=[];
+ for(const section of ['relations','routines']){
+   const keys=sections[section];
+   const a=keyed(source[section],keys), b=keyed(target[section],keys);
+   const sourceRaw=new Map(source[section].map(x=>[JSON.stringify(keys.map(k=>x[k])),x]));
+   const targetRaw=new Map(target[section].map(x=>[JSON.stringify(keys.map(k=>x[k])),x]));
+   for(const [key,value] of a){
+     if(!b.has(key)||value===b.get(key))continue;
+     const x=sourceRaw.get(key),y=targetRaw.get(key);
+     if(JSON.stringify(canonicalAcl(x.acl))===JSON.stringify(canonicalAcl(y.acl)))continue;
+     check(x.owner===y.owner,'G5_RECOVERY_ACL_OWNER_CHANGED');
+     const kind=section==='routines'?'f':x.kind==='S'?'s':['r','p','v','m','f'].includes(x.kind)?'r':null;
+     check(kind!==null,'G5_RECOVERY_ACL_KIND_REVIEW_REQUIRED');
+     rows.push({idx:rows.length,section,schema:x.schema,name:x.name,identity_args:x.identity_args??null,kind,owner:x.owner,source_acl:x.acl,target_acl:y.acl});
+   }
+ }
+ const encoded=Buffer.from(JSON.stringify(rows),'utf8').toString('base64');
+ return "BEGIN READ ONLY;\nWITH input AS (\n SELECT * FROM jsonb_to_recordset(convert_from(decode('__PAYLOAD__','base64'),'UTF8')::jsonb)\n AS x(idx int,section text,schema text,name text,identity_args text,kind text,owner text,source_acl text,target_acl text)\n), objs AS (\n SELECT i.*, CASE WHEN i.section='relations' THEN 'pg_class'::regclass ELSE 'pg_proc'::regclass END AS classid,\n CASE WHEN i.section='relations' THEN\n (SELECT c.oid FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=i.schema AND c.relname=i.name)\n ELSE (SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname=i.schema AND p.proname=i.name AND pg_get_function_identity_arguments(p.oid)=i.identity_args) END AS objid FROM input i\n), acl_sets AS (\n SELECT o.*, COALESCE(source_acl::aclitem[],acldefault(kind::\"char\",owner::regrole)) AS src,\n COALESCE(target_acl::aclitem[],acldefault(kind::\"char\",owner::regrole)) AS dst,\n EXISTS(SELECT 1 FROM pg_depend d WHERE d.classid=o.classid AND d.objid=o.objid AND d.objsubid=0 AND d.refclassid='pg_extension'::regclass AND d.deptype='e') AS extension_member,\n EXISTS(SELECT 1 FROM pg_init_privs p WHERE p.classoid=o.classid AND p.objoid=o.objid AND p.objsubid=0 AND p.privtype='e') AS extension_initial_acl FROM objs o\n), expanded AS (\n SELECT a.idx,'source' AS side,e.grantee,e.grantor,e.privilege_type,e.is_grantable FROM acl_sets a CROSS JOIN LATERAL aclexplode(a.src) e\n UNION ALL\n SELECT a.idx,'target',e.grantee,e.grantor,e.privilege_type,e.is_grantable FROM acl_sets a CROSS JOIN LATERAL aclexplode(a.dst) e\n), src AS (\n SELECT idx,grantee,privilege_type,bool_or(is_grantable) AS grantable FROM expanded WHERE side='source' GROUP BY 1,2,3\n), dst AS (\n SELECT idx,grantee,privilege_type,bool_or(is_grantable) AS grantable FROM expanded WHERE side='target' GROUP BY 1,2,3\n), delta AS (\n SELECT COALESCE(s.idx,t.idx) idx,COALESCE(s.grantee,t.grantee) grantee,\n CASE WHEN s.idx IS NULL THEN 'extra_privilege' WHEN t.idx IS NULL THEN 'missing_privilege'\n WHEN s.grantable AND NOT t.grantable THEN 'missing_grant_option'\n WHEN t.grantable AND NOT s.grantable THEN 'extra_grant_option' END AS difference\n FROM src s FULL JOIN dst t USING(idx,grantee,privilege_type)\n WHERE s.idx IS NULL OR t.idx IS NULL OR s.grantable<>t.grantable\n), classified AS (\n SELECT d.*, CASE WHEN grantee=0 THEN 'public'\n WHEN r.rolname IN ('fawri_owner','fawri_restricted_runtime','fawri_auth_issuer','fawri_operator_issuer','fawri_cashier_retirement_writer') THEN 'application'\n WHEN r.rolname IN ('neon_superuser','cloud_admin') THEN 'provider'\n WHEN r.rolname='g5_detached_bootstrap' THEN 'bootstrap'\n WHEN left(r.rolname,3)='pg_' THEN 'builtin' ELSE 'other' END AS role_class FROM delta d LEFT JOIN pg_roles r ON r.oid=d.grantee\n), summaries AS (\n SELECT a.section,count(*) AS examined,count(*) FILTER (WHERE a.objid IS NULL) AS unresolved_objects,\n count(*) FILTER (WHERE a.extension_member) AS extension_members,\n count(*) FILTER (WHERE a.extension_initial_acl) AS extension_initial_acls,\n count(*) FILTER (WHERE NOT EXISTS(SELECT 1 FROM delta d WHERE d.idx=a.idx)) AS same_direct_privileges,\n count(*) FILTER (WHERE EXISTS(SELECT 1 FROM delta d WHERE d.idx=a.idx)) AS different_direct_privileges FROM acl_sets a GROUP BY a.section\n), delta_counts AS (\n SELECT a.section,c.role_class,c.difference,count(*) AS n FROM classified c JOIN acl_sets a USING(idx) GROUP BY 1,2,3\n)\nSELECT jsonb_build_object('sections',COALESCE((SELECT jsonb_object_agg(section,to_jsonb(s)-'section') FROM summaries s),'{}'::jsonb),\n 'delta',COALESCE((SELECT jsonb_agg(to_jsonb(d) ORDER BY section,role_class,difference) FROM delta_counts d),'[]'::jsonb))::text;\nROLLBACK;\n".replace('__PAYLOAD__',encoded);
+}
