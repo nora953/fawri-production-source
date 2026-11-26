@@ -5,7 +5,8 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { READER_PREFLIGHT_SQL, dumpArguments, sealRecurringDump } from "./v1-recurring-encrypted-db-backup.mjs";
-import { openIsolatedDump } from "./lib/v1-isolated-neon-dump-safety.mjs";
+import { restoreRecurringArchive, verifyRecurringArchive } from "./v1-recurring-offsite-restore.mjs";
+import { createHash } from "node:crypto";
 const name="fawri-g5-recurring-fixture-"+process.pid;
 const run=(args,input)=> {
  const r=spawnSync("docker",args,{input,timeout:90000,maxBuffer:8*1024*1024,env:{PATH:process.env.PATH,HOME:process.env.HOME}});
@@ -46,11 +47,14 @@ try {
  const pass="synthetic isolated fixture backup passphrase";
  const {encrypted,manifest}=sealRecurringDump(raw,pass,new Date().toISOString());
  assert.equal(manifest.offsite_verified,false);
- const plain=openIsolatedDump(encrypted,pass);
- sql("CREATE DATABASE fawri_restore_fixture;","postgres","postgres");
- run(["exec","-i",name,"pg_restore","-U","postgres","-d","fawri_restore_fixture","--no-owner","--no-acl","--single-transaction","--exit-on-error"],plain);
- assert.equal(sql("SELECT string_agg(merchant,',' ORDER BY id) FROM public.orders;","postgres","fawri_restore_fixture"),"fixture-a,fixture-b");
- raw.fill(0);plain.fill(0);
+ const archiveHash=createHash("sha256").update(encrypted).digest("hex");
+ const plain=verifyRecurringArchive(manifest,encrypted,pass,archiveHash);
+ try {
+  assert.equal(restoreRecurringArchive(plain),"G5_RECURRING_ISOLATED_PG18_RESTORE_OK 2");
+  sql("CREATE DATABASE fawri_restore_fixture;","postgres","postgres");
+  run(["exec","-i",name,"pg_restore","-U","postgres","-d","fawri_restore_fixture","--no-owner","--no-acl","--single-transaction","--exit-on-error"],plain);
+  assert.equal(sql("SELECT string_agg(merchant,',' ORDER BY id) FROM public.orders;","postgres","fawri_restore_fixture"),"fixture-a,fixture-b");
+ } finally { raw.fill(0); plain.fill(0); }
  console.log("G5_NONEMPTY_RLS_FIXTURE_RESTORED; PRODUCTION_NOT_CONNECTED");
 } finally {
  spawnSync("docker",["rm","-f",name],{stdio:"ignore",timeout:20000});

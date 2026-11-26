@@ -4,6 +4,8 @@ on:
     paths:
       - .github/workflows/v1-recurring-encrypted-db-backup.yml
       - scripts/v1-recurring-encrypted-db-backup.mjs
+      - scripts/v1-recurring-offsite-restore.mjs
+      - scripts/tests/v1-recurring-offsite-restore.test.mjs
       - scripts/tests/v1-recurring-encrypted-db-backup.test.mjs
       - scripts/v1-recurring-backup-pg18-fixture.mjs
 permissions:
@@ -22,6 +24,7 @@ jobs:
           node-version: 24
       - run: node --check scripts/v1-recurring-encrypted-db-backup.mjs
       - run: node --test scripts/tests/v1-recurring-encrypted-db-backup.test.mjs
+      - run: node --test scripts/tests/v1-recurring-offsite-restore.test.mjs
       - name: Unapproved invocation fails closed
         run: |
           if node scripts/v1-recurring-encrypted-db-backup.mjs; then
