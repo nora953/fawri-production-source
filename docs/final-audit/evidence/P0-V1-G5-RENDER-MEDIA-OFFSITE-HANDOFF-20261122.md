@@ -1,5 +1,24 @@
 # FAWRI V1 G5 — one-time Render catalog-media offsite acceptance handoff
 
+## 2026-11-26 — Hosted reader capability accepted; production recurring admission HELD
+
+[Hosted synthetic reader result](https://github.com/nora953/fawri-production-source/commit/a74c1bdb62dd5dca8ea155d424124edfee87aaed) supersedes the pending synthetic drill below. The SQL-created direct reader passed the unchanged preflight (source blob `4fae4af9c65a629ac36812a5cd66b87131437f3c`), read two FORCE RLS fixture rows and passed separate effective privilege checks; the new role/schema were removed and the experimental compute suspended. No actual denied write statement was attempted. No production reader or schedule is established. Do not repeat the accepted fixture CI or V7.
+
+### Next bounded owner decision: production inventory only
+
+Request explicit permission for one read-only catalog inventory on the existing commercial Neon database, with no tenant rows, no secret values, no new service, and no additional charge. Use the trusted owner session on the exact direct production endpoint already pinned by the accepted exporter; verify database, PG18 and effective owner attributes before proceeding. Return only aggregate counts and non-sensitive application schema/object ACL metadata needed to review the exact CONNECT/USAGE/SELECT allowlist, including sequence SELECT and inherited PUBLIC privileges, current role-name collision, schema/database CREATE, relation/column DML, executable SECURITY DEFINER routines and provider/extension-owned objects. No automatic blanket grant, revoke, role creation or alteration. If current production identity, billing allowance or grants cannot be verified, hold. A production role mutation requires separate exact approval after inventory; a synthetic provider-capability result is not a live grant authorization.
+
+### Execution path after production reader approval (proposal, not enabled)
+
+1. Provision only the dedicated SQL-created `fawri_v1_recurring_backup_reader` with the previously tested attributes, fresh credential in an approved private vault, and the reviewed exact object allowlist. Verify the unchanged preflight through an independent direct TLS-authenticated reader connection. Stop on unexpected PUBLIC/extension privileges, missing SELECT coverage or role collision; do not change other application principals to make the preflight pass.
+2. Use the existing accepted exporter `scripts/v1-recurring-encrypted-db-backup.mjs` and restore CLI `scripts/v1-recurring-offsite-restore.mjs` (restore blob `a1dfa8b4fb6180782f9a2cfdea8ca7b42e6b0836`), not the one-time owner exporter. Current workflow is PR fixture-only; do not add production secrets to it. First run only after separate export approval with PG18 tools, dedicated reader URL and independent archive passphrase (minimum 24 characters). Its output is ENCRYPTED_LOCAL_ONLY; source_commit is currently null in the manifest, so record the exact checkout SHA independently.
+3. Transfer only encrypted archive and manifest into an approved private offsite destination (existing owner-controlled Drive is the one-time custody precedent, not automatic recurring authorization); separately retain ciphertext SHA-256 and keys. Verify independently retrieved bytes and perform detached PG18 restoration. Current recurring restore verifies catalog and order count with --no-owner/--no-acl; it does NOT establish full ACL/roles or media recovery. Retain the separately accepted V7 evidence, and require a production-realistic recurring recovery with relevant ACL and media checkpoint.
+4. Choose a private, reliably available runner and custody credentials only after reviewing actual free quota, availability, secret handling and upload/download verification. Proposed daily cadence (RPO <=24h), 30 daily copies subject to legal retention, failure/staleness notification and monthly isolated drill are still unapproved; no scheduled job or retention deletion is enabled. Do not claim that GitHub artifacts, local /tmp, Render snapshots or manual Drive uploads alone meet automatic independent custody. No paid cron or runner may be provisioned.
+5. G3/G4 real merchant/image path remains independent and necessary for G5 paired media proof; do not create fake production data to make an empty backup pass.
+
+No production connection, no mutation, no schedule, no charge and no new parent P0 closure in this source-only handoff. G5 BLOCKED, PR #550 DRAFT, commercial NO-GO.
+
+
 ## 2026-11-26 — Reuse prior hosted reader evidence; bounded non-production admission HELD
 
 ### Provider portability disposition (no additional owner-private restore requested)
