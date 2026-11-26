@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Detached PG18 fixture bootstrap-name collision corrected
+
+- [CI #45800794507](https://github.com/nora953/fawri-production-source/actions/runs/45800794507): source and guard job SUCCESS; isolated PG18 job failed before archive restoration at fixture line 41 (6 application roles found, expected 5). The temporary bootstrap administrator's name began with `fawri_`, matching the unchanged capture SQL application-role inventory. [Correction `02f8bc8b`](https://github.com/nora953/fawri-production-source/commit/02f8bc8b0456018e4d2a5870c49ad49895bdacb0) changes only the temporary bootstrap identity in source/target and updates the launcher runner pin. No relaxation of the five-role or ACL guard. Corrected focused CI readback: #45801566602 queued/pending; no accepted real restore yet. Owner-private launch remains held until targeted acceptance. No production access or changes, no deploy, no cost, no new P0 closure; G5 BLOCKED, commercial NO-GO.
+
+
 ## 2026-11-26 — Owner-private recovery launcher prepared, held for test acceptance
 
 - [Launcher `6d6cab8d`](https://github.com/nora953/fawri-production-source/commit/6d6cab8d9cd50bfabdfd1683e4f667bc2cee1a05) is now on the existing PR branch. It refuses root/CI/noninteractive execution, verifies six exact source blob pins before asking for hidden passphrases, and requires only the two independently downloaded encrypted artifacts and the independently recorded sidecar hash. It does not request a Neon connection URL or upload a secret. This is a prepared handoff, NOT permission to execute it before targeted runner acceptance. Actual CI #45800794507 readback: reviewed-acl-plan: completed/success; detached-pg18-fixture: queued/pending. The earlier pure helper CI #45799843822 remains accepted; do not rerun unchanged tests. No new production connection, migration, role change, deploy or cost. No new parent P0 closure, G5 remains BLOCKED and commercial NO-GO.
