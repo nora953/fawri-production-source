@@ -72,7 +72,7 @@ export function loadPrivatePair(zipFile,aclFile,env){
   return {catalog:opened.catalog,plain};
 }
 function phase(msg){console.log(msg);}
-function recoverLocal({catalog,plain}){
+export function recoverLocal({catalog,plain}){
   check(process.platform==='linux'&&typeof process.getuid==='function'&&process.getuid()!==0,'G5_LOCAL_NONROOT_LINUX_REQUIRED');
   const sql=fs.readFileSync(captureSql);
   check(sha(Buffer.concat([Buffer.from('blob '+sql.length+'\0'),sql]),'sha1')===SQL_BLOB,'G5_LOCAL_CAPTURE_SQL_PIN');

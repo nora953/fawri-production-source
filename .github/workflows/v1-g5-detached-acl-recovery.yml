@@ -3,6 +3,9 @@ on:
   pull_request:
     paths:
       - 'scripts/lib/v1-g5-detached-acl-recovery.mjs'
+      - 'scripts/v1-g5-private-detached-recovery.mjs'
+      - 'scripts/tests/v1-g5-private-detached-recovery.test.mjs'
+      - 'scripts/tests/v1-g5-detached-pg18-fixture.mjs'
       - 'scripts/tests/v1-g5-detached-acl-recovery.test.mjs'
       - '.github/workflows/v1-g5-detached-acl-recovery.yml'
 permissions:
@@ -17,4 +20,21 @@ jobs:
         with:
           node-version: '22'
       - run: node --check scripts/lib/v1-g5-detached-acl-recovery.mjs
+      - run: node --check scripts/v1-g5-private-detached-recovery.mjs
+      - run: node --test scripts/tests/v1-g5-private-detached-recovery.test.mjs
       - run: node --test scripts/tests/v1-g5-detached-acl-recovery.test.mjs
+  detached-pg18-fixture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Build disposable PG18 + Node runtime
+        run: |
+          docker build --tag fawri-g5-pg18-fixture - <<'DOCKER'
+          FROM node:22-bookworm AS node
+          FROM postgres:18-bookworm
+          COPY --from=node /usr/local/bin/node /usr/local/bin/node
+          DOCKER
+      - name: Restore synthetic ACL archive in network-disabled container
+        run: |
+          docker run --rm --network none --user postgres --cap-drop ALL --security-opt no-new-privileges --mount type=bind,source="$PWD",target=/src,readonly --entrypoint /usr/local/bin/node fawri-g5-pg18-fixture /src/scripts/tests/v1-g5-detached-pg18-fixture.mjs

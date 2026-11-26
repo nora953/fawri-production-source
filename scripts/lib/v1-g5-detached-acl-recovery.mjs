@@ -59,6 +59,7 @@ export function buildDetachedRoleSql(c,random=()=>randomBytes(32).toString('hex'
       check(typeof secret==='string'&&/^[a-f0-9]{64}$/.test(secret)&&!Object.values(credentials).includes(secret),
         'G5_RECOVERY_FRESH_CREDENTIAL_REQUIRED');
       credentials[r.rolname]=secret;a.push('PASSWORD '+lit(secret));
+      if(r.rolvaliduntil==='infinity')a.push("VALID UNTIL 'infinity'");
     }
     statements.push('CREATE ROLE '+qi(r.rolname)+' '+a.join(' ')+';');
   }
