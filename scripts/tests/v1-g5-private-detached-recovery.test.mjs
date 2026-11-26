@@ -29,7 +29,7 @@ test('missing role diagnostics expose only explicit role labels, never private q
 test('catalog role preflight covers owners, ACL grantees/grantors, default creators, policy and edges without automatic role creation',()=>{
  const c={roles:[{rolname:'fawri_owner'}],membership_edges:[{role:'neon_superuser',member:'fawri_owner',grantor:'cloud_admin'}],
  database_acl:{owner:'cloud_admin',acl:'{=Tc/cloud_admin,neon_superuser=c/cloud_admin}'},
- schemas:[{owner:'pg_database_owner',acl:'{"\"odd,role\"=U/cloud_admin"}'}],
+ schemas:[{owner:'pg_database_owner',acl:String.raw`{"\"odd,role\"=U/cloud_admin"}`}],
  relations:[{owner:'fawri_owner',acl:null}],column_acls:[{acl:'{fawri_owner=r/cloud_admin}'}],
  routines:[],types:[],default_acls:[{creator:'fawri_owner',acl:'{}'}],policy_roles:[{roles:['PUBLIC','other_role']}],extensions:[]};
  assert.deepEqual(providerPlaceholders,['neon_superuser','cloud_admin']);
