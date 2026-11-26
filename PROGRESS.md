@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Canonical functional authorization fixture ACCEPTED; private V7 handoff
+
+- [CI #45865611579](https://github.com/nora953/fawri-production-source/actions/runs/45865611579) at `d1cbb20ddd83c9de27efad3ce83cb9267a7642b8`: both focused jobs completed SUCCESS. Logs verify `G5_LOCAL_AUTH_MARKER_AND_OPERATOR_UNKNOWN_ACTOR_DENIAL_VERIFIED`, `G5_LOCAL_TWO_SYNTHETIC_TENANTS_PRODUCT_SCOPE_VERIFIED`, `G5_SYNTHETIC_CANONICAL_ISSUER_FUNCTIONAL_PROOF_PASS`. Earlier quoting failure resolved. The fixture is synthetic with canonical issuer definitions, not proof of private restored production schema behavior or general operator workflows.
+- Next owner-controlled V7 handoff: exact source archive at `d1cbb20ddd83c9de27efad3ce83cb9267a7642b8`, existing encrypted pair and hidden passphrases, unchanged pinned launcher and local WSL PG18. No new export or production connection. The probe may grant only detached trusted owner pg_read_all_stats when necessary; never grants runtime membership. Actual functional proof pending; raw provider owner/grantor portability remains held even if probe succeeds. G5 BLOCKED, no new P0 closure, commercial NO-GO, no new cost.
+
+
 ## 2026-11-26 — Corrected negative authorization probe SQL delimiters
 
 - [CI #45864629309](https://github.com/nora953/fawri-production-source/actions/runs/45864629309): ACL/source job SUCCESS; detached synthetic restore, direct ACL review and persistent session passed, but new functional probe stopped at malformed `DO  quoting in unknown-operator denial SQL. Fixed both negative probes (operator admission and tenant scope rebind) to use explicit tagged dollar delimiters and complete PL/pgSQL block syntax; refreshed launcher pin. This is a diagnostic source defect, not an established production authorization failure. No guard relaxed, no changes to canonical migrations. New targeted CI pending; actual private functional verification held until acceptance. No production access/change, cost, deploy or new P0 closure; G5 BLOCKED, commercial NO-GO.
