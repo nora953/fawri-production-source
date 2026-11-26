@@ -5,7 +5,7 @@ import path from "node:path";
 import os from "node:os";
 import { performance } from "node:perf_hooks";
 
-export async function proveManualCommercialOrders({ ownerPool, tenantUrl, authUrl, operatorUrl }) {
+export async function proveManualCommercialOrders({ ownerPool, tenantUrl, authUrl, operatorUrl, focusedG5 = false }) {
   for (const url of [tenantUrl, authUrl, operatorUrl]) {
     assert.equal(new URL(url).hostname, "127.0.0.1");
     assert.equal(new URL(url).pathname, "/fawri");
@@ -167,6 +167,16 @@ export async function proveManualCommercialOrders({ ownerPool, tenantUrl, authUr
     }
     const stock = await ownerPool.query("SELECT quantity FROM location_inventory_levels WHERE id = 'manual-stock'");
     assert.equal(stock.rows[0].quantity, 998);
+
+    if (focusedG5) {
+      assert.equal((await request("/api/orders", session, 200)).orders.length, 2);
+      assert.equal((await request("/api/orders", otherSession, 200)).orders.length, 0);
+      const deniedPos = await request("/api/cashier/management/discount-kind", session, 403, "PUT", {
+        expected_version: 0, discount_kind: "amount",
+      });
+      assert.equal(deniedPos.code, "FAWRI_V1_POS_NOT_OFFERED");
+      return;
+    }
 
     const concurrency = 25;
     const requests = 100;
