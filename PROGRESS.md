@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — G4 WhatsApp authentication template active (owner console evidence)
+
+- Owner screenshot of WhatsApp Manager for Fawri Reply shows template `fawri_otp`, category Authentication, language English, green Active status, last edited 2026-11-24, zero sends/reads displayed. Supersedes earlier In Review template status. The screenshot also shows a warning that no valid payment method exists. This is template approval evidence only; sender/phone activation, billing readiness, production token configuration and actual delivered/redeemed OTP remain unverified. Next owner console step: inspect existing phone number status; do not create a duplicate template/number or incur charges without approval. No production changes, credentials collected, new paid service, new P0 closure or GO. G4 remains OPEN.
+
+
 ## 2026-11-25 — corrected executable PR workflow batch 95/95 SUCCESS
 
 - Actual GitHub workflow readback for executable SHA `9b1791bc6141d5ca4756ab8f9491cfbcb89fd85a` returned 95 completed SUCCESS and zero failed/pending; [Final security #45685262407](https://github.com/nora953/fawri-production-source/actions/runs/45685262407) SUCCESS after exact historical synthetic fixture classification. Earlier failures resolved in this batch without migration or hosted privilege changes. This is the count of returned workflow runs on that executable commit, not P0 coverage, not a claim that conditional hosted steps ran, and not commercial acceptance. Do not rerun unchanged tests.
