@@ -1,5 +1,19 @@
 # FAWRI V1 G5 — one-time Render catalog-media offsite acceptance handoff
 
+## 2026-11-26 — Approved production catalog inventory executed; reader admission BLOCKED
+
+Owner explicitly approved one catalog-only inventory. Neon project metadata confirmed free_v3, existing production branch and active direct endpoint matching the accepted exporter pin, PG18, 167108 reported compute seconds before inventory, no upgrade or new resources. One SQL transaction with SET TRANSACTION READ ONLY returned catalog metadata only. SQL identity guard verified fawri database, PG18, session/current user match, database ownership, BYPASSRLS and CREATEROLE, read_only=on; proposed reader role does not exist. No merchant rows, secret values, function calls against application data or production mutations.
+
+Inventory: three non-system schemas (drizzle, fawri_security, public), ordinary application tables and two sequences owned by the existing owner; no extension-owned application relations found. PUBLIC database CONNECT and TEMPORARY, public schema USAGE; no PUBLIC database/schema CREATE, relation or column privileges or sequence grants reported. Provider-owned plpgsql extension is in pg_catalog. Of 25 non-system SECURITY DEFINER routines, six have PUBLIC EXECUTE:
+- public.fawri_consume_cashier_discount_approval
+- public.fawri_invalidate_pending_cashier_discount_approvals
+- public.fawri_lock_cashier_approver
+- public.fawri_lock_cashier_discount_approval
+- public.fawri_lock_cashier_discount_setting
+- public.fawri_tenant_or_audited_admin
+
+These inherited privileges conflict with the unchanged recurring-reader preflight; no role created and no grant/revoke attempted. PUBLIC TEMPORARY also deserves explicit review (preflight currently checks CREATE, not TEMPORARY). Next action is source-only dependency and intended runtime-grant review for these six routines, followed by an isolated rehearsal of any least-privilege correction and separate precise owner approval for production ACL changes. Do not weaken preflight or infer a production security exploit from ACL metadata alone. Existing role-specific grants/dependencies and actual future reader privileges are not yet independently established. No production backup export, schedule, new subscription or parent P0 closure. G5 BLOCKED; commercial NO-GO.
+
 ## 2026-11-26 — Hosted reader capability accepted; production recurring admission HELD
 
 [Hosted synthetic reader result](https://github.com/nora953/fawri-production-source/commit/a74c1bdb62dd5dca8ea155d424124edfee87aaed) supersedes the pending synthetic drill below. The SQL-created direct reader passed the unchanged preflight (source blob `4fae4af9c65a629ac36812a5cd66b87131437f3c`), read two FORCE RLS fixture rows and passed separate effective privilege checks; the new role/schema were removed and the experimental compute suspended. No actual denied write statement was attempted. No production reader or schedule is established. Do not repeat the accepted fixture CI or V7.
