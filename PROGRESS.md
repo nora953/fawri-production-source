@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Missing-role diagnostic CI accepted; owner-private diagnostic handoff
+
+- [CI #45804016422](https://github.com/nora953/fawri-production-source/actions/runs/45804016422) at `e2cee2d75e718fa9b054147c15beba8048417e4f` now reports both jobs completed SUCCESS. The narrow diagnostic and detached synthetic fixture passed. Next use the pinned revised launcher against the same two independently authenticated encrypted artifacts in private WSL; only the allowlisted `G5_LOCAL_MISSING_ROLE_HINT` and terminal status may be shared, not raw SQL or credentials. No known missing role identity yet, no actual ACL restoration accepted, no new P0 closure, production change or expense; G5 BLOCKED and commercial NO-GO.
+
+
 ## 2026-11-26 — Actual private ACL restore blocked by missing archive role; diagnostic source prepared
 
 - Owner screenshot at the first actual WSL recovery attempt (pinned `02f8bc8b`) shows `G5_LOCAL_SOURCE_PINS_VERIFIED`, `G5_LOCAL_BOTH_ARCHIVES_AUTHENTICATED`, `G5_LOCAL_NEW_PG18_SOCKET_ONLY`, `G5_LOCAL_DISPOSABLE_CLEANUP_COMPLETE`, then `G5_LOCAL_ARCHIVE_RESTORE_ROLE_MISSING`. Both encrypted artifacts and independent hashes authenticated; new detached cluster and cleanup succeeded. Actual archive restoration, catalog parity and tenant authorization were NOT accepted. The exact missing role is not established by this sanitized result. Do not guess, silently create arbitrary roles, replay provider privileges, or repeat Neon export/capture. No production access/change or new cost in this operation.
