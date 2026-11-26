@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Actual private V5 field evidence; semantic ACL analysis prepared
+
+- Owner screenshot at 15:32 Baghdad on pinned `07fbdee9` confirms seven relation ACLs and six routine ACLs explicit-to-NULL, one extension owner provider-to-bootstrap and four membership grantors provider-to-bootstrap. No missing/extra objects or changes to RLS flags/policy metadata in the compared fields. Three restricted logins and cleanup verified; exact ACL parity false. No assumption of default equivalence.
+- [Source `4623500d`](https://github.com/nora953/fawri-production-source/commit/4623500da4c4a158348824b79c26c5cfa4f256e0) adds read-only PostgreSQL aclexplode/acldefault direct privilege/grant-option comparison, extension membership and initial ACL counts, and synthetic default-equivalent, missing provider grant and extra PUBLIC execution cases. No raw ACLs or identifiers output and no automatic changes. Does not establish inherited permissions, grantor parity or functional tenant authorization. Focused CI: not yet returned. Owner execution held until CI accepted. No production access, change, expense or new P0 closure; G5 BLOCKED, NO-GO.
+
+
 ## 2026-11-26 — Field-level private ACL parity diagnostic accepted in CI
 
 - [CI #45818430208](https://github.com/nora953/fawri-production-source/actions/runs/45818430208) on `07fbdee9132f894bdac1239e87a75de2840035a8` completed SUCCESS. The next operation is owner-private V5 using the same encrypted artifacts and pinned launcher; share only aggregate `G5_LOCAL_PARITY_FIELDS` and terminal markers. No private object names, raw ACLs, passwords or production URL requested. The actual V4 archive restore and restricted logins are already established; V5 is a targeted diagnostic of unresolved differences, not a new backup. Do not claim ACL parity or G5 closure until differences and tenant authorization are reviewed. No production changes, new expense or P0 closure; commercial NO-GO.
