@@ -9,7 +9,7 @@ import {createHash,randomBytes} from 'node:crypto';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {openCatalog} from './v1-g5-private-acl-capture.mjs';
 import {verifyOffsiteArchive} from './v1-postg4-offsite-restore.mjs';
-import {buildDetachedRoleSql,compareObjectCatalogs,compareDetachedGlobals} from './lib/v1-g5-detached-acl-recovery.mjs';
+import {buildDetachedRoleSql,compareObjectCatalogs,compareDetachedGlobals,canonicalAcl} from './lib/v1-g5-detached-acl-recovery.mjs';
 
 const ZIP_HASH='37153472fe8e8f8fb8cd1e934305aafe2db38ff1679e0b463f67eec1511ab62f';
 const INNER_HASH='6d29bc341de17dea0f1bb7851a3fe35367d68fbaf3743683499db094152e7a6e';
@@ -91,6 +91,48 @@ export function loadPrivatePair(zipFile,aclFile,env){
   const plain=verifyOffsiteArchive(manifest,entry(archiveName),env.FAWRI_G5_OFFSITE_PASSPHRASE,INNER_HASH);
   return {catalog:opened.catalog,plain};
 }
+
+// Check all role references in the authenticated catalog, without printing
+// private identifiers. This is a preflight, not proof that the older dump
+// has no additional role dependencies.
+export const providerPlaceholders=Object.freeze(['neon_superuser','cloud_admin']);
+export function catalogRoleReferences(c){
+  const refs=new Set();
+  const add=name=>{
+    check(typeof name==='string'&&name.length>0,'G5_LOCAL_CATALOG_ROLE_REFERENCE_INVALID');
+    if(name!=='PUBLIC')refs.add(name);
+  };
+  const decode=name=>{
+    if(name.startsWith('"')){
+      check(/^"(?:[^"]|"")*"$/.test(name),'G5_LOCAL_CATALOG_ACL_ROLE_SYNTAX');
+      return name.slice(1,-1).replaceAll('""','"');
+    }
+    check(!name.includes('"'),'G5_LOCAL_CATALOG_ACL_ROLE_SYNTAX');
+    return name;
+  };
+  for(const r of c.roles)add(r.rolname);
+  for(const e of c.membership_edges)for(const k of ['role','member','grantor'])add(e[k]);
+  const rows=[c.database_acl,...['schemas','relations','column_acls','routines','types','default_acls','policy_roles','extensions'].flatMap(k=>c[k])];
+  for(const row of rows){
+    if(Object.hasOwn(row,'owner'))add(row.owner);
+    if(Object.hasOwn(row,'creator'))add(row.creator);
+    if(Object.hasOwn(row,'roles'))for(const name of row.roles)add(name);
+    if(Object.hasOwn(row,'acl')&&row.acl!==null){
+      for(const item of canonicalAcl(row.acl)){
+        const m=item.match(/^("(?:[^"]|"")*"|[^="]*)=[A-Za-z*]*\/("(?:[^"]|"")*"|[^/"=]+)$/);
+        check(m,'G5_LOCAL_CATALOG_ACL_ROLE_SYNTAX');
+        if(m[1]!=='')add(decode(m[1]));
+        add(decode(m[2]));
+      }
+    }
+  }
+  return refs;
+}
+export function unresolvedCatalogRoleCount(c,existing){
+  const names=new Set(existing);
+  return [...catalogRoleReferences(c)].filter(n=>!names.has(n)).length;
+}
+
 function phase(msg){console.log(msg);}
 export function recoverLocal({catalog,plain}){
   check(process.platform==='linux'&&typeof process.getuid==='function'&&process.getuid()!==0,'G5_LOCAL_NONROOT_LINUX_REQUIRED');
@@ -128,14 +170,19 @@ export function recoverLocal({catalog,plain}){
     check(guard.toString().trim()==='t','G5_LOCAL_SOCKET_GUARD');
     phase('G5_LOCAL_NEW_PG18_SOCKET_ONLY');
     psql(ADMIN,roles.sql,{db:'postgres',stage:'G5_LOCAL_RECREATE_GLOBALS'});
-    // Exact provider role observed missing in the actual private archive.
-    // A name-only inert principal preserves archive object ACL references;
-    // never reproduce Neon role attributes or grant its membership to anyone.
-    psql(ADMIN,'CREATE ROLE neon_superuser NOLOGIN NOINHERIT NOSUPERUSER NOCREATEROLE NOCREATEDB NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 0;', {db:'postgres',stage:'G5_LOCAL_PROVIDER_PLACEHOLDER_CREATE'});
-    const providerGuardSql="SELECT NOT rolcanlogin AND NOT rolsuper AND NOT rolinherit AND NOT rolcreaterole AND NOT rolcreatedb AND NOT rolreplication AND NOT rolbypassrls AND rolconnlimit=0 AND NOT EXISTS (SELECT 1 FROM pg_auth_members WHERE roleid=r.oid OR member=r.oid) FROM pg_roles r WHERE rolname='neon_superuser';";
+    // Only the two provider names actually observed missing are admitted.
+    // No dynamic role creation, no provider membership and no LOGIN.
+    for(const role of providerPlaceholders){
+      psql(ADMIN,'CREATE ROLE '+role+' NOLOGIN NOINHERIT NOSUPERUSER NOCREATEROLE NOCREATEDB NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 0;', {db:'postgres',stage:'G5_LOCAL_PROVIDER_PLACEHOLDER_CREATE'});
+    }
+    const providerGuardSql="SELECT count(*)=2 AND bool_and(NOT rolcanlogin AND NOT rolsuper AND NOT rolinherit AND NOT rolcreaterole AND NOT rolcreatedb AND NOT rolreplication AND NOT rolbypassrls AND rolconnlimit=0 AND NOT EXISTS (SELECT 1 FROM pg_auth_members WHERE roleid=r.oid OR member=r.oid)) FROM pg_roles r WHERE rolname IN ('neon_superuser','cloud_admin');";
     const providerCheck=()=>check(psql(ADMIN,providerGuardSql,{db:'postgres',stage:'G5_LOCAL_PROVIDER_PLACEHOLDER_GUARD'}).toString().trim()==='t','G5_LOCAL_PROVIDER_PLACEHOLDER_GUARD');
     providerCheck();
-    phase('G5_LOCAL_PROVIDER_NAME_ONLY_PLACEHOLDER_VERIFIED');
+    phase('G5_LOCAL_PROVIDER_NAME_ONLY_PLACEHOLDERS_VERIFIED');
+    const existing=JSON.parse(psql(ADMIN,"SELECT jsonb_agg(rolname ORDER BY rolname) FROM pg_roles;",{db:'postgres',stage:'G5_LOCAL_ROLE_PREFLIGHT'}).toString());
+    const unresolved=unresolvedCatalogRoleCount(catalog,existing);
+    console.log('G5_LOCAL_CATALOG_ROLE_PREFLIGHT_UNRESOLVED '+unresolved);
+    check(unresolved===0,'G5_LOCAL_UNREVIEWED_CATALOG_ROLE');
     fs.writeFileSync(archive,plain,{flag:'wx',mode:0o600});plain.fill(0);
     pg('pg_restore',['-w','--create','--exit-on-error','--dbname=postgres',archive],
       {env:conn(ADMIN,'postgres'),timeout:180000,stage:'G5_LOCAL_ARCHIVE_RESTORE'});

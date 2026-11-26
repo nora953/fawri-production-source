@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {loadPrivatePair,missingRoleHint} from '../v1-g5-private-detached-recovery.mjs';
+import {loadPrivatePair,missingRoleHint,catalogRoleReferences,unresolvedCatalogRoleCount,providerPlaceholders} from '../v1-g5-private-detached-recovery.mjs';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -24,4 +24,17 @@ test('missing role diagnostics expose only explicit role labels, never private q
  assert.equal(missingRoleHint('ERROR:  role "some_private_name" does not exist\nCommand was: secret SQL;'),'OTHER_PRIVATE_ROLE');
  assert.equal(missingRoleHint('ERROR:  permission denied\nCommand was: role "neon_superuser" does not exist\n'),null);
  assert.equal(missingRoleHint('ERROR:  role "private""name" does not exist\n'),'OTHER_PRIVATE_ROLE');
+});
+
+test('catalog role preflight covers owners, ACL grantees/grantors, default creators, policy and edges without automatic role creation',()=>{
+ const c={roles:[{rolname:'fawri_owner'}],membership_edges:[{role:'neon_superuser',member:'fawri_owner',grantor:'cloud_admin'}],
+ database_acl:{owner:'cloud_admin',acl:'{=Tc/cloud_admin,neon_superuser=c/cloud_admin}'},
+ schemas:[{owner:'pg_database_owner',acl:'{"\"odd,role\"=U/cloud_admin"}'}],
+ relations:[{owner:'fawri_owner',acl:null}],column_acls:[{acl:'{fawri_owner=r/cloud_admin}'}],
+ routines:[],types:[],default_acls:[{creator:'fawri_owner',acl:'{}'}],policy_roles:[{roles:['PUBLIC','other_role']}],extensions:[]};
+ assert.deepEqual(providerPlaceholders,['neon_superuser','cloud_admin']);
+ const refs=catalogRoleReferences(c);
+ assert.deepEqual([...refs].sort(),['cloud_admin','fawri_owner','neon_superuser','odd,role','other_role','pg_database_owner'].sort());
+ assert.equal(unresolvedCatalogRoleCount(c,['cloud_admin','fawri_owner','neon_superuser','pg_database_owner']),2);
+ assert.equal(unresolvedCatalogRoleCount(c,[...refs]),0);
 });

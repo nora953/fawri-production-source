@@ -24,7 +24,7 @@ try{
  const roles=['fawri_restricted_runtime','fawri_auth_issuer','fawri_operator_issuer','fawri_cashier_retirement_writer'];
  psql('CREATE ROLE fawri_owner LOGIN NOSUPERUSER INHERIT BYPASSRLS;'+roles.map((r,i)=>'CREATE ROLE '+r+(i===3?' NOLOGIN':' LOGIN')+' NOINHERIT NOSUPERUSER NOBYPASSRLS;').join('\n')+
  roles.map(r=>'GRANT '+r+' TO fawri_owner WITH ADMIN TRUE, INHERIT FALSE, SET FALSE;').join('\n')+
- 'CREATE ROLE neon_superuser NOLOGIN NOINHERIT; GRANT neon_superuser TO fawri_owner; CREATE DATABASE fawri OWNER fawri_owner;');
+ 'CREATE ROLE neon_superuser NOLOGIN NOINHERIT; CREATE ROLE cloud_admin NOLOGIN NOINHERIT; GRANT neon_superuser TO fawri_owner; CREATE DATABASE fawri OWNER fawri_owner;');
  const sql=[];
  for(let i=0;i<102;i++){
    sql.push('CREATE TABLE public.fixture_'+i+'(id integer, merchant_id integer);');
@@ -34,7 +34,7 @@ try{
  }
  sql.push('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO fawri_auth_issuer;');
  sql.push('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE ON SEQUENCES TO fawri_auth_issuer;');
- sql.push('GRANT CONNECT ON DATABASE fawri TO neon_superuser; GRANT SELECT ON public.fixture_0 TO neon_superuser;');
+ sql.push('GRANT CONNECT ON DATABASE fawri TO neon_superuser; GRANT SELECT ON public.fixture_0 TO neon_superuser; GRANT USAGE ON SCHEMA public TO cloud_admin;');
  sql.push('INSERT INTO public.fixture_0 VALUES (1,1),(2,2);');
  psql(sql.join('\n'),{PGUSER:'fawri_owner',PGDATABASE:'fawri'});
  const capture=fileURLToPath(new URL('../../docs/final-audit/evidence/sql/P0-V1-G5-POSTG4-ACL-RECOVERY-CATALOG-HELD.sql',import.meta.url));
@@ -43,10 +43,14 @@ try{
  assert.equal(catalog.membership_edges.filter(x=>x.role==='neon_superuser'&&x.member==='fawri_owner').length,1);
  assert.match(catalog.database_acl.acl,/neon_superuser=/);
  assert.match(catalog.relations.find(x=>x.name==='fixture_0').acl,/neon_superuser=/);
+ psql('ALTER TABLE public.fixture_101 OWNER TO cloud_admin;', {PGDATABASE:'fawri'});
+ const updatedCatalog=JSON.parse(psql(fs.readFileSync(capture),{PGUSER:'fawri_owner',PGDATABASE:'fawri'},['-v','g5_capture_approved=1']).toString());
+ assert.equal(updatedCatalog.relations.find(x=>x.name==='fixture_101').owner,'cloud_admin');
+ assert.match(updatedCatalog.schemas.find(x=>x.schema==='public').acl,/cloud_admin=/);
  const archive=run('pg_dump',['-Fc','--dbname=fawri']);
  // Source and target are distinct local clusters. No production endpoint or
  // passphrase is available in this workflow. The private CLI remains CI-denied.
- recoverLocal({catalog,plain:archive});
+ recoverLocal({catalog:updatedCatalog,plain:archive});
  console.log('G5_SYNTHETIC_SOCKET_ONLY_ACL_REHEARSAL_PASS');
 }finally{
  if(started){
