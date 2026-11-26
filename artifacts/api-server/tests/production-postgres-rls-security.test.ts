@@ -379,3 +379,49 @@ test("production RLS SQL enumerates activatable and inherited CREATEROLE princip
   assert.equal(reachabilityChecks.length, 2, "both SET and USAGE role reachability must cover CREATEROLE");
   assert.match(source, /PRODUCTION_DATABASE_RUNTIME_CREATEROLE_FORBIDDEN/);
 });
+
+
+test("manual V1 requires exact restricted G5 routine ACL instead of tenant cashier EXECUTE", async () => {
+  const env = { ...productionEnv(), FAWRI_V1_MANUAL_COMMERCE: "1",
+    FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_restricted_runtime" };
+  const state = safeRow({
+    role_name: "fawri_restricted_runtime", session_role_name: "fawri_restricted_runtime",
+    cashier_staff_lock_ready: false, cashier_approval_authority_ready: false,
+  });
+  let checks = 0;
+  const scopedTarget = (proof: unknown, readiness = state): OperationalQueryTarget => ({
+    async query<T extends Record<string, unknown>>(sql: string) {
+      if (sql.includes("g5_v1_exact_routine_acl")) {
+        checks++;
+        assert.match(sql, /pg_catalog\.aclexplode\(f\.proacl\)/);
+        assert.match(sql, /acl\.is_grantable/);
+        assert.match(sql, /has_function_privilege\(r\.oid,f\.oid,'EXECUTE'\)/);
+        assert.match(sql, /m\.member=r\.oid/);
+        return { rows: (proof === undefined ? [] : [{g5_v1_exact_routine_acl:proof}]) as unknown as T[] };
+      }
+      return target(readiness).query<T>(sql);
+    },
+  });
+  await assert.doesNotReject(() => assertProductionDatabaseRlsReady(env, scopedTarget(true)));
+  assert.equal(checks, 1);
+  for (const proof of [false, undefined, null, "true", 1]) {
+    await assert.rejects(() => assertProductionDatabaseRlsReady(env, scopedTarget(proof)),
+      {code:"PRODUCTION_V1_G5_ROUTINE_ACL_REQUIRED"});
+  }
+  // Exact G5 proof does not bypass predicate/RLS checks or old non-V1 gates.
+  await assert.rejects(() => assertProductionDatabaseRlsReady(env,
+    scopedTarget(true, {...state, tenant_predicate_trusted:false})),
+    {code:"PRODUCTION_TENANT_PREDICATE_SOURCE_UNTRUSTED"});
+  await assert.rejects(() => assertProductionDatabaseRlsReady(
+    {...env, FAWRI_V1_MANUAL_COMMERCE:"0"}, scopedTarget(true)),
+    {code:"PRODUCTION_CASHIER_APPROVAL_AUTHORITY_REQUIRED"});
+  await assert.rejects(() => assertProductionDatabaseRlsReady(
+    {...env, FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE:"another_runtime"}, scopedTarget(true)),
+    {code:"PRODUCTION_DATABASE_RUNTIME_ROLE_MISMATCH"});
+  await assert.rejects(() => assertProductionDatabaseRlsReady(env, {
+    async query<T extends Record<string, unknown>>(sql: string) {
+      if (sql.includes("g5_v1_exact_routine_acl")) throw new Error("catalog unavailable");
+      return target(state).query<T>(sql);
+    },
+  }), {code:"PRODUCTION_V1_G5_ROUTINE_ACL_REQUIRED"});
+});
