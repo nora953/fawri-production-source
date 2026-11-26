@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Render Web Shell read-only access verified
+
+- The existing authenticated Render session opened Web Shell for `fawri-v1-commercial-gated-k9yj`. The live command returned `/app` from `pwd`, `directory /var/data` from `stat` and `/var/data ext4` from `findmnt --mountpoint /var/data`. This resolves the Shell-access dependency. The command read mount metadata only. No catalog media or credentials were read, and nothing was written, exported, restarted or deployed.
+- G3 remains PARTIAL, G4 OPEN and G5 BLOCKED. Real-media isolation and recovery follow approved G4 merchant onboarding. Independent ACL-preserving recovery still requires the owner-private sidecar, and recurring backup operation remains pending. No new P0 closure. PR #550 stays draft, commercial NO-GO.
+
 ## 2026-11-26 — G4 WhatsApp authentication template active (owner console evidence)
 
 - Owner screenshot of WhatsApp Manager for Fawri Reply shows template `fawri_otp`, category Authentication, language English, green Active status, last edited 2026-11-24, zero sends/reads displayed. Supersedes earlier In Review template status. The screenshot also shows a warning that no valid payment method exists. This is template approval evidence only; sender/phone activation, billing readiness, production token configuration and actual delivered/redeemed OTP remain unverified. Next owner console step: inspect existing phone number status; do not create a duplicate template/number or incur charges without approval. No production changes, credentials collected, new paid service, new P0 closure or GO. G4 remains OPEN.
