@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Corrected negative authorization probe SQL delimiters
+
+- [CI #45864629309](https://github.com/nora953/fawri-production-source/actions/runs/45864629309): ACL/source job SUCCESS; detached synthetic restore, direct ACL review and persistent session passed, but new functional probe stopped at malformed `DO  quoting in unknown-operator denial SQL. Fixed both negative probes (operator admission and tenant scope rebind) to use explicit tagged dollar delimiters and complete PL/pgSQL block syntax; refreshed launcher pin. This is a diagnostic source defect, not an established production authorization failure. No guard relaxed, no changes to canonical migrations. New targeted CI pending; actual private functional verification held until acceptance. No production access/change, cost, deploy or new P0 closure; G5 BLOCKED, commercial NO-GO.
+
+
 ## 2026-11-26 — Recurring-reader provisioning documentation verified in parallel (no hosted change)
 
 - [Neon roles documentation, updated 2026-11-19](https://github.com/neondatabase/website/blob/main/content/docs/manage/roles.md) confirms SQL-created roles do not receive automatic neon_superuser membership, and the CLI now offers database-scoped read_only/read_write modes. Neither mode documents the direct BYPASSRLS attribute required by FAWRI's unchanged recurring reader preflight. [PG18 CREATE ROLE](https://www.postgresql.org/docs/18/sql-createrole.html) requires the executing role itself to possess BYPASSRLS or be a superuser to specify BYPASSRLS; role attributes are non-inheritable. Thus SQL provisioning is the candidate, not a proven hosted capability. Verify actual owner attributes and provider acceptance only on an explicitly approved disposable non-production target, not production; do not use the ordinary admin role, weaken preflight, or assume CLI read_only covers FORCE RLS tables. No credentials/roles/branches/schedules created, no cost.

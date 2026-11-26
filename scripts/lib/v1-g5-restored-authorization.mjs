@@ -62,7 +62,7 @@ export async function proveRestoredAuthorization({psql,conn,bin}){
   // No actual administrator ID is ever selected or printed.
   const absent='g5-absent-'+randomBytes(20).toString('hex');
   const audit='g5-audit-'+randomBytes(20).toString('hex');
-  const denial="DO $ BEGIN PERFORM public.fawri_issue_admin_directory_audit("+q(absent)+","+q(audit)+",'"+'0'.repeat(64)+"'); RAISE EXCEPTION 'unexpected operator admission'; EXCEPTION WHEN insufficient_privilege THEN NULL; END $;";
+  const denial="DO $g5$ BEGIN PERFORM public.fawri_issue_admin_directory_audit("+q(absent)+","+q(audit)+",'"+'0'.repeat(64)+"'); RAISE EXCEPTION 'unexpected operator admission'; EXCEPTION WHEN insufficient_privilege THEN NULL; END; $g5$;";
   psql(OP,denial,{stage:'G5_LOCAL_OPERATOR_UNKNOWN_ACTOR_DENIED'});
   console.log('G5_LOCAL_RESTORED_ROLE_CAPABILITIES_VERIFIED');
   console.log('G5_LOCAL_AUTH_MARKER_AND_OPERATOR_UNKNOWN_ACTOR_DENIAL_VERIFIED');
@@ -97,7 +97,7 @@ export async function proveRestoredAuthorization({psql,conn,bin}){
       check(await tenant.query(count)==='1','G5_LOCAL_SCOPED_PRODUCT_COUNT');
       // Auth issuer must not rebind the live transaction to another merchant.
       const other=merchant===a?b:a;
-      const rebind="DO $ BEGIN PERFORM fawri_security.issue_scope('fawri_restricted_runtime'::name,"+pid+"::integer,"+xid+"::bigint,"+q(other)+"::text); RAISE EXCEPTION 'unexpected scope rebind'; EXCEPTION WHEN insufficient_privilege THEN NULL; END $;";
+      const rebind="DO $g5$ BEGIN PERFORM fawri_security.issue_scope('fawri_restricted_runtime'::name,"+pid+"::integer,"+xid+"::bigint,"+q(other)+"::text); RAISE EXCEPTION 'unexpected scope rebind'; EXCEPTION WHEN insufficient_privilege THEN NULL; END; $g5$;";
       psql(AUTH,rebind,{stage:'G5_LOCAL_SCOPE_REBIND_DENIED'});
       check(await tenant.query("SELECT count(*) FROM public.products WHERE id="+q(product)+";")==='1','G5_LOCAL_OWN_PRODUCT_NOT_VISIBLE');
       check(await tenant.query("SELECT count(*) FROM public.products WHERE id="+q(foreign)+";")==='0','G5_LOCAL_FOREIGN_PRODUCT_VISIBLE');
