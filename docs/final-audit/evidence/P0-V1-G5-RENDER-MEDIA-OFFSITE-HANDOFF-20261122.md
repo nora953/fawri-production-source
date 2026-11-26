@@ -7,19 +7,21 @@ The active [Render deployment](https://dashboard.render.com/web/srv-dbv0kvm8bjmc
 ### Private database access-control recovery
 
 1. In a trusted private Bash session, use a clean checkout of `28a7f3ee8afe1d8384c5f0229a9a1de6159020ed` and PostgreSQL 18 client tools. Get the existing direct `fawri_owner` production connection from the owner's secret store, with `sslmode=verify-full` and channel binding required. Use a separate strong passphrase of at least 24 characters for this artifact. The operation reads only the allowlisted catalog metadata and does not require Meta, payment or a production configuration change.
-2. After owner approval, use the accepted CLI from the checkout root, outside CI and Render. The variables are scoped to the subshell and the prompts hide input. Choose a fresh private output directory.
+2. After owner approval, use the accepted CLI from the checkout root, outside CI and Render. The variables are scoped to the subshell and the prompts hide input. Choose an existing private output directory outside the checkout.
 
    ```bash
    (
      set -e
      umask 077
+     read -rp 'Absolute private output directory outside the checkout: ' g5_output_dir
+     [[ "$g5_output_dir" = /* && -d "$g5_output_dir" ]]
      read -rsp 'Private direct Neon owner URL: ' FAWRI_G5_PRIVATE_OWNER_URL
      printf '\n'
      read -rsp 'Separate ACL backup passphrase: ' FAWRI_G5_PRIVATE_ACL_PASSPHRASE
      printf '\n'
      export FAWRI_G5_PRIVATE_OWNER_URL FAWRI_G5_PRIVATE_ACL_PASSPHRASE
      FAWRI_G5_PRIVATE_ACL_CAPTURE_APPROVED=1 \
-       node scripts/v1-g5-private-acl-capture.mjs capture ./fawri-g5-acl.enc
+       node scripts/v1-g5-private-acl-capture.mjs capture "$g5_output_dir/fawri-g5-acl.enc"
    )
    ```
 
