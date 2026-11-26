@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Both observed provider roles and captured-role preflight accepted on synthetic fixture
+
+- [CI #45816343942](https://github.com/nora953/fawri-production-source/actions/runs/45816343942) at `d79ddadaafa2b54b64ea207129ac13ee0e66d140`: both targeted jobs completed SUCCESS. Detached synthetic PG18 fixture includes both observed provider names, provider ownership and ACL references; logs verify two inert principals, zero unresolved catalog role references, archive restore with ownership and ACLs, exact synthetic object parity, portable global role match, three restricted logins and cleanup. The next step is owner-private V4 restore using the exact pinned source and the existing encrypted pair, no Neon connection, no re-export. Captured-reference preflight cannot prove all older archive dependencies; actual archive recovery and tenant scope authorization remain unaccepted, as do recurring backups and media recovery. No new P0 closure, production change, expense or commercial GO; G5 BLOCKED.
+
+
 ## 2026-11-26 — Private V3 restore exposed second provider role; full captured-reference preflight prepared
 
 - Owner V3 screenshot on `e00feb96` confirms source pins, both archives authenticated, isolated cluster, inert Neon placeholder verified, `G5_LOCAL_MISSING_ROLE_HINT cloud_admin`, successful cleanup and restore failure. This is a second provider role reference; not a backup corruption or production failure. No actual ACL recovery accepted, no need to recapture or repeat V3.
