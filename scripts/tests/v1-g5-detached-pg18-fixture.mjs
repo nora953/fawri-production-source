@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {recoverLocal} from '../v1-g5-private-detached-recovery.mjs';
 const BIN='/usr/lib/postgresql/18/bin';
 const root=fs.mkdtempSync('/tmp/fawri-acl-fixture-');
-const data=path.join(root,'data'),socket=path.join(root,'s'),admin='fawri_detached_bootstrap';
+const data=path.join(root,'data'),socket=path.join(root,'s'),admin='g5_detached_bootstrap';
 const env={PATH:'/usr/bin:/bin',LANG:'C.UTF-8',HOME:root,PGHOST:socket,PGPORT:'5432',PGUSER:admin,PGDATABASE:'postgres'};
 const run=(cmd,args,input,extra={})=>{
  const r=spawnSync(path.join(BIN,cmd),args,{input,env:{...env,...extra},timeout:120000,maxBuffer:8*1024*1024});

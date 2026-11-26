@@ -17,7 +17,7 @@ const SQL_BLOB='25ddef2fe539c7b840288e15e943bfbb4ee6210b';
 const BIN='/usr/lib/postgresql/18/bin';
 const OWNER='fawri_owner';
 const RUNTIME=['fawri_restricted_runtime','fawri_auth_issuer','fawri_operator_issuer'];
-const ADMIN='fawri_detached_bootstrap';
+const ADMIN='g5_detached_bootstrap';
 const sha=(b,a='sha256')=>createHash(a).update(b).digest('hex');
 const check=(ok,code)=>{if(!ok)throw new Error(code);};
 const safeEnv=Object.freeze({PATH:'/usr/bin:/bin',LANG:'C.UTF-8',LC_ALL:'C.UTF-8'});
@@ -104,7 +104,7 @@ export function recoverLocal({catalog,plain}){
       "-c listen_addresses='' -c unix_socket_directories="+socket+
       " -c unix_socket_permissions=0700 -c log_statement=none -c log_min_error_statement=panic",
       '-w','start'],{stage:'G5_LOCAL_START'});
-    const guard=psql(ADMIN,"SELECT current_setting('server_version_num')::int/10000=18 AND current_setting('listen_addresses')='' AND inet_server_addr() IS NULL AND current_user='fawri_detached_bootstrap';",{db:'postgres',stage:'G5_LOCAL_SOCKET_GUARD'});
+    const guard=psql(ADMIN,"SELECT current_setting('server_version_num')::int/10000=18 AND current_setting('listen_addresses')='' AND inet_server_addr() IS NULL AND current_user='g5_detached_bootstrap';",{db:'postgres',stage:'G5_LOCAL_SOCKET_GUARD'});
     check(guard.toString().trim()==='t','G5_LOCAL_SOCKET_GUARD');
     phase('G5_LOCAL_NEW_PG18_SOCKET_ONLY');
     psql(ADMIN,roles.sql,{db:'postgres',stage:'G5_LOCAL_RECREATE_GLOBALS'});
