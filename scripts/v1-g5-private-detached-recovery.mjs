@@ -32,6 +32,23 @@ function readPrivateFile(file,limit){
     return fs.readFileSync(fd);
   }finally{fs.closeSync(fd);}
 }
+
+// Only explicitly reviewed common role labels may leave the private runner.
+// Unknown role identifiers, command text, catalog entries and SQL stay private.
+const diagnosticRoleLabels=new Set([
+  'neon_superuser','cloud_admin','neon_admin','neon','postgres',
+  'pg_database_owner','pg_read_all_stats','pg_read_all_data','pg_write_all_data',
+  'fawri_owner','fawri_restricted_runtime','fawri_auth_issuer',
+  'fawri_operator_issuer','fawri_cashier_retirement_writer'
+]);
+export function missingRoleHint(stderr){
+  if(typeof stderr!=='string')return null;
+  const match=stderr.match(/(?:^|\n)(?:pg_restore: error: could not execute query: )?ERROR:\s+role "((?:[^"\n]|"")*)" does not exist\s*(?:\r?\n|$)/);
+  if(!match)return null;
+  const name=match[1].replaceAll('""','"');
+  return diagnosticRoleLabels.has(name)?name:'OTHER_PRIVATE_ROLE';
+}
+
 function run(exe,args,{input,env=safeEnv,timeout=30000,stage}={}){
   const r=spawnSync(exe,args,{input,env,timeout,maxBuffer:16*1024*1024,stdio:['pipe','pipe','pipe']});
   if(r.error||r.status!==0){
@@ -40,6 +57,9 @@ function run(exe,args,{input,env=safeEnv,timeout=30000,stage}={}){
       /extension .+ is not available/i.test(err)?'_EXTENSION_MISSING':
       /permission denied/i.test(err)?'_PERMISSION_DENIED':
       /password authentication failed/i.test(err)?'_AUTH_FAILED':'';
+    if(stage==='G5_LOCAL_ARCHIVE_RESTORE'&&hint==='_ROLE_MISSING'){
+      console.log('G5_LOCAL_MISSING_ROLE_HINT '+(missingRoleHint(err)??'UNPARSED'));
+    }
     r.stdout?.fill(0);r.stderr?.fill(0);
     throw new Error(stage+hint);
   }
