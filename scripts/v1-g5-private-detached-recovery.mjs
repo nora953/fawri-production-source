@@ -9,7 +9,7 @@ import {createHash,randomBytes} from 'node:crypto';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {openCatalog} from './v1-g5-private-acl-capture.mjs';
 import {verifyOffsiteArchive} from './v1-postg4-offsite-restore.mjs';
-import {buildDetachedRoleSql,compareObjectCatalogs,compareDetachedGlobals,canonicalAcl} from './lib/v1-g5-detached-acl-recovery.mjs';
+import {buildDetachedRoleSql,compareObjectCatalogs,compareDetachedGlobals,canonicalAcl,describeObjectDifferences,describeGrantorDifferences} from './lib/v1-g5-detached-acl-recovery.mjs';
 
 const ZIP_HASH='37153472fe8e8f8fb8cd1e934305aafe2db38ff1679e0b463f67eec1511ab62f';
 const INNER_HASH='6d29bc341de17dea0f1bb7851a3fe35367d68fbaf3743683499db094152e7a6e';
@@ -195,6 +195,7 @@ export function recoverLocal({catalog,plain}){
     const objects=compareObjectCatalogs(catalog,target);
     const globals=compareDetachedGlobals(catalog,target);
     console.log('G5_LOCAL_CATALOG_COUNTS '+JSON.stringify({objects,globals}));
+    console.log('G5_LOCAL_PARITY_FIELDS '+JSON.stringify({objects:describeObjectDifferences(catalog,target),grantorTransitions:describeGrantorDifferences(catalog,target)}));
     for(const name of RUNTIME){
       const q=psql(name,"SELECT current_user=session_user AND current_database()='fawri' AND NOT rolsuper AND NOT rolbypassrls AND NOT rolcreaterole AND NOT rolcreatedb AND NOT rolreplication AND NOT rolinherit AND NOT EXISTS (SELECT 1 FROM pg_auth_members WHERE member=pg_roles.oid) FROM pg_roles WHERE rolname=current_user;",{stage:'G5_LOCAL_RUNTIME_LOGIN'});
       check(q.toString().trim()==='t','G5_LOCAL_RUNTIME_LOGIN_ATTRIBUTES');

@@ -141,3 +141,59 @@ export function compareDetachedGlobals(source,target){
   const counts=r=>r.missing+r.extra+r.changed;
   return {portableMatch:counts(roles)+counts(edges)===0,roles,edges,grantors:exactGrantors,externalExcluded:1};
 }
+
+
+// Share only fixed field names and aggregate counts. Never expose an object
+// identifier, policy expression, raw ACL, role name, or private catalog.
+const reviewFields=Object.freeze({
+ schemas:['owner','acl'],relations:['owner','acl','rls','force_rls'],
+ column_acls:['acl'],routines:['owner','acl','security_definer'],
+ types:['owner','acl'],default_acls:['acl'],
+ policy_roles:['command','permissive','roles'],extensions:['owner','version','schema'],
+ database_acl:['owner','acl']
+});
+function roleClass(name){
+ if(NAMES.includes(name))return 'application';
+ if(['neon_superuser','cloud_admin'].includes(name))return 'provider';
+ if(name==='g5_detached_bootstrap')return 'bootstrap';
+ if(typeof name==='string'&&name.startsWith('pg_'))return 'builtin';
+ return 'other';
+}
+function increment(obj,k){obj[k]=(obj[k]??0)+1;}
+export function describeObjectDifferences(source,target){
+ const report={};
+ for(const [section,fields] of Object.entries(reviewFields)){
+   const keys=sections[section]??[];
+   const a=keyed(section==='database_acl'?[source.database_acl]:source[section],keys);
+   const b=keyed(section==='database_acl'?[target.database_acl]:target[section],keys);
+   const counts={},owners={},aclForms={};let unclassified=0;
+   for(const [key,value] of a){
+     if(!b.has(key)||value===b.get(key))continue;
+     const x=JSON.parse(value),y=JSON.parse(b.get(key));let found=false;
+     for(const field of fields){
+       if(JSON.stringify(x[field])===JSON.stringify(y[field]))continue;
+       found=true;increment(counts,field);
+       if(field==='owner')increment(owners,roleClass(x.owner)+'_to_'+roleClass(y.owner));
+       if(field==='acl'){
+         const form=z=>z===null?'null':Array.isArray(z)?(z.length?'explicit':'empty'):'other';
+         increment(aclForms,form(x.acl)+'_to_'+form(y.acl));
+       }
+     }
+     if(!found||Object.keys({...x,...y}).some(k=>!keys.includes(k)&&!fields.includes(k)&&JSON.stringify(x[k])!==JSON.stringify(y[k])))unclassified++;
+   }
+   if(Object.keys(counts).length||unclassified)report[section]={fields:counts,ownerClasses:owners,aclForms,unclassified};
+ }
+ return report;
+}
+export function describeGrantorDifferences(source,target){
+ const g=reviewedGlobals(source);
+ const a=keyed(g.internal,['role','member']);
+ const b=keyed(target.membership_edges,['role','member']);
+ const transitions={};
+ for(const [key,value] of a){
+   if(!b.has(key))continue;
+   const x=JSON.parse(value),y=JSON.parse(b.get(key));
+   if(x.grantor!==y.grantor)increment(transitions,roleClass(x.grantor)+'_to_'+roleClass(y.grantor));
+ }
+ return transitions;
+}
