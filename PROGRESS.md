@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Field-level private ACL parity diagnostic accepted in CI
+
+- [CI #45818430208](https://github.com/nora953/fawri-production-source/actions/runs/45818430208) on `07fbdee9132f894bdac1239e87a75de2840035a8` completed SUCCESS. The next operation is owner-private V5 using the same encrypted artifacts and pinned launcher; share only aggregate `G5_LOCAL_PARITY_FIELDS` and terminal markers. No private object names, raw ACLs, passwords or production URL requested. The actual V4 archive restore and restricted logins are already established; V5 is a targeted diagnostic of unresolved differences, not a new backup. Do not claim ACL parity or G5 closure until differences and tenant authorization are reviewed. No production changes, new expense or P0 closure; commercial NO-GO.
+
+
 ## 2026-11-26 — Actual private V4 archive restored with ACLs; parity differences remain
 
 - Owner screenshot (pinned `d79ddada`, 15:16 Baghdad) confirms source pins, both archives authenticated, fresh socket-only PG18 cluster, two inert provider placeholders, zero unresolved catalog roles, `G5_LOCAL_ARCHIVE_OWNER_ACL_RESTORED`, all three restricted logins, successful cleanup. Actual object comparison: all missing/extra counts zero; changed relations 7, routines 6, extensions 1; schemas, column ACLs, types, default ACLs, policies and database ACL unchanged. Portable global match true, role and membership semantic differences zero, four grantor differences; one external membership deliberately excluded. Final marker `G5_LOCAL_PARITY_REVIEW_REQUIRED`; actual exact parity and tenant authorization NOT accepted. This is evidence from owner terminal, not a connector execution. Do not repeat V4 unchanged, recapture credentials or re-export the backups.
