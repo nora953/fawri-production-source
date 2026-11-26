@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Inert Neon principal fixture accepted; actual private restore retry required
+
+- [CI #45806658514](https://github.com/nora953/fawri-production-source/actions/runs/45806658514) on `e00feb96812327e1b7ba57f45b7edc0713afae4a`: both jobs completed SUCCESS. Detached job `139863584851` logs confirm `G5_LOCAL_PROVIDER_NAME_ONLY_PLACEHOLDER_VERIFIED`, archive owner/ACL restore, exact synthetic object catalog comparison (zero missing/extra/changed entries in every reported category), portable role and membership match, three fresh restricted logins, and successful cleanup. The provider membership is deliberately excluded. This is synthetic acceptance only; the owner must use the pinned revised launcher on the same two private encrypted backups. Actual archive recovery, grantor/provider portability, tenant-scope proof, recurring backup and media recovery remain unaccepted. No new P0 closure, production change, expense or commercial GO.
+
+
 ## 2026-11-26 — Actual missing role identified; detached inert Neon principal correction
 
 - Owner private V2 screenshot (pinned `e2cee2d7`) confirms source pins, both archive authentication, fresh socket-only cluster, `G5_LOCAL_MISSING_ROLE_HINT neon_superuser`, disposable cleanup, and restore failure. This establishes the missing provider role name, not full ACL parity. No production access or mutation. Do not repeat the diagnostic-only run or re-export either backup.
