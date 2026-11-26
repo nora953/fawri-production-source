@@ -1,5 +1,9 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — G5 isolated ACL rehearsal approved; runtime unavailable (HELD)
+
+- [Updated handoff and confirmed auth caller](https://github.com/nora953/fawri-production-source/commit/76e4b326be4f554c6ce5bff6eec87656c7c872c0): owner approved isolated PG18 test only. Local PG18 binaries absent, package host unresolved, Neon connector project lookup unavailable before SQL. Confirmed cashier discount-kind mutation uses trusted auth after subscription guard; test separate from shared tenant/audited-admin predicate. Exact independent role/reader acceptance remains pending; use reachable detached synthetic PG18 runtime, no repeat of V7 or live catalog scan. No production connection/mutation, new resource, charge-incurring action initiated, CI, merge/deploy or new P0 closure. G5 BLOCKED; commercial NO-GO.
+
 ## 2026-11-26 — G5 live ACL and policy dependencies confirmed (HELD)
 
 - [Approved production catalog-only follow-up](https://github.com/nora953/fawri-production-source/commit/af5239d275b38c38f4870e5827b3bcc7e401c7aa): PG18.7 read-only identity guard passed, six exact routines have owner/PUBLIC EXECUTE only, all three application LOGINs plus cashier retirement NOLOGIN currently have effective EXECUTE; 138 policy dependency records (not distinct policies) for the tenant/audited-admin predicate; no other recorded reverse dependency or literal routine-body reference found. Dynamic/external callers not excluded. PUBLIC TEMPORARY remains untouched. Next: bounded detached synthetic PG18 ACL rehearsal, independently authenticated positive/negative probes before exact production approval; preserve reader preflight and existing privileges as proven necessary. No tenant rows read, no production ACL change, new resource or plan upgrade, merge/deploy, or new P0 closure. G5 BLOCKED; commercial NO-GO.
