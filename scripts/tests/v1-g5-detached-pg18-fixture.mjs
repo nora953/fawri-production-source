@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {localSession} from '../lib/v1-g5-restored-authorization.mjs';
+import {createHash} from 'node:crypto';
+import {localSession,proveRestoredAuthorization} from '../lib/v1-g5-restored-authorization.mjs';
 import {recoverLocal} from '../v1-g5-private-detached-recovery.mjs';
 import {buildAclSemanticReviewSql} from '../lib/v1-g5-detached-acl-recovery.mjs';
 const BIN='/usr/lib/postgresql/18/bin';
@@ -80,6 +81,29 @@ try{
  // passphrase is available in this workflow. The private CLI remains CI-denied.
  await recoverLocal({catalog:updatedCatalog,plain:archive});
  console.log('G5_SYNTHETIC_SOCKET_ONLY_ACL_REHEARSAL_PASS');
+
+ // Exercise the real canonical issuer and actual authentication/operator
+ // functions on a separate synthetic schema after the ACL rehearsal.
+ // These are minimal dependency tables, not proof of the complete migrations.
+ const source=(file,expected)=>{
+   const bytes=fs.readFileSync(fileURLToPath(new URL('../../lib/db/drizzle/'+file,import.meta.url)));
+   assert.equal(createHash('sha1').update('blob '+bytes.length+'\0').update(bytes).digest('hex'),expected);
+   return bytes.toString('utf8');
+ };
+ const owner={PGUSER:'fawri_owner',PGDATABASE:'fawri'};
+ const marker=source('0039_role_bound_authentication_runtime.sql','3275129afee9ba454ba1e69ea619f538a94e1c14').split('--> statement-breakpoint').slice(0,2).join('\n');
+ const operator=source('0038_role_bound_admin_directory_issuer.sql','1ab287e78d7c61e721860e8591fae1b40b8adf64').split('--> statement-breakpoint').slice(0,2).join('\n');
+ const issuer=source('0040_transaction_scoped_tenant_authority.sql','718330bb9b1ac592e0f2f835be2062c11f0dbffe');
+ psql("CREATE TABLE public.accounts(id text PRIMARY KEY,kind text,phone text UNIQUE,password_hash text,state text DEFAULT 'active'); CREATE TABLE public.merchants(id text PRIMARY KEY,account_id text REFERENCES public.accounts(id),owner_name text,store_name text,activity_type text); CREATE TABLE public.products(id text PRIMARY KEY,merchant_id text REFERENCES public.merchants(id),name text); CREATE TABLE public.admin_profiles(account_id text PRIMARY KEY REFERENCES public.accounts(id),role text,enabled boolean,must_change_password boolean); CREATE TABLE public.admin_permissions(admin_id text,permission text); CREATE TABLE public.database_admin_access_audits(id text PRIMARY KEY,admin_account_id text,reason_code text,request_hash text,expires_at timestamptz);",owner);
+ psql(marker+'\n'+operator+'\n'+issuer,owner);
+ psql("REVOKE ALL ON public.products FROM fawri_auth_issuer; GRANT SELECT ON public.merchants TO fawri_auth_issuer; GRANT SELECT ON public.products TO fawri_restricted_runtime; GRANT USAGE ON SCHEMA fawri_security TO fawri_restricted_runtime,fawri_auth_issuer; GRANT EXECUTE ON FUNCTION public.fawri_authentication_runtime() TO fawri_auth_issuer; GRANT EXECUTE ON FUNCTION public.fawri_issue_admin_directory_audit(text,text,text) TO fawri_operator_issuer; GRANT EXECUTE ON FUNCTION fawri_security.issue_scope(name,integer,bigint,text) TO fawri_auth_issuer; GRANT EXECUTE ON FUNCTION fawri_security.allows_merchant(text) TO fawri_restricted_runtime; ALTER TABLE public.products ENABLE ROW LEVEL SECURITY; ALTER TABLE public.products FORCE ROW LEVEL SECURITY; CREATE POLICY g5_product_scope ON public.products TO fawri_restricted_runtime USING (fawri_security.allows_merchant(merchant_id));",owner);
+ await proveRestoredAuthorization({
+   psql:(role,sql)=>psql(sql,{PGUSER:role,PGDATABASE:'fawri'}),
+   conn:role=>({...env,PGUSER:role,PGDATABASE:'fawri'}),
+   bin:path.join(BIN,'psql')
+ });
+ console.log('G5_SYNTHETIC_CANONICAL_ISSUER_FUNCTIONAL_PROOF_PASS');
+
 }finally{
  if(started){
   run('pg_ctl',['-D',data,'-m','immediate','-w','stop']);

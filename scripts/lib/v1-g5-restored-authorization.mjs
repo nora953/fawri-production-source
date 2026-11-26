@@ -57,7 +57,15 @@ export async function proveRestoredAuthorization({psql,conn,bin}){
   for(const [role,expected] of [[TENANT,'f|f|f|f|t|f'],[AUTH,'f|t|t|f|f|t'],[OP,'f|f|f|t|f|f']]){
     check(str(psql(role,capsSql,{stage:'G5_LOCAL_RESTORED_ROLE_CAPABILITIES'}))===expected,'G5_LOCAL_RESTORED_ROLE_CAPABILITIES_MISMATCH');
   }
+  check(str(psql(AUTH,"SELECT public.fawri_authentication_runtime();",{stage:'G5_LOCAL_AUTH_MARKER_CALL'}))==='t','G5_LOCAL_AUTH_MARKER_CALL');
+  // The operator must be denied when there is no active authorized admin.
+  // No actual administrator ID is ever selected or printed.
+  const absent='g5-absent-'+randomBytes(20).toString('hex');
+  const audit='g5-audit-'+randomBytes(20).toString('hex');
+  const denial="DO $ BEGIN PERFORM public.fawri_issue_admin_directory_audit("+q(absent)+","+q(audit)+",'"+'0'.repeat(64)+"'); RAISE EXCEPTION 'unexpected operator admission'; EXCEPTION WHEN insufficient_privilege THEN NULL; END $;";
+  psql(OP,denial,{stage:'G5_LOCAL_OPERATOR_UNKNOWN_ACTOR_DENIED'});
   console.log('G5_LOCAL_RESTORED_ROLE_CAPABILITIES_VERIFIED');
+  console.log('G5_LOCAL_AUTH_MARKER_AND_OPERATOR_UNKNOWN_ACTOR_DENIAL_VERIFIED');
   // Canonical issue_scope needs cross-backend xid visibility at its trusted
   // function owner. Do not recreate the hosted provider edge; only add
   // the already reviewed stats capability to the detached owner if needed.
@@ -87,6 +95,10 @@ export async function proveRestoredAuthorization({psql,conn,bin}){
       const [pid,xid]=identity.split('|');
       psql(AUTH,"SELECT fawri_security.issue_scope('fawri_restricted_runtime'::name,"+pid+"::integer,"+xid+"::bigint,"+q(merchant)+"::text);",{stage:'G5_LOCAL_AUTH_ISSUE_SCOPE'});
       check(await tenant.query(count)==='1','G5_LOCAL_SCOPED_PRODUCT_COUNT');
+      // Auth issuer must not rebind the live transaction to another merchant.
+      const other=merchant===a?b:a;
+      const rebind="DO $ BEGIN PERFORM fawri_security.issue_scope('fawri_restricted_runtime'::name,"+pid+"::integer,"+xid+"::bigint,"+q(other)+"::text); RAISE EXCEPTION 'unexpected scope rebind'; EXCEPTION WHEN insufficient_privilege THEN NULL; END $;";
+      psql(AUTH,rebind,{stage:'G5_LOCAL_SCOPE_REBIND_DENIED'});
       check(await tenant.query("SELECT count(*) FROM public.products WHERE id="+q(product)+";")==='1','G5_LOCAL_OWN_PRODUCT_NOT_VISIBLE');
       check(await tenant.query("SELECT count(*) FROM public.products WHERE id="+q(foreign)+";")==='0','G5_LOCAL_FOREIGN_PRODUCT_VISIBLE');
       check(await tenant.query("ROLLBACK; "+count)==='0','G5_LOCAL_SCOPE_SURVIVED_TRANSACTION');
