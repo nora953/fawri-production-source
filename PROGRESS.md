@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Owner private ACL capture and independent Drive authentication verified
+
+- Owner terminal screenshots show actual `G5_PRIVATE_ACL_CIPHERTEXT_LOCAL_ONLY`, followed by upload of the encrypted sidecar to owner-private Google Drive and independent browser download. The downloaded copy was verified using the separately recorded capture hash and private passphrase; actual terminal result: `G5_PRIVATE_ACL_AUTHENTICATED; ARCHIVE_ACL_PARITY_AND_RESTORE_NOT_ACCEPTED`. Evidence is owner-provided terminal/Drive screenshots, not a connector re-execution. The initial generic capture failure was superseded by successful diagnostic-bundle invocation; diagnostic bundle source provenance and exact change have not been independently accepted in GitHub. No secret, raw ACL or encrypted artifact is included here. Do not repeat capture or offsite authentication.
+- Next: private detached PG18 ACL-preserving restoration using the original independently verified database archive and authenticated ACL sidecar. Review source archive/sidecar temporal differences, recreate only reviewed application roles with fresh isolated credentials, exclude provider-specific external role edge, and test tenant/auth/operator authorization. No production connection or writes for recovery. G5 remains BLOCKED (actual ACL parity/recovery, media and recurring operation pending); no new parent P0 closure or commercial GO.
+
+
 ## 2026-11-26 — Owner-approved private G5 ACL capture prepared
 
 - The owner approved one read-only Neon catalog capture under the existing direct-owner, TLS and private-custody controls. The operator bundle `FAWRI-G5-Private-ACL.zip` SHA-256 is `fa62cf8783778a08e609dd97cc8f69cf2b9a8f3fe76d079d303fbba51000d78f`. It packages the already accepted capture CLI and SQL at their pinned Git blob hashes, with a local interactive launcher. The launcher checks those pins, prompts privately, enforces TLS verification, and supports verifying the independently retrieved encrypted copy. Mock capture and copied-ciphertext verification passed without any Neon connection. The live capture and independent verification still require the owner's trusted terminal and private credentials. G5 remains blocked pending actual recovery evidence.
