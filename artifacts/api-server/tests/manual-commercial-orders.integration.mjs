@@ -110,38 +110,38 @@ export async function proveManualCommercialOrders({ ownerPool, tenantUrl, authUr
     assert.equal(results[1].order.id, created.id);
     assert.equal(created.total_price, 3000);
     assert.equal(created.payment_status, "cash_on_delivery");
-    // Cross-origin browser requests must be rejected before any order/financial DML.
-    // CORS headers alone do not stop a state-changing HTTP request.
-    for (const [method, endpoint] of [
-      ["POST", "/api/orders"],
-      ["PATCH", `/api/orders/${created.id}/status`],
-      ["PATCH", `/api/orders/${created.id}/payment-status`],
-      ["POST", `/api/orders/${created.id}/payment/confirm`],
-      ["POST", `/api/orders/${created.id}/payment/reject`],
-      ["POST", `/api/orders/${created.id}/payment/conflict/resolve`],
+    // Enabled order mutations reject a foreign origin. Excluded provider
+    // endpoints stop at the manual V1 gate even for an allowed origin.
+    for (const [method, endpoint, providerExcluded] of [
+      ["POST", "/api/orders", false],
+      ["PATCH", `/api/orders/${created.id}/status`, false],
+      ["PATCH", `/api/orders/${created.id}/payment-status`, true],
+      ["POST", `/api/orders/${created.id}/payment/confirm`, true],
+      ["POST", `/api/orders/${created.id}/payment/reject`, true],
+      ["POST", `/api/orders/${created.id}/payment/conflict/resolve`, true],
     ]) {
-      const response = await fetch(base + endpoint, {
-        method,
-        headers: {
-          Cookie: session,
-          Origin: "https://foreign-merchant.example.test",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...order,
-          idempotency_key: "cross-origin-rejected",
-          expected_version: created.version,
-          status: "cancelled",
-          payment_status: "paid",
-          reason: "synthetic",
-          resolution_note: "synthetic",
-        }),
-        signal: AbortSignal.timeout(15000),
-      });
-      const denied = await response.json();
-      assert.equal(response.status, 403, `${method} ${endpoint}: cross-origin request must be forbidden`);
-      assert.equal(denied.code, "AUTH_ORIGIN_FORBIDDEN",
-        `${method} ${endpoint}: cross-origin request must fail at origin middleware`);
+      const origins = ["https://foreign-merchant.example.test"];
+      if (providerExcluded) origins.push("https://fawri.example.test");
+      for (const origin of origins) {
+        const response = await fetch(base + endpoint, {
+          method,
+          headers: { Cookie: session, Origin: origin, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...order,
+            idempotency_key: "cross-origin-rejected",
+            expected_version: created.version,
+            status: "cancelled",
+            payment_status: "paid",
+            reason: "synthetic",
+            resolution_note: "synthetic",
+          }),
+          signal: AbortSignal.timeout(15000),
+        });
+        const denied = await response.json();
+        assert.equal(response.status, 403, `${method} ${endpoint} from ${origin} must be forbidden`);
+        assert.equal(denied.code, providerExcluded ? "FAWRI_V1_PROVIDER_NOT_OFFERED" : "AUTH_ORIGIN_FORBIDDEN",
+          `${method} ${endpoint} from ${origin} must stop at the expected gate`);
+      }
     }
     const preserved = await request(`/api/order/${created.id}`, session, 200);
     assert.equal(preserved.order.version, created.version,
