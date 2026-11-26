@@ -1,5 +1,24 @@
 # FAWRI V1 G5 — one-time Render catalog-media offsite acceptance handoff
 
+## 2026-11-27 — Full 54-stage detached ACL/application proof reviewed; coordinated hosted change HELD
+
+Reviewed exact PR #550 head `60a93698470b4827d5f0f6229e5389f997237561`, its diff and current PROGRESS checkpoint. The recorded isolated PG18.6 execution includes focused unit 1/1, API typecheck, all 54 pinned entries plus V1 grants/patches, exact candidate catalog readiness, rejection of old PUBLIC and an extra tenant EXECUTE, mounted actual application manual orders with two independent merchant sessions and audited administrator activation, POS/provider denial, retention SQL zero-stream success and preserved retired stream denial, unchanged backup-reader preflight and actual denied UPDATE. Test changes correct expected provider-gate ordering, not production middleware. Evidence is recorded local execution, not independently repeated CI or hosted proof. The mounted HTTP test is in test mode; production prelistener boot, actual provider identity and explicit catalog-product HTTP read coverage are not inferred. Retention is direct trusted-auth SQL, not a full HTTP deletion proof. Keep earlier accepted evidence; do not rerun unchanged suites.
+
+### Next scoped owner decision: coordinated production preflight
+
+Request one fresh read-only catalog/configuration preflight on the existing Neon production project crimson-cherry-65705041 / branch br-holy-waterfall-b993zglb / fawri PG18 and existing Render service srv-dbv0kvm8bjmc73av6fm0. No merchant rows, secrets, exports, role changes, deployment, new resource, paid usage or removal of maintenance. Confirm exact direct endpoint and owner identity, server version, full six signatures/definitions and direct ACL grantor/option preimage, current effective application grants and memberships, existing reader absence, maintenance ON and auto-deploy OFF, exact deployed image SHA and deploy/rollback availability. Confirm cost ceiling before any action that could wake hosted compute; stop on mismatch or unavailable authority. This is a new targeted drift check for a proposed production mutation, not a repeat of the old inventory test.
+
+### Coordinated rollout decision (separate subsequent approval; NOT executable from this note)
+
+- Pin tested source candidate and build/deploy target; review intervening source changes from currently deployed SHA, CI evidence and existing recovery archive/custody. If current recovery checkpoint is stale or mismatched, obtain scoped approval for a fresh recoverable encrypted checkpoint. No automatic merge into main.
+- With maintenance ON and no user traffic, verify the exact preimage and freeze conflicting deploys/ACL changes. A reviewed bounded owner transaction grants the shared predicate to the three named roles and settings routines to auth only, revokes PUBLIC EXECUTE from the exact six, compares direct/effective ACLs and non-target invariants before commit. Abort on any drift; do not touch table ACLs, history, TEMPORARY, defaults or role memberships. No reader provisioning yet.
+- Deploy only the approved pinned application candidate in the same maintenance window; verify actual production prelistener startup, Render health and /readyz, independent restricted identities and no POS reactivation. Do not open registration or test real merchant data without explicit scoped authority. The two versions are not mutually compatible with both ACL states; never treat this as an independent SQL-only rollout.
+- If the coordinated change fails, keep maintenance ON, stop progression, restore the captured exact six ACLs (only if no reader can execute them) and restore the pinned previous app image under the approved rollback scope, then verify previous readiness. Do not restore an entire database for an ACL-only failure or overwrite financial rows.
+- Only after hosted readiness acceptance, separately approve the dedicated reader, encrypted recurring offsite backup and independent recovery. Actual Render image recovery still depends on separately authorized legitimate merchant/image flow. No fabricated live data, no public transfer endpoint or production secrets in GitHub.
+
+No hosted action performed in this review. No new P0 closure. G5 BLOCKED; commercial NO-GO.
+ 
+
 ## 2026-11-27 — Six-routine rehearsal evidence reviewed; V1 application boundary source review (HELD)
 
 Reviewed the recorded PG18.6 result and reproducible test at `544d353eefd783e07964f030692106af43023392`. Accept its bounded synthetic SQL/ACL result; do not repeat unchanged. Source review at this exact head:
