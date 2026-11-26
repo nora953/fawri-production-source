@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Recurring production reader admission prepared (HELD)
+
+- [Updated existing G5 handoff](https://github.com/nora953/fawri-production-source/commit/aa6b07e2dfe222db8dee1de5ea5fdb16288cbdd9) supersedes the pending synthetic drill and specifies the next narrowly scoped production catalog-only inventory, subsequent exact-role approval, existing accepted encrypted exporter/restore, independent private custody, runner/quotas and monitoring. Existing CI is PR fixture-only; no schedule is enabled. Export manifest source_commit is null (record exact checkout independently); recurring restore suppresses ownership/ACLs and does not prove full ACL/media recovery. No repeat of accepted V7/fixture CI. Next owner decision: one production catalog-only inventory, no tenant rows, no role mutation or extra expense; subsequent role/export/schedule require separate approval. Real merchant media remains dependent on G3/G4. No production access/change, new cost, deployment or new P0 closure. G5 BLOCKED, commercial NO-GO.
+
+
 ## 2026-11-26 — Hosted restricted recurring reader capability ACCEPTED on existing synthetic Neon child
 
 - Owner's billing screenshot confirms the organization Free Plan ($0/month; 100 included compute hours, 1 GB storage, 10 branches). Project consumption readback for November returned 167108 compute seconds before the drill, within the stated included allowance; no upgrade/new branch/new endpoint. Used only authorized existing child `br-rough-boat-b947xiir`, direct compute `ep-steep-star-b97qa95j`, database fawri. Owner SQL verified PG18.7, BYPASSRLS and CREATEROLE, exactly one pre-existing synthetic relation, no recurring reader and no new drill schema before mutation.
