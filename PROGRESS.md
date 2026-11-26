@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Actual V6 direct ACL semantics verified on restored private archive
+
+- Owner WSL terminal screenshot at 15:50 Baghdad, pinned `4623500d`, confirms authenticated encrypted pair, fresh socket-only PG18, two inert provider principals, zero unresolved roles, archive owner/ACL restoration, three restricted logins and disposable cleanup. Actual `G5_LOCAL_ACL_SEMANTIC_REVIEW`: delta=[], relations examined 7/same_direct_privileges 7/different 0, routines examined 6/same_direct_privileges 6/different 0; unresolved objects, extension membership and extension initial ACL counts all zero in both categories. This proves direct privilege and grant-option equivalence for the 13 explicit-to-NULL transitions, not inherited access or grantor identity. Do not repeat unchanged V6 or re-export.
+- Raw comparison remains exact=false: one extension owner provider-to-bootstrap, four membership grantors provider-to-bootstrap, one provider membership deliberately excluded. All catalog missing/extra counts zero; application role/edge semantic comparison passes. Final marker `G5_LOCAL_PARITY_REVIEW_REQUIRED` is retained. Next review narrowly scoped provider portability and test real tenant/auth/operator behavior in the detached recovered database. No production change, deploy, new expense or P0 closure. G5 BLOCKED; commercial NO-GO. Media and recurring operation remain pending.
+
+
 ## 2026-11-26 — PostgreSQL direct ACL semantic review accepted on synthetic fixture
 
 - [CI #45821458635](https://github.com/nora953/fawri-production-source/actions/runs/45821458635) at `4623500da4c4a158348824b79c26c5cfa4f256e0` completed SUCCESS. Both targeted jobs passed. Next owner-private V6 uses the same encrypted backup pair and pinned launcher, reports only `G5_LOCAL_ACL_SEMANTIC_REVIEW` and terminal markers. Actual V5 field evidence is already recorded; no re-export or unchanged diagnostic retry. Direct privilege comparison is not proof of inherited rights or tenant authorization; exact ACL parity still unaccepted. No production access/change, expense, new P0 closure or GO. G5 remains BLOCKED.
