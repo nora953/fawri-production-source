@@ -51,7 +51,9 @@ export function localSession({bin,env}){
 export async function proveRestoredAuthorization({psql,conn,bin}){
   // Explicit guard: only the freshly created socket-only recovery server.
   check(str(psql(ADMIN,"SELECT current_user='g5_detached_bootstrap' AND current_database()='fawri' AND inet_server_addr() IS NULL AND current_setting('listen_addresses')='';",{stage:'G5_LOCAL_PROOF_GUARD'}))==='t','G5_LOCAL_PROOF_GUARD');
-  const capsSql="SELECT has_schema_privilege(session_user,'public','CREATE'),has_function_privilege(session_user,'public.fawri_authentication_runtime()','EXECUTE'),has_function_privilege(session_user,(SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='fawri_security' AND p.proname='issue_scope' AND pg_get_function_identity_arguments(p.oid) IS NOT NULL LIMIT 1),'EXECUTE'),has_function_privilege(session_user,'public.fawri_issue_admin_directory_audit(text,text,text)','EXECUTE'),has_table_privilege(session_user,'public.products','SELECT'),has_table_privilege(session_user,'public.merchants','SELECT');";
+  const scopeOid=str(psql(ADMIN,"SELECT 'fawri_security.issue_scope(name,integer,bigint,text)'::regprocedure::oid;",{stage:'G5_LOCAL_SCOPE_OID'}));
+  check(/^\d+$/.test(scopeOid),'G5_LOCAL_SCOPE_OID');
+  const capsSql="SELECT has_schema_privilege(session_user,'public','CREATE'),has_function_privilege(session_user,'public.fawri_authentication_runtime()','EXECUTE'),has_function_privilege(session_user,"+scopeOid+"::oid,'EXECUTE'),has_function_privilege(session_user,'public.fawri_issue_admin_directory_audit(text,text,text)','EXECUTE'),has_table_privilege(session_user,'public.products','SELECT'),has_table_privilege(session_user,'public.merchants','SELECT');";
   for(const [role,expected] of [[TENANT,'f|f|f|f|t|f'],[AUTH,'f|t|t|f|f|t'],[OP,'f|f|f|t|f|f']]){
     check(str(psql(role,capsSql,{stage:'G5_LOCAL_RESTORED_ROLE_CAPABILITIES'}))===expected,'G5_LOCAL_RESTORED_ROLE_CAPABILITIES_MISMATCH');
   }

@@ -4,10 +4,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
+import {localSession} from '../lib/v1-g5-restored-authorization.mjs';
 import {recoverLocal} from '../v1-g5-private-detached-recovery.mjs';
 import {buildAclSemanticReviewSql} from '../lib/v1-g5-detached-acl-recovery.mjs';
 const BIN='/usr/lib/postgresql/18/bin';
-const root=fs.mkdtempSync('/tmp/fawri-acl-fixture-');
+const root=fs.mkdtempSync('/tmp/fawri-acl-recovery-fixture-');
 const data=path.join(root,'data'),socket=path.join(root,'s'),admin='g5_detached_bootstrap';
 const env={PATH:'/usr/bin:/bin',LANG:'C.UTF-8',HOME:root,PGHOST:socket,PGPORT:'5432',PGUSER:admin,PGDATABASE:'postgres'};
 const run=(cmd,args,input,extra={})=>{
@@ -65,6 +66,15 @@ try{
  assert.ok(semantics.delta.some(x=>x.role_class==='public'&&x.difference==='extra_privilege'));
  psql("DROP FUNCTION public.g5_acl_fixture();",{PGDATABASE:'fawri',PGUSER:'fawri_owner'});
  console.log('G5_SYNTHETIC_ACL_DEFAULT_SEMANTICS_PASS');
+ const session=localSession({bin:path.join(BIN,'psql'),env:{...env,PGUSER:'fawri_restricted_runtime',PGDATABASE:'fawri'}});
+ try{
+   assert.equal(await session.query("SELECT current_user=session_user AND current_user='fawri_restricted_runtime';"),'t');
+   const identity=await session.query("BEGIN; SELECT pg_backend_pid()::text||'|'||txid_current()::text;");
+   assert.match(identity,/^\d+\|\d+$/);
+   assert.equal(await session.query("SELECT count(id) FROM public.fixture_0;"),'0');
+   assert.equal(await session.query("ROLLBACK; SELECT 1;"),'1');
+ }finally{await session.close();}
+ console.log('G5_SYNTHETIC_PERSISTENT_RESTRICTED_SESSION_PASS');
  const archive=run('pg_dump',['-Fc','--dbname=fawri']);
  // Source and target are distinct local clusters. No production endpoint or
  // passphrase is available in this workflow. The private CLI remains CI-denied.

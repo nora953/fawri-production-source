@@ -1,5 +1,7 @@
 # فوري — خطة الإطلاق الأولى الوحيدة المعتمدة | FAWRI First Commercial Launch
 
+> **2026-11-26 — G5 actual private archive ACL restore and 13 direct ACL transitions verified:** Owner-run detached PG18 restored the actual archive with owners/ACLs and three independent restricted logins. All 13 explicit-to-NULL ACL transitions have identical direct privileges/grant options, zero missing/extra objects. One provider extension owner and four membership grantors differ; external provider membership intentionally excluded. Functional restored tenant/auth/operator authorization, inherited/provider portability, recurring backup and real media recovery remain unaccepted. No new parent P0 closure; commercial NO-GO. [Latest evidence](PROGRESS.md).
+
 > **2026-11-25 — G5 independent offsite database catalog restoration ACCEPTED:** Owner-run private V2 restored the original 671,797-byte encrypted Google Drive ZIP into an isolated PG18 database. Archive integrity and authenticated decryption passed, `RESTORE_ARCHIVE: OK`, `G5_OFFSITE_ISOLATED_PG18_CATALOG_VERIFIED`, `G5_PRODUCTION_CONNECTION_NONE`. Supersedes the earlier failed notebook and the historical pending independent DB restore statements below. `ACL_AND_MEDIA_RECOVERY_NOT_ACCEPTED`; runtime deletion requested, not confirmed. Full ACL/role recovery, Render media restore, recurring backup acceptance and G4 two-merchant/provider evidence remain outstanding. G5/P0-HOSTED-RECOVERY remains BLOCKED; no new P0 closure or commercial GO. [Evidence](PROGRESS.md).
 
 

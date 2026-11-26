@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Restored role and two-tenant functional proof prepared (source only)
+
+- [Source `a3ccc806`](https://github.com/nora953/fawri-production-source/commit/a3ccc8069b12f1e859a32d1bb30651b04cc50525) adds an owner-private restored authorization probe using separate authenticated tenant/auth/operator connections. Checks bounded role capabilities against the existing canonical three-role source, inserts two synthetic accounts/merchants/products only into the new detached cluster, uses the actual restored scope issuer and checks own/foreign/no-scope product visibility and transaction scope expiry. The sole optional local substitute is `pg_read_all_stats` on the trusted owner, after checking the exact SECURITY DEFINER issuer owner; no runtime membership or provider role edge is granted. This is an explicit detached portability difference, not hosted proof or exact ACL parity. Follow-up pins exact issue_scope OID and exercises persistent restricted session transport on synthetic fixture. Full private restored behavior is not yet run, operator scope is capability-only in this probe, extension-owner and grantor differences remain documented. CI pending; owner handoff held. No new P0 closure, production connection/change, deploy or cost. G5 BLOCKED, NO-GO.
+
+
 ## 2026-11-26 — Actual V6 direct ACL semantics verified on restored private archive
 
 - Owner WSL terminal screenshot at 15:50 Baghdad, pinned `4623500d`, confirms authenticated encrypted pair, fresh socket-only PG18, two inert provider principals, zero unresolved roles, archive owner/ACL restoration, three restricted logins and disposable cleanup. Actual `G5_LOCAL_ACL_SEMANTIC_REVIEW`: delta=[], relations examined 7/same_direct_privileges 7/different 0, routines examined 6/same_direct_privileges 6/different 0; unresolved objects, extension membership and extension initial ACL counts all zero in both categories. This proves direct privilege and grant-option equivalence for the 13 explicit-to-NULL transitions, not inherited access or grantor identity. Do not repeat unchanged V6 or re-export.
