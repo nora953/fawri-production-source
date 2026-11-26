@@ -4,6 +4,7 @@ on:
     paths:
       - 'scripts/lib/v1-g5-detached-acl-recovery.mjs'
       - 'scripts/v1-g5-private-detached-recovery.mjs'
+      - 'scripts/lib/v1-g5-restored-authorization.mjs'
       - 'scripts/tests/v1-g5-private-detached-recovery.test.mjs'
       - 'scripts/tests/v1-g5-detached-pg18-fixture.mjs'
       - 'scripts/tests/v1-g5-detached-acl-recovery.test.mjs'
@@ -21,6 +22,7 @@ jobs:
           node-version: '22'
       - run: node --check scripts/lib/v1-g5-detached-acl-recovery.mjs
       - run: node --check scripts/v1-g5-private-detached-recovery.mjs
+      - run: node --check scripts/lib/v1-g5-restored-authorization.mjs
       - run: node --test scripts/tests/v1-g5-private-detached-recovery.test.mjs
       - run: node --test scripts/tests/v1-g5-detached-acl-recovery.test.mjs
   detached-pg18-fixture:

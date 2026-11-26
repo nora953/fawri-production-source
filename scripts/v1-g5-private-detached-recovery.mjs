@@ -7,6 +7,7 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {createHash,randomBytes} from 'node:crypto';
 import {fileURLToPath,pathToFileURL} from 'node:url';
+import {proveRestoredAuthorization} from './lib/v1-g5-restored-authorization.mjs';
 import {openCatalog} from './v1-g5-private-acl-capture.mjs';
 import {verifyOffsiteArchive} from './v1-postg4-offsite-restore.mjs';
 import {buildDetachedRoleSql,compareObjectCatalogs,compareDetachedGlobals,canonicalAcl,describeObjectDifferences,describeGrantorDifferences,buildAclSemanticReviewSql} from './lib/v1-g5-detached-acl-recovery.mjs';
@@ -134,7 +135,7 @@ export function unresolvedCatalogRoleCount(c,existing){
 }
 
 function phase(msg){console.log(msg);}
-export function recoverLocal({catalog,plain}){
+export async function recoverLocal({catalog,plain,verifyAuthorization=false}){
   check(process.platform==='linux'&&typeof process.getuid==='function'&&process.getuid()!==0,'G5_LOCAL_NONROOT_LINUX_REQUIRED');
   const sql=fs.readFileSync(captureSql);
   check(sha(Buffer.concat([Buffer.from('blob '+sql.length+'\0'),sql]),'sha1')===SQL_BLOB,'G5_LOCAL_CAPTURE_SQL_PIN');
@@ -205,6 +206,10 @@ export function recoverLocal({catalog,plain}){
       check(q.toString().trim()==='t','G5_LOCAL_RUNTIME_LOGIN_ATTRIBUTES');
     }
     phase('G5_LOCAL_THREE_RESTRICTED_LOGINS_VERIFIED');
+    if(verifyAuthorization){
+      check(globals.portableMatch,'G5_LOCAL_GLOBALS_BEFORE_AUTHORIZATION');
+      await proveRestoredAuthorization({psql,conn,bin:path.join(BIN,'psql')});
+    }
     check(objects.exact&&globals.portableMatch,'G5_LOCAL_PARITY_REVIEW_REQUIRED');
     phase('G5_LOCAL_OBJECT_ACL_EXACT_AND_PORTABLE_GLOBALS_MATCH; GRANTOR_REVIEW_AND_TENANT_SCOPE_PROOF_PENDING');
   }finally{
@@ -220,15 +225,15 @@ export function recoverLocal({catalog,plain}){
     phase('G5_LOCAL_DISPOSABLE_CLEANUP_COMPLETE');
   }
 }
-function main(){
+async function main(){
   const [zip,acl,...extra]=process.argv.slice(2);
   check(zip&&acl&&extra.length===0,'G5_LOCAL_EXPECTS_TWO_ENCRYPTED_FILES');
   const pair=loadPrivatePair(zip,acl,process.env);
-  try{phase('G5_LOCAL_BOTH_ARCHIVES_AUTHENTICATED');recoverLocal(pair);}
+  try{phase('G5_LOCAL_BOTH_ARCHIVES_AUTHENTICATED');await recoverLocal({...pair,verifyAuthorization:true});}
   finally{pair.plain.fill(0);}
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
-  try{main();}
+  try{await main();}
   catch(e){
     const m=typeof e?.message==='string'&&/^G5_LOCAL_[A-Z0-9_]+$/.test(e.message)?e.message:'G5_LOCAL_PRIVATE_RECOVERY_REFUSED';
     console.error(m);process.exitCode=1;

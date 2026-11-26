@@ -68,7 +68,7 @@ try{
  const archive=run('pg_dump',['-Fc','--dbname=fawri']);
  // Source and target are distinct local clusters. No production endpoint or
  // passphrase is available in this workflow. The private CLI remains CI-denied.
- recoverLocal({catalog:updatedCatalog,plain:archive});
+ await recoverLocal({catalog:updatedCatalog,plain:archive});
  console.log('G5_SYNTHETIC_SOCKET_ONLY_ACL_REHEARSAL_PASS');
 }finally{
  if(started){

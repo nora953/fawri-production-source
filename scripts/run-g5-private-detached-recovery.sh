@@ -18,7 +18,8 @@ node --input-type=module - <<'JS'
 import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 const files={
-  'scripts/v1-g5-private-detached-recovery.mjs':'436a471c8da969b8b50d02666be3ef5f10b6e04f',
+  'scripts/lib/v1-g5-restored-authorization.mjs':'8d60abca0c8361bf1ce371587d129c4ca6bdd245',
+  'scripts/v1-g5-private-detached-recovery.mjs':'83b58908d8163ad70fed036f2e70084be47f0657',
   'scripts/lib/v1-g5-detached-acl-recovery.mjs':'7635cce1acb59f03dd7a6215a0086733fce12896',
   'scripts/v1-g5-private-acl-capture.mjs':'37cae2122b3b9c06a0b6cc9995b5c6c989e0a158',
   'scripts/v1-postg4-offsite-restore.mjs':'5a4d47b6b367a09a3d1247fd09bc8000008c77ce',
