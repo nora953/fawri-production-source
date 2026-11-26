@@ -128,9 +128,18 @@ export function recoverLocal({catalog,plain}){
     check(guard.toString().trim()==='t','G5_LOCAL_SOCKET_GUARD');
     phase('G5_LOCAL_NEW_PG18_SOCKET_ONLY');
     psql(ADMIN,roles.sql,{db:'postgres',stage:'G5_LOCAL_RECREATE_GLOBALS'});
+    // Exact provider role observed missing in the actual private archive.
+    // A name-only inert principal preserves archive object ACL references;
+    // never reproduce Neon role attributes or grant its membership to anyone.
+    psql(ADMIN,'CREATE ROLE neon_superuser NOLOGIN NOINHERIT NOSUPERUSER NOCREATEROLE NOCREATEDB NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 0;', {db:'postgres',stage:'G5_LOCAL_PROVIDER_PLACEHOLDER_CREATE'});
+    const providerGuardSql="SELECT NOT rolcanlogin AND NOT rolsuper AND NOT rolinherit AND NOT rolcreaterole AND NOT rolcreatedb AND NOT rolreplication AND NOT rolbypassrls AND rolconnlimit=0 AND NOT EXISTS (SELECT 1 FROM pg_auth_members WHERE roleid=r.oid OR member=r.oid) FROM pg_roles r WHERE rolname='neon_superuser';";
+    const providerCheck=()=>check(psql(ADMIN,providerGuardSql,{db:'postgres',stage:'G5_LOCAL_PROVIDER_PLACEHOLDER_GUARD'}).toString().trim()==='t','G5_LOCAL_PROVIDER_PLACEHOLDER_GUARD');
+    providerCheck();
+    phase('G5_LOCAL_PROVIDER_NAME_ONLY_PLACEHOLDER_VERIFIED');
     fs.writeFileSync(archive,plain,{flag:'wx',mode:0o600});plain.fill(0);
     pg('pg_restore',['-w','--create','--exit-on-error','--dbname=postgres',archive],
       {env:conn(ADMIN,'postgres'),timeout:180000,stage:'G5_LOCAL_ARCHIVE_RESTORE'});
+    providerCheck();
     fs.unlinkSync(archive);
     phase('G5_LOCAL_ARCHIVE_OWNER_ACL_RESTORED');
     const raw=psql(OWNER,sql,{stage:'G5_LOCAL_TARGET_CATALOG',variables:['-v','g5_capture_approved=1']});
