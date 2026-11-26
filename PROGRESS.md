@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Actual missing role identified; detached inert Neon principal correction
+
+- Owner private V2 screenshot (pinned `e2cee2d7`) confirms source pins, both archive authentication, fresh socket-only cluster, `G5_LOCAL_MISSING_ROLE_HINT neon_superuser`, disposable cleanup, and restore failure. This establishes the missing provider role name, not full ACL parity. No production access or mutation. Do not repeat the diagnostic-only run or re-export either backup.
+- [Correction `e00feb96`](https://github.com/nora953/fawri-production-source/commit/e00feb96812327e1b7ba57f45b7edc0713afae4a) creates exactly one inert name-only `neon_superuser` principal exclusively in the newly initialized detached cluster, NOLOGIN/NOINHERIT/NOSUPERUSER/NOCREATEROLE/NOCREATEDB/NOREPLICATION/NOBYPASSRLS, zero connection limit, and verifies no incoming or outgoing memberships both before and after archive restore. It never reproduces the provider's role membership or attributes; archived object ACL references remain subject to exact comparison. The synthetic fixture now specifically includes a provider membership on the source and database/table ACL references, not merely the generic earlier case. Launcher pin updated. Focused CI: not yet returned. The real archive still needs re-execution after fixture acceptance, and further provider/ownership/authorization differences may remain. G5 BLOCKED; no new parent P0 closure, production change, cost or GO.
+
+
 ## 2026-11-26 — Missing-role diagnostic CI accepted; owner-private diagnostic handoff
 
 - [CI #45804016422](https://github.com/nora953/fawri-production-source/actions/runs/45804016422) at `e2cee2d75e718fa9b054147c15beba8048417e4f` now reports both jobs completed SUCCESS. The narrow diagnostic and detached synthetic fixture passed. Next use the pinned revised launcher against the same two independently authenticated encrypted artifacts in private WSL; only the allowlisted `G5_LOCAL_MISSING_ROLE_HINT` and terminal status may be shared, not raw SQL or credentials. No known missing role identity yet, no actual ACL restoration accepted, no new P0 closure, production change or expense; G5 BLOCKED and commercial NO-GO.
