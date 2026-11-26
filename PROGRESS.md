@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Recurring-reader provisioning documentation verified in parallel (no hosted change)
+
+- [Neon roles documentation, updated 2026-11-19](https://github.com/neondatabase/website/blob/main/content/docs/manage/roles.md) confirms SQL-created roles do not receive automatic neon_superuser membership, and the CLI now offers database-scoped read_only/read_write modes. Neither mode documents the direct BYPASSRLS attribute required by FAWRI's unchanged recurring reader preflight. [PG18 CREATE ROLE](https://www.postgresql.org/docs/18/sql-createrole.html) requires the executing role itself to possess BYPASSRLS or be a superuser to specify BYPASSRLS; role attributes are non-inheritable. Thus SQL provisioning is the candidate, not a proven hosted capability. Verify actual owner attributes and provider acceptance only on an explicitly approved disposable non-production target, not production; do not use the ordinary admin role, weaken preflight, or assume CLI read_only covers FORCE RLS tables. No credentials/roles/branches/schedules created, no cost.
+- [Targeted restored-authorization CI #45864629309](https://github.com/nora953/fawri-production-source/actions/runs/45864629309): reviewed-acl-plan SUCCESS, detached-pg18-fixture IN_PROGRESS at readback. Owner handoff remains held pending functional fixture result. No new P0 closure, G5 BLOCKED and commercial NO-GO.
+
+
 ## 2026-11-26 — Canonical scope issuer functional fixture added before private handoff
 
 - The previous detached fixture exercised session transport, not the entire newly prepared authorization probe. Added the exact pinned 0040 issuer/predicate migration plus initial auth marker (0039) and operator issuer (0038) definitions against minimal synthetic dependencies in the disposable fixture. The full probe now checks own/foreign/unscoped products for two synthetic merchants, denies rebinding a live transaction, verifies authentication marker invocation and denies an unknown operator actor. This is targeted mechanism proof, not full restored-schema or hosted acceptance. Original real migration CI not rerun unchanged. No private owner operation requested before focused CI succeeds. The new runner retains exact parity refusal and no production access, changes, deploy, cost or P0 closure. G5 BLOCKED; commercial NO-GO.
