@@ -1,5 +1,13 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-26 — Operational readback on the active Render release
+
+- Render reports deploy [dep-dc2ujkjl550s73c98cf0](https://dashboard.render.com/web/srv-dbv0kvm8bjmc73av6fm0/deploys/dep-dc2ujkjl550s73c98cf0) LIVE at `9efbe2326eda7aef12260dce245824ebe0f0dacd`, auto-deploy OFF and edge maintenance OFF. Read-only GETs initiated from the running Shell returned loopback `/readyz=200`, public HTTPS `/=200`, and `503` for `/signup`, `/login`, `/admin`, `/dashboard` and `/api/orders`. The application gate is active while the informational page remains available.
+- Shell-visible configuration reported deployment mode `production`, a present Google server client ID, OIDC HTTP readiness and merchant admission flags both `0`, and the phone-claim flag unset. No client ID or credential values were printed. This resolves uncertainty about the runtime deployment mode and confirms Google admission is disabled at this checkpoint. Provider publication and hosted merchant sign-in acceptance remain open.
+- The running container has the media archive CLI, while the expected catalog-media directory is absent. The application creates it on first product-image upload. G3 remains PARTIAL, and G5 media recovery needs the authorized first real image and detached restore. The already accepted standalone database catalog restore was not rerun.
+- Verified no Render cron in this workspace and no schedule in the project's recurring-backup fixture workflow. The [G5 recovery handoff](docs/final-audit/evidence/P0-V1-G5-RENDER-MEDIA-OFFSITE-HANDOFF-20261122.md) records the private ACL capture procedure, the archive restoration distinction and the remaining restricted reader requirement. Owner-private ACL capture and actual access-control recovery are pending independently of Meta and payments. G4 OPEN, G5 BLOCKED, no new parent P0 closure and commercial NO-GO. No production configuration changes, production database access, restart, deploy, provider action or privilege changes.
+
+
 ## 2026-11-26 — Render Web Shell read-only access verified
 
 - The existing authenticated Render session opened Web Shell for `fawri-v1-commercial-gated-k9yj`. The live command returned `/app` from `pwd`, `directory /var/data` from `stat` and `/var/data ext4` from `findmnt --mountpoint /var/data`. This resolves the Shell-access dependency. The command read mount metadata only. No catalog media or credentials were read, and nothing was written, exported, restarted or deployed.
