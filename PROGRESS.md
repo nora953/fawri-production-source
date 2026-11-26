@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-27 — G5 full-schema test evidence reviewed; coordinated hosted preflight awaiting approval
+
+- Reviewed the exact detached full 54-stage result at `60a93698470b4827d5f0f6229e5389f997237561`, confirmed tested V1 source unchanged by fixture correction, and [recorded the coordinated rollout/rollback decision boundary](https://github.com/nora953/fawri-production-source/commit/bd741488ad9f6a72eb0f5ca64e8642a8da7290e0). Accept bounded recorded local SQL, readiness, manual HTTP and reader/retention evidence without repeating it. Production prelistener boot, provider authentication, explicit product HTTP coverage and full HTTP deletion are not inferred.
+- Next request narrowly scoped owner approval for fresh **read-only** Neon ACL/role/identity drift and Render maintenance/deployed-SHA/configuration verification, no merchant rows, secrets, exports, extra cost, deploy or mutations. Separate subsequent authorization needed for exact six-routine ACL transaction and coordinated maintenance-on application deployment/rollback. Reader creation, recurring backup schedule/offsite recovery and real media recovery remain separate. No hosted action, CI, merge, deploy, new expense or new P0 closure in this review. G5 BLOCKED; commercial NO-GO.
+
+
 ## 2026-11-27 — G5 manual V1 readiness and retention/reader pass on all 54 disposable PG18 stages
 
 - Checked out PR #550 at `2bb4e73113dcedc2def6b6f3f4355a7801c8acae`. With the pinned pnpm version and frozen dependencies for the API/database workspace, the new readiness unit regression passed (1/1) and API TypeScript typecheck passed. A fresh, loopback-only PostgreSQL 18.6 cluster with SCRAM logins applied all 54 pinned migration entries plus the selected V1 grants and held patches. Legacy PUBLIC and an unexpected tenant EXECUTE grant were rejected; the exact six-function ACL passed both production RLS and POS-off readiness assertions.
