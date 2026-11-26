@@ -1,5 +1,36 @@
 # FAWRI V1 G5 — one-time Render catalog-media offsite acceptance handoff
 
+## 2026-11-26 — Live media-export prerequisite and remaining private recovery steps
+
+The active [Render deployment](https://dashboard.render.com/web/srv-dbv0kvm8bjmc73av6fm0/deploys/dep-dc2ujkjl550s73c98cf0) uses Git commit `9efbe2326eda7aef12260dce245824ebe0f0dacd`. A read-only check from its Shell established that the packaged archive CLI exists and its expected `/var/data/fawri/catalog-media` path is absent. The app creates this path on first product-image upload. This supersedes the inconclusive Shell screenshot and resolves the live CLI availability question. No directory creation, media export or test upload was performed. To prove media recovery, first obtain authorized merchant image data and then execute the encrypted offsite and detached recovery steps below.
+
+### Private database access-control recovery
+
+1. In a trusted private Bash session, use a clean checkout of `28a7f3ee8afe1d8384c5f0229a9a1de6159020ed` and PostgreSQL 18 client tools. Get the existing direct `fawri_owner` production connection from the owner's secret store, with `sslmode=verify-full` and channel binding required. Use a separate strong passphrase of at least 24 characters for this artifact. The operation reads only the allowlisted catalog metadata and does not require Meta, payment or a production configuration change.
+2. After owner approval, use the accepted CLI from the checkout root, outside CI and Render. The variables are scoped to the subshell and the prompts hide input. Choose a fresh private output directory.
+
+   ```bash
+   (
+     set -e
+     umask 077
+     read -rsp 'Private direct Neon owner URL: ' FAWRI_G5_PRIVATE_OWNER_URL
+     printf '\n'
+     read -rsp 'Separate ACL backup passphrase: ' FAWRI_G5_PRIVATE_ACL_PASSPHRASE
+     printf '\n'
+     export FAWRI_G5_PRIVATE_OWNER_URL FAWRI_G5_PRIVATE_ACL_PASSPHRASE
+     FAWRI_G5_PRIVATE_ACL_CAPTURE_APPROVED=1 \
+       node scripts/v1-g5-private-acl-capture.mjs capture ./fawri-g5-acl.enc
+   )
+   ```
+
+3. Store only the encrypted output in the owner's private offsite backup location. Record the reported ciphertext SHA-256 separately from the file. From an independently retrieved copy, run the CLI's `verify` mode with that independently recorded hash in `FAWRI_G5_PRIVATE_ACL_EXPECTED_SHA256` and the separate passphrase. Record only the success marker in the project. The private URL, passphrase and raw catalog belong outside GitHub and chat.
+4. In a detached PG18 environment, compare ownership and ACLs from the original archive against the authenticated sidecar. The original export used custom-format `pg_dump` with ownership and ACL entries retained, while the earlier restore deliberately suppressed both. Global roles are outside the dump. Recreate only the reviewed application roles with fresh isolated credentials, exclude the provider-specific external role edge, and check tenant, auth and operator authorization before accepting recovery. A successful sidecar capture or verification alone leaves this acceptance pending.
+
+### Recurring backup admission
+
+The current Render workspace shows the web service and no Render cron service. The existing GitHub workflow runs source/fixture CI on pull requests. The next production prerequisite is a dedicated reader proven first on a disposable non-production Neon target. The accepted preflight requires direct login with `BYPASSRLS`, zero memberships, and no data-write, schema-creation or privileged routine access. [Neon's roles documentation](https://neon.com/docs/manage/roles#the-neon_superuser-role) shows that its normal Console/API role creation grants `neon_superuser` membership, which conflicts with that preflight. A provider-supported restricted provisioning path still needs confirmation. Reusing the owner or app runtime credentials would fail the intended security boundary. Independent encrypted custody, backup-age monitoring, and an actual scheduled recovery drill remain outstanding. No credentials, role changes, schedule or new service were provisioned.
+
+
 
 ## 2026-11-24 — independent offsite DB restore tool and recurring backup boundary (HELD)
 - New source [offline restore CLI](../../../scripts/v1-postg4-offsite-restore.mjs) and focused tests/CI at [276ad6a5](https://github.com/nora953/fawri-production-source/commit/276ad6a5ecccf222827eea5842bce8e0aaaa2e1c). Takes independently downloaded manifest and encrypted archive plus independently established encrypted SHA-256 and approved passphrase; validates scope, ciphertext hash/size, authenticated decryption and plaintext hash/size. Restores only into a fresh network-disabled PG18 Docker container without host mounts, without live database URL, and checks the expected prelaunch schema/owner and empty merchant/order/trial tables. No plaintext file on host; container is disposable. Source tests pending readback; actual Drive-based decryption/restoration not yet performed. The original one-shot export/restore is already accepted and must not be repeated. This is not an ACL, production restore, or real-media acceptance.
