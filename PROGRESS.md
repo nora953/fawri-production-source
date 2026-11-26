@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-27 — G5 candidate V1 application boundary source review (HELD)
+
+- [Reviewed isolated PG18.6 acceptance and V1 source impact](https://github.com/nora953/fawri-production-source/commit/747c8c77833bd9ecb874a07ebdea5dcf9b6bfa04): POS gate is mounted before application routes; V1 startup requires dormant retirement role and no financial-table privileges; POS-off retention trigger has no direct call to the six routines, and historic INVOKER retirement is excluded. Existing HTTP guard fixture uses miniature Express, not full application after ACL correction. Candidate exact five named grant edges, six PUBLIC revocations, fail-closed preimage/rollback conditions documented. No production authorization. Next focused detached full canonical V1 schema + held-patch composition and authenticated application HTTP/retention/startup regression with candidate ACL, not repeat of accepted synthetic fixture or V7. No production connection/change, new resource, CI run, merge/deployment or new P0 closure. G5 BLOCKED; commercial NO-GO.
+
+
 ## 2026-11-27 — G5 six-routine ACL rehearsal passed on detached PG18.6 (synthetic)
 
 - Ran the owner-approved [reproducible rehearsal](scripts/tests/v1-g5-six-routine-acl-rehearsal.py) against seven exact Git-pinned canonical migrations and the unchanged recurring-reader preflight (blob `4fae4af9c65a629ac36812a5cd66b87131437f3c`). Fresh local PG18.6 listened exclusively on loopback with independent SCRAM sessions and rejected an incorrect credential. All six synthetic starting ACLs matched owner/PUBLIC EXECUTE. The candidate removed PUBLIC from the exact six, granted the shared predicate to the tenant/auth/operator roles, and granted only the two settings routines to auth. The reader and retirement NOLOGIN role received zero of the six grants. Unchanged ownership, routine definitions, non-target ACLs, memberships and database TEMPORARY were confirmed.
