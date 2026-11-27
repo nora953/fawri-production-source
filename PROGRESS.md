@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-27 — G5 owner-approved production read-only preflight: six ACL/function bodies match; traffic gate unverified
+
+- [Detailed evidence](https://github.com/nora953/fawri-production-source/commit/153bc2df48b4c3120576102bf085b490f6442cf6): exact production Neon PG18.7, owner identity, six routine ACL preimages and six canonical body SHA-256 matches; restricted three application LOGINs and dormant retirement writer confirmed, recurring reader absent. Free_v3 confirmed; usage 178745 compute-unit seconds before and after the metadata/SELECT checks. No merchant data, mutations, new resources or upgrade.
+- Render live SHA `9efbe2326eda7aef12260dce245824ebe0f0dacd`, automatic deployment off, 5GB persistent disk and /readyz configured. Native platform maintenance is off; application public-prelaunch gate actual state unverified (environment read unavailable and public probe inaccessible). Prior deployments listed; rollback not executed. Hold rollout until actual traffic isolation and pinned deploy/rollback procedure verified. No production changes, deploy, merge or new parent P0 closure; G5 BLOCKED, commercial NO-GO.
+
+
 ## 2026-11-27 — G5 full-schema test evidence reviewed; coordinated hosted preflight awaiting approval
 
 - Reviewed the exact detached full 54-stage result at `60a93698470b4827d5f0f6229e5389f997237561`, confirmed tested V1 source unchanged by fixture correction, and [recorded the coordinated rollout/rollback decision boundary](https://github.com/nora953/fawri-production-source/commit/bd741488ad9f6a72eb0f5ca64e8642a8da7290e0). Accept bounded recorded local SQL, readiness, manual HTTP and reader/retention evidence without repeating it. Production prelistener boot, provider authentication, explicit product HTTP coverage and full HTTP deletion are not inferred.
