@@ -1,5 +1,12 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-27 — G5 deploy delta reviewed; guarded ACL rehearsal source prepared (HELD)
+
+- Compared current live Render SHA `9efbe2326eda7aef12260dce245824ebe0f0dacd` with `b1ac5e796682f640f33041ce0f0f338b9170a9f2`: 113 commits ahead, 0 behind, 34 changed files. Only application runtime source change is the previously locally tested POS-off readiness ACL gate. Dockerfile.staging, src/index.ts and public-prelaunch middleware blobs are identical. Other changes are backup/recovery tooling, tests, workflows, documentation, and a narrow historical fabricated-test-secret exception in the security audit. No PR-triggered workflow runs returned for `60a9369`; no full new build/CI acceptance inferred.
+- [Guarded six-routine transaction rehearsal source](https://github.com/nora953/fawri-production-source/commit/75f10e66856c928c85d5e9cf66666be19ffcfb91) prepared using all six independently matched canonical body hashes, exact role, identity, direct/effective ACL and public-definer-count pre/postconditions. It is explicitly rollback-only and unexecuted; only rehearse in a detached local PG18 target. Do not run it on production or change ROLLBACK to COMMIT without separate reviewed scope.
+- Public GET probes to apex and harmless nonexistent API path and /readyz were inaccessible from web and container DNS; Render default origin also failed DNS. No authenticated traffic test performed. Render connector exposes trigger-deploy by branch head only, not pinned SHA/rollback or env read. Work/browser or owner must verify actual public gate, independent isolation on all exposed origins, and exact pinned deploy/rollback control without revealing credentials, changing production or adding cost. Prior approved local results remain accepted; do not rerun unchanged suites. No deploy, Neon change, new cost or P0 closure; G5 remains BLOCKED, NO-GO.
+
+
 ## 2026-11-27 — G5 owner-approved production read-only preflight: six ACL/function bodies match; traffic gate unverified
 
 - [Detailed evidence](https://github.com/nora953/fawri-production-source/commit/153bc2df48b4c3120576102bf085b490f6442cf6): exact production Neon PG18.7, owner identity, six routine ACL preimages and six canonical body SHA-256 matches; restricted three application LOGINs and dormant retirement writer confirmed, recurring reader absent. Free_v3 confirmed; usage 178745 compute-unit seconds before and after the metadata/SELECT checks. No merchant data, mutations, new resources or upgrade.
