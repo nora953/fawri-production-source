@@ -29,8 +29,12 @@ const mediaTypes = new Map([
   [".webp", "image/webp"], [".woff2", "font/woff2"],
 ]);
 const digest = value => createHash("sha256").update(value).digest();
+export const PREVIEW_DOMAIN = "preview.fawrireply.com";
 
-export async function createOwnerPreview({ dist, tokenHash, expiresAt, now = Date.now }) {
+export async function createOwnerPreview({ dist, tokenHash, expiresAt, now = Date.now, domain = undefined }) {
+  if (domain !== undefined && domain !== PREVIEW_DOMAIN) {
+    throw new Error("Unexpected preview domain");
+  }
   const start = now();
   if (!/^[\da-f]{64}$/.test(tokenHash) || !Number.isFinite(expiresAt) || expiresAt <= start || expiresAt > start + 3_600_000) {
     throw new Error("Preview requires a token hash and an expiry within one hour");
@@ -48,7 +52,10 @@ export async function createOwnerPreview({ dist, tokenHash, expiresAt, now = Dat
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Referrer-Policy", "no-referrer");
     res.setHeader("Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
-    if (req.headers.host !== `127.0.0.1:${server.address().port}` || now() >= expiresAt) {
+    // Take the original authority used by the routing layer. A caller-supplied
+    // forwarding header must never substitute for the dedicated preview host.
+    const authority = domain ?? `127.0.0.1:${server.address().port}`;
+    if (req.headers.host !== authority || now() >= expiresAt) {
       res.writeHead(404).end();
       return;
     }

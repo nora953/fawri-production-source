@@ -3,7 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { request } from "node:http";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { createOwnerPreview } from "../run-fawri-owner-preview.mjs";
+import { createOwnerPreview, PREVIEW_DOMAIN } from "../run-fawri-owner-preview.mjs";
 
 test("owner preview keeps the built V1 and synthetic APIs behind the isolated origin gate", async () => {
   const token = randomBytes(32).toString("hex");
@@ -56,6 +56,38 @@ test("owner preview keeps the built V1 and synthetic APIs behind the isolated or
     assert.equal((await get("/dashboard")).status, 404);
     assert.equal((await get(assetPath)).status, 404);
     assert.equal((await get("/api/auth/me")).status, 404);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test("the hosted origin contract permits only the dedicated preview authority", async () => {
+  const token = randomBytes(32).toString("hex");
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const authorization = `Basic ${Buffer.from(`owner:${token}`).toString("base64")}`;
+  const dist = fileURLToPath(new URL("../../artifacts/fawri/dist/public/", import.meta.url));
+  const options = { dist, tokenHash, expiresAt: 30_000, now: () => 0 };
+  await assert.rejects(createOwnerPreview({ ...options, domain: "fawrireply.com" }), /Unexpected preview domain/);
+  const server = await createOwnerPreview({ ...options, domain: PREVIEW_DOMAIN });
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const { port } = server.address();
+  const check = (host, headers = {}) => new Promise((resolve, reject) => {
+    const req = request({ host: "127.0.0.1", port, path: "/api/auth/me", headers: { host, authorization, ...headers } }, res => {
+      res.resume();
+      res.on("end", () => resolve(res.statusCode));
+      res.on("error", reject);
+    });
+    req.on("error", reject);
+    req.end();
+  });
+  try {
+    assert.equal(await check(PREVIEW_DOMAIN), 200);
+    assert.equal(await check("preview.onrender.com", { "x-forwarded-host": PREVIEW_DOMAIN }), 404);
+    assert.equal(await check("fawrireply.com", { forwarded: `host=${PREVIEW_DOMAIN}` }), 404);
+    assert.equal(await check(`${PREVIEW_DOMAIN}.example`), 404);
   } finally {
     await new Promise(resolve => server.close(resolve));
   }

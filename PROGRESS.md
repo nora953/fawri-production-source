@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-27 — G5 synthetic source verified and preview authority pinned
+
+- Owner approved a synthetic-only Neon hosted isolation and encrypted export/restore drill plus private preview preparation, with production and hosted preview activation excluded. Neon metadata showed PG18, free_v3, 182230 CU-seconds used, no read replica. A bounded catalog read on the explicitly selected existing recovery branch `br-rough-boat-b947xiir` and its test compute confirmed PG18.7, only `fawri_recovery_drill.recovery_proof` among non-system data relations, zero large objects and the proposed test role absent. Prior evidence identifies the fixture as synthetic. No production contact, new endpoint, role, export or restore. The older accepted export was not repeated. The host runner still needs PG18 dump/restore clients and an outbound Neon route before provisioning the disposable trial.
+- Prepared the preview origin gate for exact `preview.fawrireply.com`. It retains the loopback-only CLI and rejects apex, Render/default authority, lookalikes and caller-supplied forwarding headers. The new targeted HTTP test passed against the existing V1 build. Browser binary is absent locally; the runtime install was not executed after automatic approval review hit the usage limit, and the alternate registry lookup was blocked by network policy. No browser render or hosted TLS claim. No deployment, DNS edits, or change to registration/cashier status. G5 remains BLOCKED and zero new P0 closures.
+
 ## 2026-11-27 — Isolated G5 replica boundary and private preview HTTP proof
 
 - Neon Free allows up to three read replicas per project, sharing the 100 CU-hour monthly compute allowance. Same-branch replica compute serves the primary's data, with no documented endpoint-specific role restriction found in the reviewed Free plan controls. A stopped/idle Neon writer can resume on access, so suspension is not a writer barrier. [Plans](https://neon.com/docs/introduction/plans) · [Read replicas](https://neon.com/docs/introduction/read-replicas) · [Computes](https://neon.com/docs/manage/computes).
