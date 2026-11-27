@@ -1,4 +1,4 @@
-/** Local rehearsal for a dedicated preview origin. Never mounts the production API. */
+/** Standalone preview for a dedicated origin. Never mounts the production API. */
 import { createHash, timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
 import { readFile, realpath } from "node:fs/promises";
@@ -11,14 +11,27 @@ const merchant = {
   onboarding_status: "channel_connected", language: "ar", theme_preference: "light",
   created_at: "2026-01-01T00:00:00Z", is_admin: false, cod_enabled: true,
 };
+const context = { country_code: "IQ", timezone: "Asia/Baghdad", currency_code: "IQD", currency_fraction_digits: 0 };
+const subscription = {
+  id: "fawri-preview-subscription", merchant_id: merchant.id, plan_name: "gold", price_iqd: 49000,
+  reply_limit: 8000, replies_used: 0, replies_remaining: 8000, status: "active",
+  start_date: "2026-01-01T00:00:00Z", expires_at: "2099-01-01T00:00:00Z", auto_reply_enabled: false,
+  emergency_credit_used: 0, emergency_credit_amount: 0, emergency_credit_remaining: 0,
+  emergency_credit_activated: false, pending_next_cycle_deduction: 0,
+};
 const fixtures = new Map([
   ["/api/auth/me", { ok: true, merchant }],
   ["/api/auth/lifecycle", { ok: true, lifecycle: { merchant_id: merchant.id,
     account_status: merchant.account_status, merchant_status: merchant.status,
     onboarding_status: merchant.onboarding_status } }],
-  ["/api/catalog/products", { ok: true, products: [] }],
-  ["/api/orders", { ok: true, orders: [] }],
-  ["/api/conversations", { ok: true, conversations: [] }],
+  ["/api/auth/subscription/current", { ok: true, subscription }],
+  ["/api/auth/emergency-read-access/notices", { ok: true, notices: [] }],
+  ["/api/catalog/products", { ok: true, products: [], count: 0 }],
+  ["/api/catalog/context", { ok: true, context }],
+  ["/api/catalog/promotions", { ok: true, promotions: [] }],
+  ["/api/merchant/regional", { ok: true, context }],
+  ["/api/orders", { ok: true, orders: [], count: 0 }],
+  ["/api/conversations", { ok: true, conversations: [], count: 0 }],
   ["/api/auth/notifications", { ok: true, notifications: [], unread_count: 0 }],
 ]);
 const pages = new Set(["/", "/dashboard", "/dashboard/overview", "/dashboard/products", "/dashboard/orders"]);
@@ -41,7 +54,8 @@ export async function createOwnerPreview({ dist, tokenHash, expiresAt, now = Dat
   }
   const expected = Buffer.from(tokenHash, "hex");
   const root = await realpath(dist);
-  const index = await readFile(resolve(root, "index.html"), "utf8");
+  const index = (await readFile(resolve(root, "index.html"), "utf8"))
+    .replace(/<link\b[^>]*\bhref="https:\/\/fonts\.(?:googleapis|gstatic)\.com[^"\s]*"[^>]*>\s*/g, "");
   if (!/<script\b[^>]*\bsrc="\/assets\/[\w.-]+\.js"/.test(index)) {
     throw new Error("Preview requires a release build with BASE_PATH=/ on its own origin");
   }
@@ -70,6 +84,14 @@ export async function createOwnerPreview({ dist, tokenHash, expiresAt, now = Dat
       return;
     }
     const path = req.url?.split("?", 1)[0];
+    if (path === "/api/auth/events") {
+      res.writeHead(200, { "Content-Type": "text/event-stream" });
+      if (req.method === "HEAD") { res.end(); return; }
+      res.write(": preview fixture\n\n");
+      const timeout = setTimeout(() => res.end(), Math.max(0, Math.min(30_000, expiresAt - now())));
+      res.once("close", () => clearTimeout(timeout));
+      return;
+    }
     if (fixtures.has(path)) {
       res.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify(fixtures.get(path)));
       return;
@@ -99,13 +121,21 @@ export async function createOwnerPreview({ dist, tokenHash, expiresAt, now = Dat
 
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   try {
+    const domain = process.env.FAWRI_OWNER_PREVIEW_DOMAIN;
+    const port = domain ? Number(process.env.PORT) : 0;
+    if (domain && (!Number.isInteger(port) || port < 1024 || port > 65535)) {
+      throw new Error("Hosted preview requires a valid service port");
+    }
     const server = await createOwnerPreview({
       dist: fileURLToPath(new URL("../artifacts/fawri/dist/public", import.meta.url)),
       tokenHash: process.env.FAWRI_OWNER_PREVIEW_TOKEN_SHA256 ?? "",
       expiresAt: Date.parse(process.env.FAWRI_OWNER_PREVIEW_EXPIRES_AT ?? ""),
+      domain,
     });
     server.on("error", () => { console.error("FAWRI_OWNER_PREVIEW_BIND_FAILED"); process.exitCode = 1; });
-    server.listen(0, "127.0.0.1", () => console.log(`http://127.0.0.1:${server.address().port}/dashboard`));
+    server.listen(port, domain ? "0.0.0.0" : "127.0.0.1", () => {
+      console.log(domain ? "FAWRI_OWNER_PREVIEW_LISTENING" : `http://127.0.0.1:${server.address().port}/dashboard`);
+    });
   } catch {
     console.error("FAWRI_OWNER_PREVIEW_REFUSED");
     process.exitCode = 1;
