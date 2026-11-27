@@ -23,6 +23,10 @@ const requireValue = (ok, code) => { if (!ok) throw new Error(code); };
 
 export function backupClientEnv(env) {
   requireValue(env.FAWRI_V1_RECURRING_DB_EXPORT_APPROVED === "1", "G5_RECURRING_EXPORT_NOT_APPROVED");
+  return readerClientEnv(env);
+}
+
+function readerClientEnv(env) {
   let url;
   try { url = new URL(env.FAWRI_V1_RECURRING_BACKUP_READER_URL || ""); }
   catch { throw new Error("G5_RECURRING_READER_URL_INVALID"); }
@@ -94,6 +98,10 @@ function checkedRun(command,args,env,maxBuffer,timeout) {
   requireValue(!result.error && result.status === 0, "G5_RECURRING_SUBPROCESS_FAILED");
   return result.stdout;
 }
+function verifyReader(env) {
+  const preflight = checkedRun("psql",["-X","-w","-Atq","-v","ON_ERROR_STOP=1","-c",READER_PREFLIGHT_SQL],env,8192,20000);
+  requireValue(preflight.toString().trim() === "G5_READER_ACCEPTED","G5_RECURRING_READER_NOT_ACCEPTED");
+}
 export function sealRecurringDump(raw, passphrase, createdAt) {
   requireValue(Buffer.isBuffer(raw) && raw.length >= 100 && raw.length <= MAX_DUMP, "G5_RECURRING_DUMP_SIZE");
   requireValue(typeof passphrase === "string" && passphrase.length >= 24, "G5_RECURRING_SECRET_REQUIRED");
@@ -113,14 +121,18 @@ export function sealRecurringDump(raw, passphrase, createdAt) {
   }};
 }
 function main() {
+  if (process.argv.length === 3 && process.argv[2] === "--reader-preflight") {
+    verifyReader(readerClientEnv(process.env));
+    console.log("G5_READER_ACCEPTED");
+    return;
+  }
   requireValue(process.argv.length === 2, "G5_RECURRING_NO_ARGUMENTS_ALLOWED");
   const env = backupClientEnv(process.env);
   const pass = process.env.FAWRI_V1_RECURRING_BACKUP_PASSPHRASE;
   requireValue(typeof pass === "string" && pass.length >= 24, "G5_RECURRING_SECRET_REQUIRED");
   const version = checkedRun("pg_dump",["--version"],{PATH:env.PATH,HOME:env.HOME},4096,5000).toString();
   requireValue(/^pg_dump \(PostgreSQL\) 18(?:\.|\s)/.test(version),"G5_RECURRING_PG18_CLIENT_REQUIRED");
-  const preflight = checkedRun("psql",["-X","-w","-Atq","-v","ON_ERROR_STOP=1","-c",READER_PREFLIGHT_SQL],env,8192,20000);
-  requireValue(preflight.toString().trim() === "G5_READER_ACCEPTED","G5_RECURRING_READER_NOT_ACCEPTED");
+  verifyReader(env);
   const createdAt = new Date().toISOString(); // dump starts after read-only preflight
   const raw = checkedRun("pg_dump",dumpArguments(),env,MAX_DUMP,180000);
   let out;
@@ -137,5 +149,9 @@ function main() {
   } finally { raw.fill(0); }
 }
 if(process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href){
-  try { main(); } catch { console.error("G5_RECURRING_EXPORT_REFUSED_OR_FAILED"); process.exitCode=1; }
+  try { main(); } catch {
+    const preflightOnly = process.argv.length === 3 && process.argv[2] === "--reader-preflight";
+    console.error(preflightOnly ? "G5_RECURRING_READER_PREFLIGHT_FAILED" : "G5_RECURRING_EXPORT_REFUSED_OR_FAILED");
+    process.exitCode=1;
+  }
 }

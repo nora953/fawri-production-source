@@ -1,5 +1,13 @@
 # FAWRI V1 G5 — one-time Render catalog-media offsite acceptance handoff
 
+## 2026-11-27 — Reader-only execution and nested preview build
+
+The owner approved the dedicated reader and independent test, with private credential storage required. The production catalog matched the pinned 106 objects on PostgreSQL 18.7, the role was absent, and the catalog showed zero PUBLIC-executable application SECURITY DEFINER routines. The credential store's private location and write path must be identified before creating an active login. Do not share the credential in chat, GitHub, command arguments or production web-service environment.
+
+For the independent check, inject the reader URL from the private vault into `FAWRI_V1_RECURRING_BACKUP_READER_URL` on the trusted runner, then execute `node scripts/v1-recurring-encrypted-db-backup.mjs --reader-preflight`. It runs the established catalog capability query using direct libpq with verify-full TLS and required channel binding, and emits only `G5_READER_ACCEPTED` on success. This entry point doesn't run pg_dump or need an archive key. The focused local test exercised the shell boundary with a stubbed psql, including suppression of a failed client echoing the synthetic password. Production login and export were not exercised.
+
+The manual-commerce V1 frontend at `fac8ec8ab21ace6cc864bcfac8c8b5362990dc48` built at `/__owner-preview/` using installed Vite dependencies. Index SHA-256 `f673a5af7ad1cbd648a725486f117035203d8779c50c8b21b7c27d4214db6157`, prefixed script and stylesheet confirmed, cashier entry absent. The compiled app still contains absolute merchant auth API calls and the source uses origin-wide storage keys. Serve the preview with fixture-only APIs and independent browser storage. A path prefix alone cannot establish those boundaries. No hosted preview route was enabled. Owner-bound expiry, no-store, direct Render-host denial, and fixture-only API/browser acceptance remain pending. No repeat of accepted archive/restore tests.
+
 ## 2026-11-27 — After production rollout: bounded reader scope and private preview
 
 The coordinated ACL/image rollout completed with the application gate closed (see [progress](../../../PROGRESS.md)). The dedicated reader remains absent. Catalog-only readback immediately after the ACL commit identified the following exact eligible relation scope, all owned by `fawri_owner`:
