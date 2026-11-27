@@ -1,5 +1,20 @@
 # FAWRI V1 G5 — one-time Render catalog-media offsite acceptance handoff
 
+## 2026-11-27 — After production rollout: bounded reader scope and private preview
+
+The coordinated ACL/image rollout completed with the application gate closed (see [progress](../../../PROGRESS.md)). The dedicated reader remains absent. Catalog-only readback immediately after the ACL commit identified the following exact eligible relation scope, all owned by `fawri_owner`:
+
+| Schema | Tables | Sequences |
+| --- | ---: | ---: |
+| drizzle | 1 | 1 |
+| fawri_security | 1 | 0 |
+| public | 102 | 1 |
+
+Sorted digest of schema/relation name, relation kind and owner: `b3b0e6e1a338eba27b7c028012af07e093d8a3469b129a3a7b373f637a77eb5d`. The next owner decision is limited production creation of the dedicated direct LOGIN and one independent TLS reader-preflight check. Its grants must be CONNECT to fawri, USAGE on these three schemas, and SELECT on the exact reviewed current objects only. Recheck the catalog fingerprint before provisioning. Use default read-only, connection limit one, no role memberships, no writes or SECURITY DEFINER execution. BYPASSRLS is necessary for a complete backup and makes the reader credential sensitive across all approved tables. Keep it in the owner-approved secret store and verify the separate direct login with the unchanged preflight before requesting archive custody and scheduling activation. Abort on drift or inability to preserve these constraints. No blanket default privileges or unattended production archive transfer authorized.
+
+Private preview can advance in parallel at source level. Keep the current default-deny prelaunch mode and isolate a gated preview route on fawrireply.com. Bind short-lived access to the owner, keep preview data synthetic and isolated from the production API, and permit only preview UI/assets and read-only fixture responses on this route. Test expiry, anonymous access, asset/API route isolation, direct Render hostname denial, cache behavior, registration and POS cutoff before a separate activation. The current production SHA intentionally contains no preview exposure. No paid dependency is required for the application-level design.
+
+
 ## 2026-11-27 — Owner-approved production read-only drift preflight: SQL match, traffic isolation HELD
 
 - Fresh Neon metadata: exact project `crimson-cherry-65705041`, branch `br-holy-waterfall-b993zglb`, active read-write compute `ep-polished-poetry-b9jpvn4r`, free_v3 subscription, 178745 compute-unit seconds before catalog SELECT, current period ends 2026-12-01 UTC. No new compute, resource, upgrade or compute wake was requested. Organization-list tool unavailable; project owner subscription metadata confirmed free_v3. One bounded catalog-only SELECT via explicitly selected owner role, branch, compute and database returned `fawri`, session/current user `fawri_owner`, PG18.7. No merchant rows, raw secrets, data exports or SQL mutations.
