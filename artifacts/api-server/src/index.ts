@@ -1,6 +1,7 @@
 import { assertFirstCommercialManualProfile, manualCommercialRelease } from "./services/manualCommercialRelease";
 import { logger } from "./lib/logger";
 import { getFawriDataDir } from "./lib/dataPaths";
+import { publicPrelaunchGateActive } from "./lib/publicPrelaunchMode";
 import type { DurableJobWorker } from "./services/durableJobQueue";
 import type { EarlyWarningIncidentMonitor } from "./services/earlyWarningIncidentMonitor";
 import type { MerchantPhysicalMediaCleanupReconciler } from "./services/merchantPhysicalMediaCleanup";
@@ -127,7 +128,8 @@ async function main(): Promise<void> {
   const server = app.listen(port, () => {
     logger.info({ port, dataDir: getFawriDataDir() }, "Server listening");
 
-    try {
+    const prelaunchClosed = publicPrelaunchGateActive();
+    if (!prelaunchClosed) try {
       earlyWarningMonitor = startEarlyWarningIncidentMonitor();
       logger.info("Early warning incident monitor started");
     } catch (error) {
@@ -137,7 +139,7 @@ async function main(): Promise<void> {
       );
     }
 
-    const workersExplicitlyDisabled = process.env.FAWRI_DISABLE_JOB_WORKERS === "1";
+    const workersExplicitlyDisabled = prelaunchClosed || process.env.FAWRI_DISABLE_JOB_WORKERS === "1";
     const metaCutoverReady = !manualCommercialRelease() && process.env.FAWRI_META_CUTOVER_READY === "1";
 
     if (!workersExplicitlyDisabled) {
