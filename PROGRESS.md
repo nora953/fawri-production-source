@@ -1,5 +1,9 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-27 — Private owner preview HTTPS live
+
+- Render console confirmed the certificate issued for preview.fawrireply.com. Applied the owner-provided verifier and bounded expiry to the separate Free preview service only. API-triggered branch-tip build was rejected by the exact commit pin. Manually redeployed the already verified source `9023d4a4e829c793b6b2c9cdb4e3cca420220200`; deploy `dep-dc4qsa5g1s2s73fg1sd0` reached live at 16:23:06 UTC. Direct TLS-verified HTTPS GET of /dashboard returned 401 with the expected Basic challenge and private/no-store. Default provider alias remains disabled. Owner must use the locally stored password before 2026-11-27T17:19:30.076Z; the plaintext was unavailable to automation, so successful owner sign-in awaits the owner. No production change, plan upgrade or deployment of main. G5 remains pending independently.
+
 ## 2026-11-27 — Preview DNS verified; TLS and owner access pending
 
 - Authenticated to Namecheap using the secure browser flow. Added only `preview CNAME fawri-owner-preview.onrender.com` under the existing BasicDNS plan. Read back saved record and verified existing apex A and www CNAME remained intact. Google Public DNS returned the expected CNAME. Render transitioned to Verified on `preview.fawrireply.com`; the certificate remained Pending at last console readback, and the initial public probe returned a temporary 503. Disabled the Render default subdomain on the separate Free preview service only, confirmed disabled through both console and API.
