@@ -84,7 +84,7 @@ BEGIN
         END IF;
         FOREACH principal IN ARRAY ARRAY['fawri_owner','fawri_restricted_runtime',
           'fawri_auth_issuer','fawri_operator_issuer','fawri_cashier_retirement_writer'] LOOP
-          IF has_function_privilege(principal,fn.oid,'EXECUTE') IS DISTINCT FROM
+          IF has_function_privilege(principal::name,fn.oid,'EXECUTE') IS DISTINCT FROM
              (phase=0 OR principal=ANY(allowed)) THEN
             RAISE EXCEPTION 'G5_EFFECTIVE_ACL_DRIFT: %, phase %',item.signature,phase;
           END IF;
@@ -102,7 +102,7 @@ BEGIN
     END IF;
   END LOOP;
   RAISE NOTICE 'G5_EXACT_SIX_ROUTINE_ACL_CANDIDATE_VERIFIED_IN_TRANSACTION';
-END
+END;
 $g5$;
 
 -- Never change this ending to COMMIT in an unreviewed or unapproved run.
