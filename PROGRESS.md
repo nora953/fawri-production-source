@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-27 — Preview DNS verified; TLS and owner access pending
+
+- Authenticated to Namecheap using the secure browser flow. Added only `preview CNAME fawri-owner-preview.onrender.com` under the existing BasicDNS plan. Read back saved record and verified existing apex A and www CNAME remained intact. Google Public DNS returned the expected CNAME. Render transitioned to Verified on `preview.fawrireply.com`; the certificate remained Pending at last console readback, and the initial public probe returned a temporary 503. Disabled the Render default subdomain on the separate Free preview service only, confirmed disabled through both console and API.
+- Post-deployment billing: 0.23/750 Free instance hours, 2/2 included domains, 2/25 included services, 1.46/5 GB bandwidth, 21/500 included pipeline minutes and $0.00 pipeline charges displayed. No new service tier, premium DNS, certificate purchase, additional domain charge or paid build selection. Preview is not yet handed off as usable. Before enabling access use only an owner-generated temporary credential digest, verify TLS, anonymous denial and owner access, and preserve the standalone fixture-only runtime. G5 hosted boundary and archive trial remain pending as below.
+
 ## 2026-11-27 — Private preview Free build live; DNS verification pending
 
 - Before creation, the Render Billing page showed 0/750 Free instance hours, 1/2 included domains, 1/25 included services, 1.45/5 GB bandwidth, 21/500 included Starter pipeline minutes, and pipeline cost $0.00. Created only separate Free Node service `fawri-owner-preview` (`srv-dc4mg2m1egvs7390u780`), Frankfurt, auto-deploy off, no database/environment group/disk. Exact `9023d4a4e829c793b6b2c9cdb4e3cca420220200` deployment `dep-dc4mg2u1egvs7390u820` is live with successful build and `FAWRI_OWNER_PREVIEW_LISTENING`; elapsed deploy time about 69 seconds. HTTPS request to default Render host /dashboard returned 404. Service contains only synthetic fixtures. No change to the production service, its domains, registration, cashier, or repository main.
