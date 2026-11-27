@@ -439,85 +439,6 @@ export async function getProductionDatabaseRlsReadiness(
   };
 }
 
-/**
- * V1 POS is excluded. Do not require a tenant LOGIN to execute disabled
- * cashier mutation functions, and do not merely skip the old checks.
- * Require the exact G5 candidate ACL matrix instead, using catalog data only.
- * This is a coordinated source candidate: old PUBLIC grants are not admitted.
- */
-export async function assertV1G5RoutineAclReady(target: OperationalQueryTarget): Promise<void> {
-  try {
-    const rows = await operationalQueryRows<{ g5_v1_exact_routine_acl: boolean }>(target, `
-      WITH expected(signature, volatility, require_strict, allowed) AS (
-        VALUES
-          ('public.fawri_tenant_or_audited_admin(text)', 's', true,
-            ARRAY['fawri_owner','fawri_restricted_runtime','fawri_auth_issuer','fawri_operator_issuer']::text[]),
-          ('public.fawri_lock_cashier_approver(text,text)', 'v', false,
-            ARRAY['fawri_owner']::text[]),
-          ('public.fawri_lock_cashier_discount_approval(text,text,text)', 'v', true,
-            ARRAY['fawri_owner']::text[]),
-          ('public.fawri_consume_cashier_discount_approval(text,text,text,text,text,bigint,text,timestamptz,bigint,text)', 'v', true,
-            ARRAY['fawri_owner']::text[]),
-          ('public.fawri_lock_cashier_discount_setting(text)', 'v', true,
-            ARRAY['fawri_owner','fawri_auth_issuer']::text[]),
-          ('public.fawri_invalidate_pending_cashier_discount_approvals(text)', 'v', true,
-            ARRAY['fawri_owner','fawri_auth_issuer']::text[])
-      ), principals AS (
-        SELECT oid, rolname, rolcanlogin, rolinherit, rolsuper, rolbypassrls,
-               rolcreaterole, rolcreatedb, rolreplication
-          FROM pg_catalog.pg_roles
-         WHERE rolname IN ('fawri_owner','fawri_restricted_runtime','fawri_auth_issuer',
-                           'fawri_operator_issuer','fawri_cashier_retirement_writer')
-      ), routines AS (
-        SELECT e.*, p.oid, p.proowner, p.proacl, p.prosecdef, p.provolatile,
-               p.proisstrict, p.proconfig
-          FROM expected e
-          LEFT JOIN pg_catalog.pg_proc p ON p.oid=pg_catalog.to_regprocedure(e.signature)
-      )
-      SELECT COALESCE(
-        session_user='fawri_restricted_runtime' AND current_user=session_user
-        AND current_database()='fawri'
-        AND current_setting('server_version_num')::int/10000=18
-        AND (SELECT count(*)=5 FROM principals)
-        AND NOT EXISTS (
-          SELECT 1 FROM principals r WHERE r.rolname<>'fawri_owner'
-            AND (r.rolcanlogin<>(r.rolname<>'fawri_cashier_retirement_writer')
-              OR r.rolinherit OR r.rolsuper OR r.rolbypassrls OR r.rolcreaterole
-              OR r.rolcreatedb OR r.rolreplication
-              OR EXISTS (SELECT 1 FROM pg_catalog.pg_auth_members m WHERE m.member=r.oid))
-        )
-        AND NOT EXISTS (
-          SELECT 1 FROM routines f
-           WHERE f.oid IS NULL
-              OR f.proowner IS DISTINCT FROM (SELECT oid FROM principals WHERE rolname='fawri_owner')
-              OR f.prosecdef IS NOT TRUE
-              OR f.provolatile::text IS DISTINCT FROM f.volatility
-              OR (f.require_strict AND f.proisstrict IS NOT TRUE)
-              OR NOT COALESCE(f.proconfig @> ARRAY['search_path=pg_catalog']::text[],false)
-              OR f.proacl IS NULL
-              OR (SELECT count(*) FROM pg_catalog.aclexplode(f.proacl))<>cardinality(f.allowed)
-              OR EXISTS (
-                SELECT 1 FROM pg_catalog.aclexplode(f.proacl) acl
-                  LEFT JOIN principals r ON r.oid=acl.grantee
-                 WHERE r.oid IS NULL OR NOT (r.rolname::text=ANY(f.allowed))
-                    OR acl.grantor<>f.proowner OR acl.privilege_type<>'EXECUTE'
-                    OR acl.is_grantable
-              )
-              OR EXISTS (
-                SELECT 1 FROM principals r
-                 WHERE pg_catalog.has_function_privilege(r.oid,f.oid,'EXECUTE')
-                       IS DISTINCT FROM (r.rolname::text=ANY(f.allowed))
-              )
-        ), false) AS g5_v1_exact_routine_acl
-    `);
-    if (rows.length === 1 && rows[0].g5_v1_exact_routine_acl === true) return;
-  } catch {
-    // A query or parsing failure is not proof of the restricted ACL matrix.
-  }
-  fail("PRODUCTION_V1_G5_ROUTINE_ACL_REQUIRED",
-    "V1 requires the exact restricted G5 routine ACL matrix");
-}
-
 export async function assertProductionDatabaseRlsReady(
   env: NodeJS.ProcessEnv = process.env,
   target?: OperationalQueryTarget,
@@ -626,13 +547,8 @@ export async function assertProductionDatabaseRlsReady(
     fail("PRODUCTION_DATABASE_OPERATOR_AUTHORITY_REACHABLE",
       "tenant runtime must not reach privileged operator database capabilities");
   }
-  if (env.FAWRI_V1_MANUAL_COMMERCE === "1" &&
-      expectedRuntimeRole === "fawri_restricted_runtime") {
-    await assertV1G5RoutineAclReady(target || await operationalDatabasePool());
-  } else {
-    if (!readiness.cashierApprovalAuthorityReady) fail("PRODUCTION_CASHIER_APPROVAL_AUTHORITY_REQUIRED", "production requires protected cashier approval mutation capabilities");
-    if (!readiness.cashierStaffLockReady) fail("PRODUCTION_CASHIER_STAFF_LOCK_REQUIRED", "production requires the protected cashier approver lock function");
-  }
+  if (!readiness.cashierApprovalAuthorityReady) fail("PRODUCTION_CASHIER_APPROVAL_AUTHORITY_REQUIRED", "production requires protected cashier approval mutation capabilities");
+  if (!readiness.cashierStaffLockReady) fail("PRODUCTION_CASHIER_STAFF_LOCK_REQUIRED", "production requires the protected cashier approver lock function");
   if (!readiness.authenticationAuthorityPresent) fail("PRODUCTION_AUTH_DATABASE_MIGRATION_REQUIRED", "production requires role-bound authentication migration");
   if (readiness.authenticationMarkerReachableRoles.length) fail(
     "PRODUCTION_AUTHENTICATION_MARKER_REACHABLE",
