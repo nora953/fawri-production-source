@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { publicPrelaunchGateActive } from "../lib/publicPrelaunchMode";
 
 /** Public prelaunch surface only. This is not commercial release authority. */
 function escapeHtml(value: string): string {
@@ -10,6 +11,7 @@ function escapeHtml(value: string): string {
 
 export function createPublicPrelaunchGate(env: NodeJS.ProcessEnv) {
   const mode = env.FAWRI_PUBLIC_PRELAUNCH_ONLY;
+  const gateActive = publicPrelaunchGateActive(env);
   const operator = (env.FAWRI_PUBLIC_BUSINESS_OPERATOR || "").trim();
   const phone = (env.FAWRI_PUBLIC_BUSINESS_PHONE || "").trim();
   const email = (env.FAWRI_PUBLIC_BUSINESS_EMAIL || "").trim();
@@ -39,7 +41,7 @@ export function createPublicPrelaunchGate(env: NodeJS.ProcessEnv) {
   return (req: Request, res: Response, next: NextFunction): void => {
     // Missing or explicit 0 preserves existing deployment behavior. A malformed
     // nonempty setting fails closed rather than silently exposing the app.
-    if (mode === undefined || mode === "" || mode === "0") { next(); return; }
+    if (!gateActive) { next(); return; }
     const read = req.method === "GET" || req.method === "HEAD";
     // Only the existing exact health probes may continue. No API, static SPA,
     // auth, admin, media, webhook or merchant action reaches downstream routes.

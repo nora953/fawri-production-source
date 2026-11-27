@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { getFawriDataFilePath } from "../lib/dataPaths";
+import { publicPrelaunchGateActive } from "../lib/publicPrelaunchMode";
 import { calculateRetentionStatus } from "./merchantLifecycle";
 import { operationalPostgresAuthorityRequired } from "./operationalPostgresAuthority";
 import { refreshAllMerchantRetentionPostgres } from "./postgresMerchantRetentionAuthority";
@@ -161,6 +162,9 @@ export function getMerchantRetentionAccess(
 }
 
 export function startMerchantRetentionPolicyScheduler(): void {
+  // The HTTP gate cannot stop startup or timer-driven merchant writes.
+  if (publicPrelaunchGateActive()) return;
+
   const globalState = globalThis as typeof globalThis & {
     __fawriRetentionPolicySchedulerStarted?: boolean;
   };
