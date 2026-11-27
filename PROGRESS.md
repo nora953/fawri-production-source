@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-27 — G5 approved vault and effective write privilege blocker
+
+- The owner designated private GitHub Actions Secrets, key `FAWRI_V1_RECURRING_BACKUP_READER_URL`, with a dedicated G5 environment if covered by the existing plan. The installed connector cannot manage Actions secrets. The cloud browser reached signed-out GitHub settings (404 with sign-in link); no environment or secret was written and no billing change was attempted. Keep this credential out of existing web-service and PR fixture environments.
+- The production catalog showed effective `PUBLIC TEMPORARY` on `fawri` and `PUBLIC EXECUTE` for 8 of the reviewed PostgreSQL large-object mutators, including creation. The current `fawri_owner` has zero EXECUTE grant options for that set. A role-level default read-only setting does not remove PostgreSQL grants. Since a SQL-created reader would inherit PUBLIC, stop before role creation. No production write tests, credential generation, broad revocation, changes to existing principals, or exports. Any viable provider solution must guarantee that the dedicated credential cannot write on the writer endpoint and must fit the existing budget.
+- Tightened the catalog-only preflight to reject effective database TEMPORARY and built-in large-object mutation permissions. The focused local source test, syntax check and diff check passed. The revised disposable PostgreSQL 18 integration is ready and remains unrun here (Docker and PG18 are unavailable); the existing accepted restore was not repeated. G5 remains BLOCKED; no new P0 closure, production change, scheduling, deployment or commercial GO.
+
 ## 2026-11-27 — G5 reader admission tooling and private preview build
 
 - Owner approved the dedicated Neon reader and independent read-only login check. Catalog-only PostgreSQL 18.7 preflight on the pinned production target returned 106 eligible objects, matching SHA-256 `b3b0e6e1a338eba27b7c028012af07e093d8a3469b129a3a7b373f637a77eb5d`; reader absent and zero PUBLIC-executable application SECURITY DEFINER routines. No merchant rows read. Named private vault and write path for the reader credential remain unconfirmed; no reader or credential created.

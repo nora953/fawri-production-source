@@ -57,6 +57,10 @@ test("refuses absent approval, privileged role, wrong database/host, TLS downgra
   assert.throws(()=>backupClientEnv({...base,FAWRI_V1_RECURRING_BACKUP_READER_URL:invalid}));
  }
 });
+test("reader preflight checks effective temporary and large-object write privileges",()=>{
+ assert.match(READER_PREFLIGHT_SQL,/NOT has_database_privilege\(current_database\(\),'CREATE,TEMPORARY'\)/);
+ assert.match(READER_PREFLIGHT_SQL,/n\.nspname='pg_catalog'\s+AND p\.proname IN \('lo_creat','lo_create','lo_from_bytea'[\s\S]+?AND has_function_privilege\(p\.oid,'EXECUTE'\)/);
+});
 test("full archive request never opts into partial RLS-filtered export",()=>{
  assert.deepEqual(dumpArguments(),["--format=custom","--compress=6","--no-password","--dbname=fawri"]);
  assert.match(READER_PREFLIGHT_SQL,/rolbypassrls/);

@@ -1,5 +1,11 @@
 # FAWRI V1 G5 — one-time Render catalog-media offsite acceptance handoff
 
+## 2026-11-27 — Secret custody decision and production privilege gate
+
+- The owner designated private GitHub Actions Secrets, key `FAWRI_V1_RECURRING_BACKUP_READER_URL`, with a dedicated G5 environment if covered by the existing plan. The installed connector cannot manage Actions secrets. The cloud browser reached signed-out GitHub settings (404 with sign-in link); no environment or secret was written and no billing change was attempted. Keep this credential out of existing web-service and PR fixture environments.
+- The production catalog showed effective `PUBLIC TEMPORARY` on `fawri` and `PUBLIC EXECUTE` for 8 of the reviewed PostgreSQL large-object mutators, including creation. The current `fawri_owner` has zero EXECUTE grant options for that set. A role-level default read-only setting does not remove PostgreSQL grants. Since a SQL-created reader would inherit PUBLIC, stop before role creation. No production write tests, credential generation, broad revocation, changes to existing principals, or exports. Any viable provider solution must guarantee that the dedicated credential cannot write on the writer endpoint and must fit the existing budget.
+- Tightened the catalog-only preflight to reject effective database TEMPORARY and built-in large-object mutation permissions. The focused local source test, syntax check and diff check passed. The revised disposable PostgreSQL 18 integration is ready and remains unrun here (Docker and PG18 are unavailable); the existing accepted restore was not repeated. G5 remains BLOCKED; no new P0 closure, production change, scheduling, deployment or commercial GO.
+
 ## 2026-11-27 — Reader-only execution and nested preview build
 
 The owner approved the dedicated reader and independent test, with private credential storage required. The production catalog matched the pinned 106 objects on PostgreSQL 18.7, the role was absent, and the catalog showed zero PUBLIC-executable application SECURITY DEFINER routines. The credential store's private location and write path must be identified before creating an active login. Do not share the credential in chat, GitHub, command arguments or production web-service environment.

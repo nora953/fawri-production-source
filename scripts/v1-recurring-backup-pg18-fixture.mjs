@@ -30,6 +30,17 @@ try {
  assert.ok(ready);
  sql("CREATE DATABASE fawri;","postgres","postgres");
  sql("CREATE ROLE "+reader+" LOGIN NOINHERIT BYPASSRLS; CREATE TABLE public.orders(id int PRIMARY KEY, merchant text NOT NULL); INSERT INTO public.orders VALUES (1,'fixture-a'),(2,'fixture-b'); ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY; ALTER TABLE public.orders FORCE ROW LEVEL SECURITY; CREATE POLICY deny_ordinary_reader ON public.orders FOR SELECT USING (false); GRANT USAGE ON SCHEMA public TO "+reader+"; GRANT SELECT ON public.orders TO "+reader+";");
+ assert.equal(preflight(),"G5_READER_DENIED");
+ sql("REVOKE TEMPORARY ON DATABASE fawri FROM PUBLIC;");
+ assert.equal(preflight(),"G5_READER_DENIED");
+ sql(`REVOKE EXECUTE ON FUNCTION pg_catalog.lo_creat(integer), pg_catalog.lo_create(oid),
+   pg_catalog.lo_from_bytea(oid,bytea), pg_catalog.lo_import(text), pg_catalog.lo_import(text,oid),
+   pg_catalog.lo_put(oid,bigint,bytea), pg_catalog.lo_unlink(oid), pg_catalog.lo_truncate(integer,integer),
+   pg_catalog.lo_truncate64(integer,bigint), pg_catalog.lowrite(integer,bytea) FROM PUBLIC;`);
+ assert.equal(preflight(),"G5_READER_ACCEPTED");
+ sql("GRANT TEMPORARY ON DATABASE fawri TO PUBLIC;");
+ assert.equal(preflight(),"G5_READER_DENIED");
+ sql("REVOKE TEMPORARY ON DATABASE fawri FROM PUBLIC;");
  assert.equal(preflight(),"G5_READER_ACCEPTED");
  assert.equal(sql("SELECT count(*) FROM public.orders;",reader,"fawri",true),"2");
  sql("ALTER ROLE "+reader+" NOBYPASSRLS;");

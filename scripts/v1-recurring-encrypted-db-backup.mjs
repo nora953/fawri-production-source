@@ -53,7 +53,8 @@ function readerClientEnv(env) {
 }
 
 // Require a dedicated direct role, with no memberships, no app-data DML,
-// no role/database/schema creation, and no writable sequence privilege.
+// no database/schema creation, temporary object creation, large-object
+// mutation, or writable sequence privilege.
 // A full RLS-protected backup needs explicit approved bypass capability;
 // if the provider cannot provision this exact restricted role, stop.
 export const READER_PREFLIGHT_SQL = `
@@ -67,7 +68,12 @@ SELECT CASE WHEN
    AND r.rolcanlogin AND r.rolbypassrls AND NOT
    (r.rolsuper OR r.rolcreaterole OR r.rolcreatedb OR r.rolreplication OR r.rolinherit))
  AND NOT EXISTS (SELECT 1 FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.member WHERE r.rolname=session_user)
- AND NOT has_database_privilege(current_database(),'CREATE')
+ AND NOT has_database_privilege(current_database(),'CREATE,TEMPORARY')
+ AND NOT EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+   WHERE n.nspname='pg_catalog'
+   AND p.proname IN ('lo_creat','lo_create','lo_from_bytea','lo_import','lo_put',
+     'lo_unlink','lo_truncate','lo_truncate64','lowrite')
+   AND has_function_privilege(p.oid,'EXECUTE'))
  AND NOT EXISTS (SELECT 1 FROM pg_namespace n
    WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema'
    AND has_schema_privilege(n.oid,'CREATE'))
