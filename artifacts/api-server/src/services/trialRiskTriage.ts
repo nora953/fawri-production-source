@@ -17,14 +17,15 @@ export type TrustedTrialRiskSnapshot = Readonly<{
   linkedAccountRisk: "none" | "elevated" | "unknown";
   // IP/device anomalies alone can trigger review, never automatic denial.
   networkDeviceSignal: "normal" | "anomalous" | "unknown";
-  approvedWhatsAppAuthenticationAvailable: boolean;
+  // Legacy signal retained for source compatibility; no OTP decision in V1.
+  approvedWhatsAppAuthenticationAvailable?: boolean;
 }>;
 
 export type TrialRiskTriageDecision = Readonly<{
-  action: "review_without_phone" | "whatsapp_auth_required" | "manual_review" | "already_used";
+  action: "review_without_phone" | "manual_review" | "already_used";
   reason:
     | "LOW_RISK_VERIFIED_BUSINESS"
-    | "PHONE_PROOF_REQUIRED"
+    | "BUSINESS_PROOF_REQUIRED"
     | "ELEVATED_RISK"
     | "RISK_SIGNAL_UNAVAILABLE"
     | "EVIDENCE_CONFLICT"
@@ -75,9 +76,7 @@ export function triagePendingGoogleMerchantTrialRisk(
   }
   if (snapshot.signupVelocity === "elevated" ||
       snapshot.linkedAccountRisk === "elevated") {
-    return snapshot.approvedWhatsAppAuthenticationAvailable === true
-      ? decision("whatsapp_auth_required", "ELEVATED_RISK")
-      : decision("manual_review", "ELEVATED_RISK");
+    return decision("manual_review", "ELEVATED_RISK");
   }
   if (snapshot.signupVelocity !== "normal" ||
       snapshot.linkedAccountRisk !== "none") {
@@ -93,7 +92,5 @@ export function triagePendingGoogleMerchantTrialRisk(
   if (snapshot.independentBusinessProof !== "none") {
     return decision("manual_review", "RISK_SIGNAL_UNAVAILABLE");
   }
-  return snapshot.approvedWhatsAppAuthenticationAvailable === true
-    ? decision("whatsapp_auth_required", "PHONE_PROOF_REQUIRED")
-    : decision("manual_review", "PHONE_PROOF_REQUIRED");
+  return decision("manual_review", "BUSINESS_PROOF_REQUIRED");
 }

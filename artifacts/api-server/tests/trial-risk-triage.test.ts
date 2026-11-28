@@ -37,7 +37,7 @@ test("Google verification alone does not establish eligible independent business
   assert.equal(triagePendingGoogleMerchantTrialRisk({
     ...lowRisk, independentBusinessProof: "none",
     approvedWhatsAppAuthenticationAvailable: true,
-  }).action, "whatsapp_auth_required");
+  }).action, "manual_review");
   assert.equal(triagePendingGoogleMerchantTrialRisk({
     ...lowRisk, independentBusinessProof: "none",
   }).action, "manual_review");
@@ -93,14 +93,14 @@ test("failed or absent server-side anti-bot verification cannot allow low risk",
   }
 });
 
-test("elevated trusted risk requires approved WhatsApp or review without SMS", () => {
+test("elevated trusted risk always requires manual review, independent of OTP availability", () => {
   for (const elevated of [
     { signupVelocity: "elevated" as const },
     { linkedAccountRisk: "elevated" as const },
   ]) {
     assert.equal(triagePendingGoogleMerchantTrialRisk({
       ...lowRisk, ...elevated, approvedWhatsAppAuthenticationAvailable: true,
-    }).action, "whatsapp_auth_required");
+    }).action, "manual_review");
     assert.equal(triagePendingGoogleMerchantTrialRisk({
       ...lowRisk, ...elevated, approvedWhatsAppAuthenticationAvailable: false,
     }).action, "manual_review");
