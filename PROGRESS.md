@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-28 — Owner correction: trial clock starts at account creation
+
+- Owner explicitly fixed the seven-day trial start at the first successful account creation through Google verification, not account approval, completion of store information, linking a channel or the first reply. Once approved, the merchant can link the first Meta channel immediately; no additional ten-day linking window. The clock continues during onboarding/review; login, approval, linking/relinking and repeat registration do not reset it. Preserve store-profile completion, channel ownership, eligibility/anti-abuse guards and text-only trial restrictions. Server-authoritative timestamps and visible remaining time are implementation requirements. This supersedes the proposed activation-based clock in the previous checkpoint.
+- Updated LAUNCH_PLAN.md, LAUNCH_SCOPE_MATRIX.md and AGENTS.md on the existing PR #550 branch. No runtime implementation or tests, no production modification, costs or P0 closure. Other owner decisions unchanged. Historical 29 source closed / 7 open / 9 blocked, 12 in-scope and 4 deferred, NO-GO.
+
+
 ## 2026-11-28 — Owner approved Google-only onboarding, seven-day text trial and support-reviewed cancellation
 
 - Owner decision: sign up/sign in directly via Google, no SMS or WhatsApp OTP; after account creation complete and establish store name, address, phone number and required procedures. Seven-day trial covers text responses to customers and order confirmation, excludes AI processing of images/audio/video. Cancellation/refund requests go to support for review based on documented token consumption. Existing mandatory Meta channel/reply, USD subscription and manual collection decisions remain.
