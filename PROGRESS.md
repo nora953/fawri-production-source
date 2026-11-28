@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-28 — Owner execution order: Meta then AI as final two technical stages
+
+- Owner explicitly ordered the two live integrations last. Updated existing LAUNCH_PLAN.md, LAUNCH_SCOPE_MATRIX.md and AGENTS.md; no competing plan. A1 Google onboarding without OTP and the first-signup seven-day trial, B1 synthetic Neon recovery connectivity/boundary run in parallel now. A2 combines independent commercial/storage/privacy acceptance; B2 scheduled encrypted DB/media recovery. After accepted foundation, M real Meta and I real AI/replies; C final integrated acceptance and explicit owner GO. No provider setup now; no repeated passing tests, no full G4 closure from synthetic fixtures. Meta approval lead time may delay final launch; report it without changing owner's order. Meta and AI remain mandatory before first sale.
+- Documentation-only reordering, no runtime changes, provider configuration, deployment, spend or new P0 closures. Historical register 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED, 12 in-scope and 4 deferred. Next actionable work: inspect existing Google admission/OTP dependency and implement only the approved onboarding/trial delta; establish previously proven Neon runner route in parallel. NO-GO.
+
+
 ## 2026-11-28 — Owner correction: trial clock starts at account creation
 
 - Owner explicitly fixed the seven-day trial start at the first successful account creation through Google verification, not account approval, completion of store information, linking a channel or the first reply. Once approved, the merchant can link the first Meta channel immediately; no additional ten-day linking window. The clock continues during onboarding/review; login, approval, linking/relinking and repeat registration do not reset it. Preserve store-profile completion, channel ownership, eligibility/anti-abuse guards and text-only trial restrictions. Server-authoritative timestamps and visible remaining time are implementation requirements. This supersedes the proposed activation-based clock in the previous checkpoint.
