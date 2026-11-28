@@ -1,5 +1,8 @@
 # FAWRI — instructions for every engineering agent (2026-11-11)
 
+> **2026-11-28 OWNER EXECUTION PRIORITY — FIRST PAID MERCHANT:** Read the newest ACTIVE section of [LAUNCH_PLAN.md](LAUNCH_PLAN.md) and the newest [LAUNCH_SCOPE_MATRIX.md](LAUNCH_SCOPE_MATRIX.md) table, not older NEXT instructions below. Exactly two active paths: A1 identity/commercial decisions → A2 one combined hosted G3/G4 acceptance; B1 synthetic Neon isolation/export proof → B2 actual recurring DB+media recovery. C is the final explicit owner GO and first paid merchant. No duplicate passing tests, no speculative features, no repeated identical failure more than twice without new evidence; switch to the independent path. No production writes, new cost, secrets, deployment, merge, or launch without scoped authorization. Existing manual-commerce scope is unchanged; WhatsApp phone verification is distinct from deferred commercial Meta replies. Only the owner can change scope or this priority. Report real P0 closures, not guessed percentages. Existing historical evidence remains authoritative within its proven scope.
+
+
 > **FIRST READ: [LAUNCH_PLAN.md](LAUNCH_PLAN.md)**. It is the **ONLY ACTIVE EXECUTION PLAN**, explicitly approved by the product owner on 2026-11-11. No older audit plan, frozen FT-01→FT-04 queue, older `closurePlan` "next steps", historical MASTER_PLAN, or prior conversation can override its work order. This instruction takes precedence over all older sequencing instructions in this repository. Historical proof, accepted safety requirements and registered P0 status remain evidence; nothing is silently waived.
 
 ## Required startup: no new competing plans
