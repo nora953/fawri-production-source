@@ -1,5 +1,35 @@
 # فوري — مصفوفة موانع إطلاق النسخة التجارية الأولى (القرار التنفيذي الجاري)
 
+## 2026-11-28 — جدول الإغلاق الجاري الوحيد لخطة أول تاجر مدفوع
+
+يتبع [LAUNCH_PLAN.md](LAUNCH_PLAN.md)؛ لا خطة ثانية. هذا الجدول يفصل حالة الأدلة الحديثة عن **الحالة التاريخية** في سجل JSON (29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED، 45 معروفة). جميع الصفوف الـ16 التاريخية تبقى غير مغلقة في السجل حتى اعتماد دليل الإغلاق أو إثبات العزل وفق السياسة. لا تُعاد الأدلة المقبولة أدناه؛ نقص واحد محدد لكل شرط قبول، ويجمع الاختبار المستضاف A2 عدة شروط معاً. لا تُحوّل كلمة «مثبت جزئياً» إلى إغلاق. أدلة التحديث المستضاف [3bdb7ef](https://github.com/nora953/fawri-production-source/commit/3bdb7ef097188dd807d299d87239070dbca067f8) والمعاينة [1d1fca5](https://github.com/nora953/fawri-production-source/commit/1d1fca5f575b4a6ec9d9518cf00b6dacd9f725e0) مع أحدث [PROGRESS](PROGRESS.md).
+
+| P0 التاريخي | الدليل الذي نعيد استخدامه | شرط القبول المتبقي فقط | الحزمة / المسؤول |
+| --- | --- | --- | --- |
+| P0-ACCESS-HOSTED-IDENTITY | G2 54 ترحيلاً، 3 LOGINs، التشغيل المستضاف | ربط هوية الجلسة الحقيقية على الإصدار المقصود بدور SQL المستقل وإقرار حدودها؛ لا مشروع Neon جديد | A2 / هندسة |
+| P0-ACCESS-HOSTED-ROLLOUT | ترحيلات مقبولة وإصلاح ACL الستة وإقلاع Render | مسارات التاجر الحقيقية إيجاباً وسلباً على الإصدار نفسه، اعتماد صلاحيات RLS وعزل بيانات الاختبار، reuse دليل التراجع | A2 / هندسة |
+| P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX | أدلة الحقول/الحوادث المصدرية وعزل SQL/HTTP المحلي | مصفوفة الأدوار والحقول والمسارات المعروضة فعلاً، الإدارة والوصول الاستثنائي المقيدان | A2 / هندسة وأمان، اعتماد السياسة |
+| P0-RESIDUAL-MERCHANT-PRIVACY-001/http | اختبارات العزل وdedupe | تاجرَان فعلياً في اختبار مستضاف مقيد؛ foreign ID/media/order/actor denial وأي منتج/مستهلك تاريخي ما زال معروضاً | A2 / هندسة |
+| P0-RECEIPT-OWNERSHIP-POLICY | HOLD_WITHOUT_ORDER; NO_ARBITRARY_ATTACH، تفعيل مدقق واختبار محلي | إجراء تحصيل اشتراك/إيصال/تسوية يدوي معتمد، منع منح الرصيد غير المصرح، إثبات audit ورفض مزود الدفع المستضاف | A1+A2 / مالكة وهندسة |
+| P0-RETENTION-PRIVILEGED-DELETION-POLICY | اختبارات retention والـPOS التاريخي محفوظ | اعتماد الاحتفاظ حسب نوع البيانات/الحجز القانوني، حل تعارض 90 يوماً مع الكود الحالي 6 أشهر+10 أيام، إثبات عزل وحذف/حفظ مأذون مع وسائط حقيقية في اختبار | A1+A2 / مالكة ومراجعة قانونية وهندسة |
+| P0-HOSTED-STORAGE-DELETION | قرص 5GB وcanary عبر redeploy | صورة منتج من التاجر المصرح، قراءة خاصة وعزل، دوام restart/redeploy واستعادة متطابقة وحذف مأذون دون مس تاريخ مالي | A2+B2 / هندسة |
+| P0-HOSTED-RECOVERY | DB offsite مشفر، استعادة مستقلة وV7، ACL rollout، local replica proof | B1 عزل حساب Neon وwriter غير متاح، export/restore اصطناعي؛ B2 DB+media فعلي دوري مشفر ومستعاد من خارج الاستضافة، صلاحيات، RPO/RTO ومراقبة وتكلفة | B1+B2 / هندسة وأمان ومالكة |
+| P0-HOSTED-BRANCH-DEPLOYMENT | SHA fac8ec8 live و/readyz، TLS، rollback cc2b3b7، prelaunch | قبول صورة الإصدار الذي سيُباع مع الإعدادات والتغييرات الفعلية، CI مناسب للتغير، جلسة اختبار محمية وخطة رجوع موائمة لـACL؛ لا إعادة نشر لمجرد هذا الصف | A2+C / هندسة ومالكة |
+| P0-INCIDENT-REVIEW | الأدلة التاريخية لا تُعتبر إغلاقاً | مراجعة محددة للتعرض/الهوية/الأسرار والسجلات، أثر موثق وإغلاق حادثة أو دوران معتمد عند الحاجة | A1+A2 / أمان ومالكة |
+| P0-RELEASE-SIGNOFF | Google client Testing وWA template Active؛ واجهة preview منفصلة ناجحة لا تعني قبولاً تجارياً | تحقق مزود Google/WhatsApp حقيقي (بلا SMS)، شروط EN/AR/KU وسياسة دعم وتحقيق الهوية/trial، مسار E2E تجاري، جميع الشروط أعلاه و5 أدلة العزل، قرار GO صريح | A1+A2+B2+C / مالكة وهندسة |
+| CASHIER-SYNC-SEQUENCE-001 | POS مؤجل وممنوع بالمصدر وhosted gate | إثبات استمرار تعطيل POS على مسار الإصدار النهائي، حفظ العمليات والسجلات التاريخية وعدم وجود عمل عالق يتأثر | A2+C / هندسة ومالكة |
+| P0-OFFLINE-DEVICE-ACCEPTANCE | POS/offline خارج العرض | تحقق انعدام/معالجة الأجهزة القديمة والعمليات العالقة قبل GO، لا اختبار أجهزة جديدة للميزة المؤجلة | A2+C / مالكة وهندسة |
+| P0-OFFLINE-KEY-RELEASE | لا تفعيل POS في V1 | عدم إصدار/منح مفاتيح أو استحقاق offline، عدم حذف التاريخ | A2+C / هندسة |
+| P0-HOSTED-PROVIDER-PAYMENT | مؤجل ورفض محلي | رفض checkout/webhook/رصيد وتسوية تلقائية على المسار المستضاف المعروض، إجراء اشتراك يدوي موثق | A1+A2 / هندسة ومالكة |
+| P0-HOSTED-PROVIDER-META | مؤجل، worker معطل ورفض محلي | منع OAuth/webhook/worker وواجهة/تسويق الردود والـAI في المسار التجاري اليدوي؛ **لا يختلط مع WhatsApp OTP المطلوب للتحقق** | A2 / هندسة |
+
+**الحزم الجارية:** A1 PENDING، B1 BLOCKED على اتصال مباشر/ضمان writer، A2 ينتظر A1 والإذن المستضاف، B2 ينتظر B1 وصورة A2، C NO-GO. إثبات الهوية/السياسة والوسائط والنسخ الدوري أهم من تجديد المعاينة. هذه مصفوفة تشغيل للنطاق الموافق عليه سابقاً، لا اعتماد لبديل هوية ولا تغيير نطاق أو إغلاق P0. أي اختلاف بين هذا القسم والجدول التاريخي أدناه: استخدم هذا القسم للتنفيذ مع حفظ الحالات التاريخية كما هي.
+
+---
+
+## المصفوفات والأدلة السابقة (مرجع تاريخي لا طابور عمل)
+
+
 > **2026-11-26 — Actual G5 restored tenant authorization probe passed:** Owner-run V7 on the real encrypted backup verified three restricted logins, direct ACL equivalence, two synthetic merchants' product isolation, transaction-bound scope and unknown operator actor denial. A trusted owner-only stats substitute was applied in the detached cluster. Exact provider extension ownership/grantor parity remains held; recurring backup and actual media recovery pending. Do not repeat unchanged V7. G5 BLOCKED; commercial NO-GO, no new P0 closure. [Evidence](PROGRESS.md).
 
 > **2026-11-26 — G5 actual private archive ACL restore and 13 direct ACL transitions verified:** Owner-run detached PG18 restored the actual archive with owners/ACLs and three independent restricted logins. All 13 explicit-to-NULL ACL transitions have identical direct privileges/grant options, zero missing/extra objects. One provider extension owner and four membership grantors differ; external provider membership intentionally excluded. Functional restored tenant/auth/operator authorization, inherited/provider portability, recurring backup and real media recovery remain unaccepted. No new parent P0 closure; commercial NO-GO. [Latest evidence](PROGRESS.md).
