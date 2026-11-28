@@ -100,13 +100,15 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
     FAWRI_DISABLE_JOB_WORKERS: "1",
   });
 
+  const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+  const runtimeFixture=await createDisposableKnowledgeRuntime();
   const [
     { pool },
     { hashPassword },
     merchantAccounts,
     { MERCHANT_SESSION_COOKIE },
   ] = await Promise.all([
-    import("@workspace/db"),
+    Promise.resolve({pool:runtimeFixture.admin}),
     import("../src/services/authPasswordService.js"),
     import("../src/services/postgresMerchantAccountAuthority.js"),
     import("../src/middleware/authSession.js"),
@@ -127,7 +129,7 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
       if (server) await new Promise<void>((resolve, reject) => server?.close((error) => error ? reject(error) : resolve()));
     }],
     ["fixture accounts", cleanup],
-    ["pool", () => pool.end()],
+    ["actual runtime fixture", () => runtimeFixture.dispose()],
     ["temporary directory", () => rm(runtimeDirectory, { recursive: true, force: true })],
   ]));
 
@@ -284,6 +286,161 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
     JSON.stringify(await loginB.clone().json().catch(() => null)),
   );
   const merchantBCookie = responseCookie(loginB, MERCHANT_SESSION_COOKIE);
+
+  // Real non-cashier order: verify tenant isolation independently of cashier-source rejection.
+  const ordinaryOrderId = `golden-online-order-${proofId}`;
+  await pool.query(
+    `INSERT INTO orders
+       (id, merchant_id, customer_name, status, payment_method, payment_status,
+        subtotal_iqd, delivery_fee_iqd, total_iqd, source_channel, version, metadata)
+     VALUES ($1, $2, 'Golden Online Customer', 'pending_confirmation',
+             'cash_on_delivery', 'cash_on_delivery', 12000, 0, 12000,
+             'online', 1, '{}'::jsonb)`,
+    [ordinaryOrderId, merchantAId],
+  );
+  const ordinaryOrderOwnerResponse = await fetch(`${baseUrl}/api/order/${ordinaryOrderId}`, {
+    headers: { Cookie: merchantACookie },
+  });
+  assert.equal(ordinaryOrderOwnerResponse.status, 200);
+  const ordinaryOrderForeignResponse = await fetch(`${baseUrl}/api/order/${ordinaryOrderId}`, {
+    headers: { Cookie: merchantBCookie },
+  });
+  assert.equal(ordinaryOrderForeignResponse.status, 404);
+  assert.equal((await json(ordinaryOrderForeignResponse)).code, "ORDER_NOT_FOUND");
+  const ordinaryOrderForeignStatus = await fetch(`${baseUrl}/api/orders/${ordinaryOrderId}/status`, {
+    method: "PATCH",
+    headers: { Cookie: merchantBCookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, status: "confirmed" }),
+  });
+  assert.equal(ordinaryOrderForeignStatus.status, 404);
+  assert.equal((await json(ordinaryOrderForeignStatus)).code, "ORDER_NOT_FOUND");
+  const ordinaryOrderForeignPayment = await fetch(`${baseUrl}/api/orders/${ordinaryOrderId}/payment-status`, {
+    method: "PATCH",
+    headers: { Cookie: merchantBCookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, payment_status: "paid" }),
+  });
+  assert.equal(ordinaryOrderForeignPayment.status, 404);
+  assert.equal((await json(ordinaryOrderForeignPayment)).code, "ORDER_NOT_FOUND");
+  const ordinaryOrderForeignConfirm = await fetch(`${baseUrl}/api/orders/${ordinaryOrderId}/payment/confirm`, {
+    method: "POST",
+    headers: { Cookie: merchantBCookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1 }),
+  });
+  assert.equal(ordinaryOrderForeignConfirm.status, 404);
+  assert.equal((await json(ordinaryOrderForeignConfirm)).code, "ORDER_NOT_FOUND");
+  const ordinaryOrderForeignReject = await fetch(`${baseUrl}/api/orders/${ordinaryOrderId}/payment/reject`, {
+    method: "POST",
+    headers: { Cookie: merchantBCookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, reason: "foreign merchant" }),
+  });
+  assert.equal(ordinaryOrderForeignReject.status, 404);
+  assert.equal((await json(ordinaryOrderForeignReject)).code, "ORDER_NOT_FOUND");
+  const ordinaryOrderForeignConflictResolve = await fetch(`${baseUrl}/api/orders/${ordinaryOrderId}/payment/conflict/resolve`, {
+    method: "POST",
+    headers: { Cookie: merchantBCookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, resolution_note: "foreign merchant" }),
+  });
+  assert.equal(ordinaryOrderForeignConflictResolve.status, 404);
+  assert.equal((await json(ordinaryOrderForeignConflictResolve)).code, "ORDER_NOT_FOUND");
+  const ordinaryOrderAfterDenials = await pool.query(
+    "SELECT status::text AS status, payment_status::text AS payment_status, version FROM orders WHERE merchant_id = $1 AND id = $2",
+    [merchantAId, ordinaryOrderId],
+  );
+  assert.equal(ordinaryOrderAfterDenials.rows.length, 1);
+  assert.equal(ordinaryOrderAfterDenials.rows[0].status, "pending_confirmation");
+  assert.equal(ordinaryOrderAfterDenials.rows[0].payment_status, "cash_on_delivery");
+  assert.equal(Number(ordinaryOrderAfterDenials.rows[0].version), 1);
+
+  const ordinaryOwnerList = await fetch(`${baseUrl}/api/orders`, {
+    headers: { Cookie: merchantACookie },
+  });
+  assert.equal(ordinaryOwnerList.status, 200);
+  assert.equal((await json(ordinaryOwnerList)).orders.some((order: any) => order.id === ordinaryOrderId), true);
+  const ordinaryForeignList = await fetch(`${baseUrl}/api/orders`, {
+    headers: { Cookie: merchantBCookie },
+  });
+  assert.equal(ordinaryForeignList.status, 200);
+  assert.equal((await json(ordinaryForeignList)).orders.some((order: any) => order.id === ordinaryOrderId), false);
+  const foreignOrdersA = await fetch(`${baseUrl}/api/orders/${merchantBId}`, {
+    headers: { Cookie: merchantACookie },
+  });
+  assert.equal(foreignOrdersA.status, 403);
+  assert.equal((await json(foreignOrdersA)).code, "MERCHANT_ACCESS_FORBIDDEN");
+  const foreignOrdersB = await fetch(`${baseUrl}/api/orders/${merchantAId}`, {
+    headers: { Cookie: merchantBCookie },
+  });
+  assert.equal(foreignOrdersB.status, 403);
+  assert.equal((await json(foreignOrdersB)).code, "MERCHANT_ACCESS_FORBIDDEN");
+
+  const ownOrdersA = await fetch(`${baseUrl}/api/orders/${merchantAId}`, {
+    headers: { Cookie: merchantACookie },
+  });
+  assert.equal(ownOrdersA.status, 200);
+  const ownOrdersABody = await json(ownOrdersA);
+  assert.equal(ownOrdersABody.merchant_id, merchantAId);
+  assert.equal(ownOrdersABody.orders.some((order: any) => order.id === ordinaryOrderId), true);
+  const ownOrdersB = await fetch(`${baseUrl}/api/orders/${merchantBId}`, {
+    headers: { Cookie: merchantBCookie },
+  });
+  assert.equal(ownOrdersB.status, 200);
+  const ownOrdersBBody = await json(ownOrdersB);
+  assert.equal(ownOrdersBBody.merchant_id, merchantBId);
+  assert.equal(ownOrdersBBody.orders.some((order: any) => order.id === ordinaryOrderId), false);
+
+  const unscopedOrdersA = await fetch(`${baseUrl}/api/orders`, {
+    headers: { Cookie: merchantACookie },
+  });
+  assert.equal(unscopedOrdersA.status, 200);
+  const unscopedOrdersABody = await json(unscopedOrdersA);
+  assert.equal(unscopedOrdersABody.merchant_id, merchantAId);
+  assert.equal(unscopedOrdersABody.orders.every((order: any) => order.merchant_id === merchantAId), true);
+
+  const unscopedOrdersB = await fetch(`${baseUrl}/api/orders`, {
+    headers: { Cookie: merchantBCookie },
+  });
+  assert.equal(unscopedOrdersB.status, 200);
+  const unscopedOrdersBBody = await json(unscopedOrdersB);
+  assert.equal(unscopedOrdersBBody.merchant_id, merchantBId);
+  assert.equal(unscopedOrdersBBody.orders.every((order: any) => order.merchant_id === merchantBId), true);
+  assert.deepEqual(unscopedOrdersABody.orders, ownOrdersABody.orders);
+  assert.deepEqual(unscopedOrdersBBody.orders, ownOrdersBBody.orders);
+
+  const anonymousOrders = await fetch(`${baseUrl}/api/orders`);
+  assert.equal(anonymousOrders.status, 401);
+  const anonymousMerchantOrders = await fetch(`${baseUrl}/api/orders/${merchantAId}`);
+  assert.equal(anonymousMerchantOrders.status, 401);
+  const anonymousOrderDetail = await fetch(`${baseUrl}/api/order/${crypto.randomUUID()}`);
+  assert.equal(anonymousOrderDetail.status, 401);
+  const anonymousOrderMutation = await fetch(`${baseUrl}/api/orders/${crypto.randomUUID()}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, status: "confirmed" }),
+  });
+  assert.equal(anonymousOrderMutation.status, 401);
+  const anonymousPaymentMutation = await fetch(`${baseUrl}/api/orders/${crypto.randomUUID()}/payment-status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, payment_status: "paid" }),
+  });
+  assert.equal(anonymousPaymentMutation.status, 401);
+  const anonymousPaymentConfirm = await fetch(`${baseUrl}/api/orders/${crypto.randomUUID()}/payment/confirm`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1 }),
+  });
+  assert.equal(anonymousPaymentConfirm.status, 401);
+  const anonymousPaymentReject = await fetch(`${baseUrl}/api/orders/${crypto.randomUUID()}/payment/reject`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, reason: "unauthorized" }),
+  });
+  assert.equal(anonymousPaymentReject.status, 401);
+  const anonymousConflictResolution = await fetch(`${baseUrl}/api/orders/${crypto.randomUUID()}/payment/conflict/resolve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, resolution_note: "unauthorized" }),
+  });
+  assert.equal(anonymousConflictResolution.status, 401);
 
   const subscription = await fetch(`${baseUrl}/api/auth/subscription/current`, {
     headers: { Cookie: merchantACookie },
@@ -640,6 +797,124 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   assert.equal(canonicalOrder.rows[0].status, "delivered");
   assert.equal(canonicalOrder.rows[0].payment_status, "paid");
   assert.equal(Number(canonicalOrder.rows[0].total_iqd), productPrice);
+
+  const foreignCashierOrderDetail = await fetch(`${baseUrl}/api/order/${saleId}`, {
+    headers: { Cookie: merchantBCookie },
+  });
+  assert.equal(foreignCashierOrderDetail.status, 404);
+  assert.equal((await json(foreignCashierOrderDetail)).code, "ORDER_NOT_FOUND");
+  const foreignCashierOrderMutation = await fetch(`${baseUrl}/api/orders/${saleId}/status`, {
+    method: "PATCH",
+    headers: { Cookie: merchantBCookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, status: "cancelled" }),
+  });
+  assert.equal(foreignCashierOrderMutation.status, 404);
+  assert.equal((await json(foreignCashierOrderMutation)).code, "ORDER_NOT_FOUND");
+  const unchangedCashierOrder = await pool.query(
+    "SELECT status::text AS status, payment_status::text AS payment_status FROM orders WHERE merchant_id = $1 AND id = $2",
+    [merchantAId, saleId],
+  );
+  assert.equal(unchangedCashierOrder.rows[0].status, "delivered");
+  assert.equal(unchangedCashierOrder.rows[0].payment_status, "paid");
+  const foreignCashierPaymentMutation = await fetch(`${baseUrl}/api/orders/${saleId}/payment-status`, {
+    method: "PATCH",
+    headers: { Cookie: merchantBCookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, payment_status: "failed" }),
+  });
+  assert.equal(foreignCashierPaymentMutation.status, 404);
+  assert.equal((await json(foreignCashierPaymentMutation)).code, "ORDER_NOT_FOUND");
+  const unchangedCashierPayment = await pool.query(
+    "SELECT status::text AS status, payment_status::text AS payment_status FROM orders WHERE merchant_id = $1 AND id = $2",
+    [merchantAId, saleId],
+  );
+  assert.equal(unchangedCashierPayment.rows[0].status, "delivered");
+  assert.equal(unchangedCashierPayment.rows[0].payment_status, "paid");
+  const foreignCashierPaymentConfirm = await fetch(`${baseUrl}/api/orders/${saleId}/payment/confirm`, {
+    method: "POST",
+    headers: { Cookie: merchantBCookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1 }),
+  });
+  assert.equal(foreignCashierPaymentConfirm.status, 404);
+  assert.equal((await json(foreignCashierPaymentConfirm)).code, "ORDER_NOT_FOUND");
+  const foreignCashierPaymentReject = await fetch(`${baseUrl}/api/orders/${saleId}/payment/reject`, {
+    method: "POST",
+    headers: { Cookie: merchantBCookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, reason: "foreign merchant" }),
+  });
+  assert.equal(foreignCashierPaymentReject.status, 404);
+  assert.equal((await json(foreignCashierPaymentReject)).code, "ORDER_NOT_FOUND");
+  const unchangedAfterPaymentDecisions = await pool.query(
+    "SELECT status::text AS status, payment_status::text AS payment_status FROM orders WHERE merchant_id = $1 AND id = $2",
+    [merchantAId, saleId],
+  );
+  assert.equal(unchangedAfterPaymentDecisions.rows[0].status, "delivered");
+  assert.equal(unchangedAfterPaymentDecisions.rows[0].payment_status, "paid");
+  const ownerCashierOrderDetail = await fetch(`${baseUrl}/api/order/${saleId}`, {
+    headers: { Cookie: merchantACookie },
+  });
+  assert.equal(ownerCashierOrderDetail.status, 404);
+  assert.equal((await json(ownerCashierOrderDetail)).code, "ORDER_NOT_FOUND");
+  const ownerCashierPaymentMutation = await fetch(`${baseUrl}/api/orders/${saleId}/payment-status`, {
+    method: "PATCH",
+    headers: { Cookie: merchantACookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, payment_status: "failed" }),
+  });
+  assert.equal(ownerCashierPaymentMutation.status, 404);
+  assert.equal((await json(ownerCashierPaymentMutation)).code, "ORDER_NOT_FOUND");
+  const ownerCashierPaymentConfirm = await fetch(`${baseUrl}/api/orders/${saleId}/payment/confirm`, {
+    method: "POST",
+    headers: { Cookie: merchantACookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1 }),
+  });
+  assert.equal(ownerCashierPaymentConfirm.status, 404);
+  assert.equal((await json(ownerCashierPaymentConfirm)).code, "ORDER_NOT_FOUND");
+  const ownerCashierPaymentReject = await fetch(`${baseUrl}/api/orders/${saleId}/payment/reject`, {
+    method: "POST",
+    headers: { Cookie: merchantACookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, reason: "cashier boundary" }),
+  });
+  assert.equal(ownerCashierPaymentReject.status, 404);
+  assert.equal((await json(ownerCashierPaymentReject)).code, "ORDER_NOT_FOUND");
+  const ownerCashierConflictResolution = await fetch(`${baseUrl}/api/orders/${saleId}/payment/conflict/resolve`, {
+    method: "POST",
+    headers: { Cookie: merchantACookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, resolution_note: "cashier boundary" }),
+  });
+  assert.equal(ownerCashierConflictResolution.status, 404);
+  assert.equal((await json(ownerCashierConflictResolution)).code, "ORDER_NOT_FOUND");
+  const cashierBoundarySnapshot = await pool.query(
+    "SELECT status::text AS status, payment_status::text AS payment_status FROM orders WHERE merchant_id = $1 AND id = $2",
+    [merchantAId, saleId],
+  );
+  assert.equal(cashierBoundarySnapshot.rows.length, 1);
+  assert.equal(cashierBoundarySnapshot.rows[0].status, "delivered");
+  assert.equal(cashierBoundarySnapshot.rows[0].payment_status, "paid");
+  const ownerCashierStatusMutation = await fetch(`${baseUrl}/api/orders/${saleId}/status`, {
+    method: "PATCH",
+    headers: { Cookie: merchantACookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, status: "cancelled" }),
+  });
+  assert.equal(ownerCashierStatusMutation.status, 404);
+  assert.equal((await json(ownerCashierStatusMutation)).code, "ORDER_NOT_FOUND");
+  const cashierSourceAfterOwnerMutation = await pool.query(
+    "SELECT status::text AS status, payment_status::text AS payment_status FROM orders WHERE merchant_id = $1 AND id = $2",
+    [merchantAId, saleId],
+  );
+  assert.equal(cashierSourceAfterOwnerMutation.rows.length, 1);
+  assert.equal(cashierSourceAfterOwnerMutation.rows[0].status, "delivered");
+  assert.equal(cashierSourceAfterOwnerMutation.rows[0].payment_status, "paid");
+  const ownerCashierList = await fetch(`${baseUrl}/api/orders`, {
+    headers: { Cookie: merchantACookie },
+  });
+  assert.equal(ownerCashierList.status, 200);
+  const ownerCashierListBody = await json(ownerCashierList);
+  assert.equal(ownerCashierListBody.orders.some((order: any) => order.id === saleId), false);
+  const ownerExplicitCashierList = await fetch(`${baseUrl}/api/orders/${merchantAId}`, {
+    headers: { Cookie: merchantACookie },
+  });
+  assert.equal(ownerExplicitCashierList.status, 200);
+  const ownerExplicitCashierListBody = await json(ownerExplicitCashierList);
+  assert.equal(ownerExplicitCashierListBody.orders.some((order: any) => order.id === saleId), false);
 
   const merchantReport = await fetch(`${baseUrl}/api/cashier/management/report`, {
     headers: { Cookie: merchantACookie },

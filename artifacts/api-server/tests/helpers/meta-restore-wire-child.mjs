@@ -1,15 +1,20 @@
 import assert from 'node:assert/strict';
 import {assertDisposablePostgres} from '../../../../scripts/lib/disposable-postgres-test-guard.mjs';
 await assertDisposablePostgres();
-const {pool}=await import('@workspace/db');
+let pool;
 let handled=false,proxy;
 async function send(message){if(process.connected)await new Promise(resolve=>process.send(message,()=>resolve()));}
 process.on('message',async task=>{
   if(handled)return;handled=true;let dropped=false;
   try{
-    assert.match(task.role,/^meta_restore_[a-f0-9]{32}$/);assert.match(task.marker,/^meta-restore-owned-[a-f0-9-]+$/);
+    assert.match(task.role,/^knowledge_app_[a-f0-9]{32}$/);assert.match(task.marker,/^meta-restore-owned-[a-f0-9-]+$/);
     assert.ok(['refund','release'].includes(task.kind));
-    pool.options.max=1;pool.options.options=`-c role=${task.role}`;pool.options.application_name=task.marker;
+    const bootstrap=new URL(process.env.DATABASE_URL),runtime=new URL(process.env.FAWRI_TEST_RUNTIME_DATABASE_URL);
+    assert.equal(runtime.host,bootstrap.host);assert.equal(runtime.pathname,bootstrap.pathname);
+    assert.equal(decodeURIComponent(runtime.username),task.role);
+    process.env.DATABASE_URL=runtime.toString();delete process.env.FAWRI_TEST_RUNTIME_DATABASE_URL;
+    ({pool}=await import('@workspace/db'));
+    pool.options.max=1;pool.options.application_name=task.marker;
     if(task.drop){
       const {startOwnedCommitResponseProxy}=await import('./postgres-commit-response-proxy.mjs');
       proxy=await startOwnedCommitResponseProxy(1,async()=>{
@@ -19,10 +24,12 @@ process.on('message',async task=>{
       const owned=new URL(process.env.DATABASE_URL);pool.options.connectionString=undefined;
       Object.assign(pool.options,{host:'127.0.0.1',port:proxy.port,user:decodeURIComponent(owned.username),password:decodeURIComponent(owned.password),database:'fawri_ci',ssl:false});
     }
-    const identity=(await pool.query("SELECT current_user AS role,rolsuper,rolbypassrls,EXISTS(SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relowner=r.oid) AS owns_table FROM pg_roles r WHERE rolname=current_user")).rows[0];
-    assert.deepEqual(identity,{role:task.role,rolsuper:false,rolbypassrls:false,owns_table:false});
+    const identity=(await pool.query("SELECT current_user AS role,session_user AS login,rolsuper,rolbypassrls,EXISTS(SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relowner=r.oid) AS owns_table FROM pg_roles r WHERE rolname=current_user")).rows[0];
+    assert.deepEqual(identity,{role:task.role,login:task.role,rolsuper:false,rolbypassrls:false,owns_table:false});
     for(const table of ['subscriptions','reply_ledger'])assert.equal((await pool.query(`SELECT count(*)::int AS n FROM ${table}`)).rows[0].n,0);
-    await send({type:'role-proof',restricted:true,nakedReadsZero:true});
+    const {assertProductionDatabaseRlsReady}=await import('../../src/services/postgresRuntimeRlsSecurity.ts');
+    await assertProductionDatabaseRlsReady({NODE_ENV:'production',FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_AUTH_DATABASE_URL:process.env.FAWRI_AUTH_DATABASE_URL,FAWRI_OPERATOR_DATABASE_URL:'postgresql://operator@127.0.0.1/fawri_ci'},pool);
+    await send({type:'role-proof',restricted:true,nakedReadsZero:true,actualLogin:true});
     const {refundMerchantAutoReplyAuthoritative}=await import('../../src/services/merchantReplyRefundAuthority.ts');
     const {releaseMerchantAutoReplyReservationAuthoritative}=await import('../../src/services/merchantReplyReservationReleaseAuthority.ts');
     proxy?.arm();
@@ -37,6 +44,6 @@ process.on('message',async task=>{
       await send({type:'uncertain',successReported:false,dropObserved:true});
     }
   }catch(error){await send({type:'failure',code:/^[A-Z0-9_]{1,80}$/.test(error?.code||'')?error.code:'META_RESTORE_WIRE_TEST_FAILURE'});process.exitCode=1;}
-  finally{try{await pool.end();if(proxy)await proxy.close();}catch{process.exitCode=1;await send({type:'cleanup-failure'});}if(process.connected)process.disconnect();}
+  finally{try{await (await import('../../src/services/authenticationPostgresAuthority.ts')).closeAuthenticationPool();if(pool)await pool.end();if(proxy)await proxy.close();}catch{process.exitCode=1;await send({type:'cleanup-failure'});}if(process.connected)process.disconnect();}
 });
 await send({type:'ready'});

@@ -3,6 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { getFawriDataDir } from "../lib/dataPaths";
+import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
+import { productionReleaseGateRequired } from "./productionReleaseReadiness";
 import { logger } from "../lib/logger";
 import {
   catalogMediaStorageProviderName,
@@ -17,6 +19,7 @@ import {
 } from "./operationalPostgresAuthority";
 import {
   completeMerchantDeletionPostgres,
+  MerchantManagementError,
   type ManagedDeletionRequest,
 } from "./postgresMerchantManagementAuthority";
 import {
@@ -24,6 +27,7 @@ import {
   removeSupportTicketImageStoragePrefix,
 } from "./supportImageStorage";
 import { reconcileOrphanSupportImagesPostgres } from "./postgresSupportImageAuthority";
+import { manualCommercialRelease } from "./manualCommercialRelease";
 
 type CleanupState = "prepared" | "pending" | "complete";
 
@@ -101,23 +105,57 @@ function writeManifest(manifest: CleanupManifest): void {
   fs.renameSync(temporary, target);
 }
 
+function invalidManifest(): never {
+  // Never include the manifest body or merchant identity in logs/exceptions.
+  throw Object.assign(new Error("merchant media cleanup manifest invalid"), {
+    code: "PHYSICAL_MEDIA_CLEANUP_MANIFEST_INVALID",
+  });
+}
+
+function validCleanupEntry(value: unknown): value is CleanupEntry {
+  if (!value || typeof value !== "object") return false;
+  const entry = value as Record<string, unknown>;
+  if (typeof entry.storage_provider !== "string" || !entry.storage_provider.trim()) return false;
+  switch (entry.kind) {
+    case "catalog_object":
+    case "support_object":
+      return typeof entry.storage_key === "string" && entry.storage_key.length > 0;
+    case "catalog_merchant_prefix":
+      return true;
+    case "support_ticket_prefix":
+      return typeof entry.ticket_id === "string" && entry.ticket_id.length > 0;
+    default:
+      return false;
+  }
+}
+
 function readManifest(filePath: string): CleanupManifest | null {
+  let raw: string;
   try {
-    const parsed = JSON.parse(fs.readFileSync(filePath, "utf8")) as CleanupManifest;
-    if (
-      parsed?.version !== 1 ||
-      !parsed.merchant_id ||
-      !parsed.deletion_request_id ||
-      !Array.isArray(parsed.entries) ||
-      !["prepared", "pending", "complete"].includes(parsed.state)
-    ) {
-      return null;
-    }
-    return parsed;
+    raw = fs.readFileSync(filePath, "utf8");
   } catch (error) {
     if ((error as NodeJS.ErrnoException)?.code === "ENOENT") return null;
-    return null;
+    return invalidManifest();
   }
+  let parsed: CleanupManifest;
+  try {
+    parsed = JSON.parse(raw) as CleanupManifest;
+  } catch {
+    return invalidManifest();
+  }
+  if (
+    parsed?.version !== 1 ||
+    typeof parsed.merchant_id !== "string" || !parsed.merchant_id.trim() ||
+    typeof parsed.deletion_request_id !== "string" || !parsed.deletion_request_id.trim() ||
+    !Array.isArray(parsed.entries) || !parsed.entries.every(validCleanupEntry) ||
+    !["prepared", "pending", "complete"].includes(parsed.state) ||
+    // A manifest under another merchant's hashed filename must never be
+    // trusted for either tombstone verification or physical media removal.
+    path.basename(filePath) !== manifestFileName(parsed.merchant_id)
+  ) {
+    return invalidManifest();
+  }
+  return parsed;
 }
 
 function safeErrorCode(error: unknown): string {
@@ -169,60 +207,69 @@ async function captureCleanupManifest(input: {
     );
   }
 
-  const [merchantRows, catalogRows, supportRows, ticketRows] = await withMerchantOperationalTransaction(
-    input.merchantId,
-    async (client) => [
-    await operationalQueryRows<{
-      merchant_status: string;
-      account_state: string;
-    }>(
-      client,
-      `SELECT m.status::text AS merchant_status, a.state::text AS account_state
+  type MerchantStateRow = { merchant_status: string; account_state: string };
+  type CatalogRow = { storage_key: string };
+  type SupportRow = { storage_provider: string; storage_key: string };
+  type TicketRow = { id: string };
+  const merchantSql = `SELECT m.status::text AS merchant_status, a.state::text AS account_state
          FROM merchants m
          JOIN accounts a ON a.id = m.account_id AND a.kind = 'merchant'
         WHERE m.id = $1
-        LIMIT 1`,
-      [input.merchantId],
-    ),
-    await operationalQueryRows<{ storage_key: string }>(
-      client,
-      `SELECT storage_key
+        LIMIT 1`;
+  const catalogSql = `SELECT storage_key
          FROM catalog_image_references
         WHERE merchant_id = $1 AND storage_key IS NOT NULL
-        ORDER BY id`,
-      [input.merchantId],
-    ),
-    await operationalQueryRows<{
-      storage_provider: string;
-      storage_key: string;
-    }>(
-      client,
-      `SELECT storage_provider, storage_key
-         FROM support_attachments
-        WHERE merchant_id = $1 AND deleted_at IS NULL
-        ORDER BY id`,
-      [input.merchantId],
-    ),
-    await operationalQueryRows<{ id: string }>(
-      client,
-      `SELECT id
-         FROM support_tickets
-        WHERE merchant_id = $1
-        ORDER BY id`,
-      [input.merchantId],
-    ),
-    ] as const,
-  );
+        ORDER BY id`;
+
+  // Manual V1 has no in-app Support. The restricted tenant role is deliberately
+  // unable to SELECT public.accounts/merchants or the deferred Support tables.
+  // Read the suspended merchant status via the trusted authentication issuer,
+  // and only catalog references via a tenant-scoped SQL transaction. Do NOT
+  // grant the tenant LOGIN access to global identity or Support tables.
+  //
+  // The full-product non-manual path retains its existing single-transaction
+  // capture semantics and must be separately reviewed before it is activated.
+  const [merchantRows, catalogRows, supportRows, ticketRows] =
+    manualCommercialRelease()
+      ? await (async () => {
+          const identity = await withAuthenticationTransaction(client =>
+            operationalQueryRows<MerchantStateRow>(client, merchantSql, [input.merchantId]));
+          const catalog = await withMerchantOperationalTransaction(
+            input.merchantId,
+            client => operationalQueryRows<CatalogRow>(client, catalogSql, [input.merchantId]),
+          );
+          return [identity, catalog, [] as SupportRow[], [] as TicketRow[]] as const;
+        })()
+      : await withMerchantOperationalTransaction(input.merchantId, async client => [
+          await operationalQueryRows<MerchantStateRow>(client, merchantSql, [input.merchantId]),
+          await operationalQueryRows<CatalogRow>(client, catalogSql, [input.merchantId]),
+          await operationalQueryRows<SupportRow>(
+            client,
+            `SELECT storage_provider, storage_key
+               FROM support_attachments
+              WHERE merchant_id = $1 AND deleted_at IS NULL
+              ORDER BY id`,
+            [input.merchantId],
+          ),
+          await operationalQueryRows<TicketRow>(
+            client,
+            `SELECT id FROM support_tickets WHERE merchant_id = $1 ORDER BY id`,
+            [input.merchantId],
+          ),
+        ] as const);
 
   const merchant = merchantRows[0];
+  if (!merchant || merchant.account_state === "closed") {
+    throw new MerchantManagementError(404, "MERCHANT_NOT_FOUND", "merchant not found");
+  }
   if (
-    !merchant ||
     merchant.merchant_status !== "suspended" ||
     merchant.account_state !== "suspended"
   ) {
-    throw Object.assign(
-      new Error("merchant must be suspended before media cleanup capture"),
-      { code: "MERCHANT_MUST_BE_SUSPENDED" },
+    throw new MerchantManagementError(
+      409,
+      "MERCHANT_MUST_BE_SUSPENDED",
+      "merchant must be suspended before media cleanup capture",
     );
   }
 
@@ -266,19 +313,26 @@ async function captureCleanupManifest(input: {
 
 async function deletionIsCommitted(merchantId: string): Promise<boolean> {
   if (!operationalPostgresAuthorityRequired()) return false;
-  const pool = await operationalDatabasePool();
-  const rows = await operationalQueryRows<{
-    account_state: string;
-    retention_status: string | null;
-  }>(
-    pool,
-    `SELECT a.state::text AS account_state, m.retention_status
+  const query = `SELECT a.state::text AS account_state, m.retention_status
        FROM merchants m
        JOIN accounts a ON a.id = m.account_id AND a.kind = 'merchant'
       WHERE m.id = $1
-      LIMIT 1`,
-    [merchantId],
-  );
+      LIMIT 1`;
+  type DeletionTombstone = {
+    account_state: string;
+    retention_status: string | null;
+  };
+  // First-commercial restricted tenant LOGIN intentionally has NO SELECT on
+  // public.merchants/accounts. It cannot verify a post-delete tombstone.
+  // Use the existing, separately authenticated issuer (already granted narrow
+  // accounts/merchants SELECT) for this internal admin deletion-only decision,
+  // with a bound merchant ID and a full trusted issuer lease. No tenant role
+  // escalation or broad application grants are introduced.
+  const rows = productionReleaseGateRequired()
+    ? await withAuthenticationTransaction(client =>
+        operationalQueryRows<DeletionTombstone>(client, query, [merchantId]))
+    : await operationalQueryRows<DeletionTombstone>(
+        await operationalDatabasePool(), query, [merchantId]);
   return (
     rows[0]?.account_state === "closed" &&
     rows[0]?.retention_status === "deleted"
@@ -291,6 +345,7 @@ async function removeEntry(
 ): Promise<void> {
   if (entry.kind === "catalog_object") {
     await removeCatalogMediaStorageObject({
+      merchantId,
       storageProvider: entry.storage_provider,
       storageKey: entry.storage_key,
     });
@@ -416,12 +471,31 @@ export async function reconcilePendingMerchantPhysicalMediaCleanups(
 
   let pending = 0;
   let inspected = 0;
+  let validAttempted = 0;
   const batchLimit = Math.max(1, Math.min(1000, limit));
   for (const name of names) {
-    const manifest = readManifest(path.join(cleanupRoot(), name));
+    let manifest: CleanupManifest | null;
+    try {
+      manifest = readManifest(path.join(cleanupRoot(), name));
+    } catch (error) {
+      // Never silently discard unreadable/corrupt deletion intents: doing so
+      // leaves private merchant images behind with no retry warning.
+      // Preserve the file for recovery and continue other valid manifests.
+      inspected += 1;
+      pending += 1;
+      logCleanupFailure(error, {
+        manifest_hash: name.slice(0, 16),
+        phase: "manifest_validation",
+      });
+      continue;
+    }
     if (!manifest || manifest.state === "complete") continue;
-    if (inspected >= batchLimit) break;
+    // Finish scanning filenames for malformed intents even when the valid
+    // retry budget is full; otherwise bad files later in the directory stay
+    // invisible and never produce an operator warning.
+    if (validAttempted >= batchLimit) continue;
     inspected += 1;
+    validAttempted += 1;
     const result = await reconcileMerchantPhysicalMediaCleanup(
       manifest.merchant_id,
     ).catch((error) => {
@@ -461,7 +535,13 @@ export function startMerchantPhysicalMediaCleanupReconciler(input: {
           "Merchant physical media cleanup remains pending",
         );
       }
-      await reconcileOrphanSupportImagesPostgres();
+      // Manual V1 does not offer Support. Its dedicated authentication LOGIN
+      // is intentionally unable to SELECT cross-merchant support_attachments.
+      // Preserve catalog deletion retries while suppressing only this legacy
+      // Support orphan scan until a later explicitly enabled Support release.
+      if (!manualCommercialRelease()) {
+        await reconcileOrphanSupportImagesPostgres();
+      }
     } finally {
       running = false;
     }

@@ -1,0 +1,29 @@
+name: V1 G5 private ACL sidecar (synthetic only)
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/v1-g5-private-acl-sidecar.yml"
+      - "scripts/v1-g5-private-acl-capture*.mjs"
+
+permissions:
+  contents: read
+
+jobs:
+  private-sidecar-fixture:
+    if: >-
+      github.repository == 'nora953/fawri-production-source'
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && github.head_ref == 'fix/p0-provider-receipt-order-discovery-20261015'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Synthetic encrypted sidecar guard
+        run: |
+          node --check scripts/v1-g5-private-acl-capture.mjs
+          node --test scripts/v1-g5-private-acl-capture.test.mjs
+          if node scripts/v1-g5-private-acl-capture.mjs capture /tmp/g5-must-not-create; then exit 1; fi
+          test ! -e /tmp/g5-must-not-create

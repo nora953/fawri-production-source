@@ -1,0 +1,384 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1786021331544,
+      "tag": "0000_even_kulan_gath",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786100550622,
+      "tag": "0001_military_proteus",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786120375361,
+      "tag": "0002_cross_lane_stage",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786120376886,
+      "tag": "0003_cross_lane_cleanup",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786314600000,
+      "tag": "0004_product_shipping_measurements",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786393740000,
+      "tag": "0005_delivery_fee_per_area",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786400580000,
+      "tag": "0006_saas_billing_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786488600000,
+      "tag": "0007_merchant_customer_payment_confirmation_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786722600000,
+      "tag": "0008_admin_device_verification_auth",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786752000000,
+      "tag": "0009_merchant_management_lifecycle_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1787356800000,
+      "tag": "0010_provider_cost_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1787435160000,
+      "tag": "0011_commerce_promotions_timezone_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1787600400000,
+      "tag": "0012_catalog_variant_signature_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1787706000000,
+      "tag": "0013_cashier_staff_station_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1787710800000,
+      "tag": "0014_cashier_operation_attribution",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1787715600000,
+      "tag": "0015_cashier_discount_override_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1789646400000,
+      "tag": "0016_cashier_merchant_discount_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789776000000,
+      "tag": "0017_multi_location_inventory_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789862400000,
+      "tag": "0018_location_inventory_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789948800000,
+      "tag": "0019_location_delivery_area_routing",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790035200000,
+      "tag": "0020_cashier_operation_location_backfill",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790121600000,
+      "tag": "0021_merchant_inventory_freshness_policy",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790294400000,
+      "tag": "0022_location_rls_schema_alignment",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790380800000,
+      "tag": "0023_canonical_tenant_rls_schema_alignment",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790467200000,
+      "tag": "0024_tenant_rls_security_definer_predicate",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790553600000,
+      "tag": "0025_tenant_rls_policy_predicate_cutover",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790640000000,
+      "tag": "0026_global_e164_phone_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1791244800000,
+      "tag": "0027_cashier_subscription_licensing",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1791936000000,
+      "tag": "0028_meta_ingress_bounded_page_resolver",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1791936000001,
+      "tag": "0029_verified_provider_payment_receipts",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1791936000002,
+      "tag": "0030_audited_verified_receipt_reads",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791936000003,
+      "tag": "0031_audited_receipt_replay_reviews",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791936000004,
+      "tag": "0032_authorized_receipt_replay_execution",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791936000005,
+      "tag": "0033_confirmed_provider_order_resolution",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791936000006,
+      "tag": "0034_cross_authority_payment_identity_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791936000007,
+      "tag": "0035_order_items_tenant_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791936000008,
+      "tag": "0036_audited_admin_active_state_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791936000009,
+      "tag": "0037_audited_admin_transaction_binding",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791936000010,
+      "tag": "0038_role_bound_admin_directory_issuer",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791936000011,
+      "tag": "0039_role_bound_authentication_runtime",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791936000012,
+      "tag": "0040_transaction_scoped_tenant_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791936000013,
+      "tag": "0041_private_tenant_predicate_cutover",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1791936000014,
+      "tag": "0042_scoped_cashier_approver_lock",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1791936000015,
+      "tag": "0043_cashier_identity_tenant_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1791936000016,
+      "tag": "0044_cashier_discount_attribution_tenant_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1791936000017,
+      "tag": "0045_scoped_cashier_approval_mutations",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1791936000018,
+      "tag": "0046_cashier_settings_authentication_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1791936000019,
+      "tag": "0047_support_privacy_tenant_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1791936000020,
+      "tag": "0048_emergency_privacy_authentication_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1791936000021,
+      "tag": "0049_order_items_declarative_rls_alignment",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1791936000022,
+      "tag": "0050_merchant_management_privacy_authentication_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1791936000023,
+      "tag": "0051_residual_merchant_privacy_scoped_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1791936000024,
+      "tag": "0052_cashier_stream_receipt_storage",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1791936000025,
+      "tag": "0053_cashier_stream_authority",
+      "breakpoints": true
+    }
+  ]
+}

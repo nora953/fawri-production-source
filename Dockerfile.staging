@@ -3,11 +3,28 @@
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
 
+# Build the commercial UI with the *same* manual-commerce profile as the API.
+# POS shell is removed by Vite build plugin; manual flag also disables
+# Meta/payment/AI UX at compile time. Do not rely only on runtime envVars.
+ENV FAWRI_V1_MANUAL_COMMERCE=1
+
 RUN corepack enable && corepack prepare pnpm@10.26.1 --activate
 
 COPY . .
 
 RUN pnpm install --frozen-lockfile
+
+# Render exposes service environment variables as Docker build arguments.
+# Explicitly admit ONLY these PUBLIC Vite Google values before compiling UI.
+# All default OFF; enabling also requires separately accepted schema/providers.
+# Never forward bearer tokens, DB URLs, WhatsApp secrets or ID tokens here.
+ARG VITE_FAWRI_GOOGLE_MERCHANT_SIGNUP=0
+ARG VITE_FAWRI_GOOGLE_PHONE_CLAIM=0
+ARG VITE_FAWRI_GOOGLE_OAUTH_CLIENT_ID=
+
+# A runtime-only toggle cannot change Vite's already-compiled UI.
+# Fail closed if the build has missing/mismatched public Google settings.
+RUN node -e 'const e=process.env;const signup=e.VITE_FAWRI_GOOGLE_MERCHANT_SIGNUP,phone=e.VITE_FAWRI_GOOGLE_PHONE_CLAIM,id=e.VITE_FAWRI_GOOGLE_OAUTH_CLIENT_ID||"";const valid=v=>v==="0"||v==="1";if(!valid(signup)||!valid(phone)||(phone==="1"&&signup!=="1")||(signup==="1"&&!/^[0-9]+-[a-z0-9-]+[.]apps[.]googleusercontent[.]com$/.test(id))){console.error("V1_GOOGLE_BUILD_CONFIGURATION_INVALID");process.exit(1)}'
 RUN pnpm --filter @workspace/fawri build \
  && pnpm --filter @workspace/api-server build
 
@@ -27,6 +44,11 @@ COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/artifacts/api-server/node_modules /app/artifacts/api-server/node_modules
 COPY --from=build /app/artifacts/api-server/dist /app/artifacts/api-server/dist
 COPY --from=build /app/artifacts/fawri/dist/public /app/artifacts/fawri/dist/public
+# Owner-only manual G5 media disaster-recovery CLI. Default DENY on live disk,
+# no HTTP route, no cron job, no secret, no startup side effect. Copying this
+# script allows later owner-approved execution from an authenticated Render
+# shell, without opening a public endpoint that exposes merchant images.
+COPY --from=build /app/scripts/v1-production-media-g5-archive.mjs /app/scripts/v1-production-media-g5-archive.mjs
 
 EXPOSE 8080
 

@@ -451,6 +451,110 @@ function assertNonTerminalPaymentTransition(
   }
 }
 
+export async function createManualOrder(input: {
+  merchantId: string;
+  body: unknown;
+}): Promise<{ order: ServerOrder; replayed: boolean }> {
+  if (!operationalPostgresAuthorityRequired()) {
+    throw new OrderOperationError("ORDER_DATABASE_REQUIRED", "order database is unavailable", 503);
+  }
+  const merchantId = identifier(input.merchantId, "ORDER_MERCHANT_ID_INVALID", "merchant identifier");
+  const body = (input.body || {}) as Record<string, unknown>;
+  const field = (value: unknown, max: number, required = false): string => {
+    const normalized = typeof value === "string" ? value.trim() : "";
+    if ((value !== undefined && typeof value !== "string") ||
+        (required && !normalized) || normalized.length > max || normalized.includes("\0")) {
+      throw new OrderOperationError("MANUAL_ORDER_INPUT_INVALID", "invalid manual order field", 400);
+    }
+    return normalized;
+  };
+  const key = field(body.idempotency_key, 100, true);
+  const name = field(body.customer_name, 160, true);
+  const phone = field(body.customer_phone, 40, true);
+  const address = field(body.customer_address, 500, true);
+  const area = field(body.customer_area, 160, true);
+  const notes = field(body.notes, 500);
+  const fee = body.delivery_fee ?? 0;
+  const maxMoney = 2_147_483_647;
+  if (typeof fee !== "number" || !Number.isInteger(fee) || fee < 0 || fee > maxMoney ||
+      !Array.isArray(body.items) || !body.items.length || body.items.length > 50) {
+    throw new OrderOperationError("MANUAL_ORDER_INPUT_INVALID", "invalid delivery fee or items", 400);
+  }
+  const items = body.items.map((item: Record<string, unknown> | null) => {
+    const productId = field(item?.product_id, 160, true);
+    const variantId = field(item?.variant_id, 160);
+    const quantity = item?.quantity;
+    if (typeof quantity !== "number" || !Number.isInteger(quantity) || quantity < 1 || quantity > 10000) {
+      throw new OrderOperationError("MANUAL_ORDER_INPUT_INVALID", "invalid item quantity", 400);
+    }
+    return { productId, variantId, quantity };
+  });
+
+  const hash = (value: unknown) => crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
+  const orderId = `manual-${hash([merchantId, key])}`;
+  const fingerprint = hash([name, phone, address, area, notes, fee, items]);
+  return withMerchantOperationalTransaction(merchantId, async (client) => {
+    const inserted = await client.query(
+      `INSERT INTO orders
+        (id, merchant_id, customer_name, customer_phone, customer_address, customer_area,
+         source_channel, notes, metadata)
+       VALUES ($1,$2,$3,$4,$5,$6,'manual',$7,$8::jsonb)
+       ON CONFLICT (id) DO NOTHING RETURNING id`,
+      [orderId, merchantId, name, phone, address, area, notes || null,
+        JSON.stringify({ manual_request_hash: fingerprint })],
+    );
+    if (!inserted.rows.length) {
+      const previous = await loadOrderRow(client, merchantId, orderId);
+      if (previous.source_channel !== "manual" || previous.metadata?.manual_request_hash !== fingerprint) {
+        throw new OrderOperationError("MANUAL_ORDER_KEY_CONFLICT", "order key was already used", 409);
+      }
+      return { order: await mapOrder(client, previous), replayed: true };
+    }
+
+    let subtotal = 0;
+    for (const [index, item] of items.entries()) {
+      const result = await client.query<{name: string; variant_name: string | null; price: number}>(
+        `SELECT p.name, v.name AS variant_name,
+                COALESCE(v.price_override_iqd, p.current_price_iqd) AS price
+           FROM products p
+           LEFT JOIN product_variants v
+             ON v.merchant_id = p.merchant_id AND v.product_id = p.id AND v.id = $3
+          WHERE p.merchant_id = $1 AND p.id = $2 AND p.deleted_at IS NULL
+            AND p.status NOT IN ('draft','out_of_stock')
+            AND CASE WHEN $3 = '' THEN NOT EXISTS (
+                SELECT 1 FROM product_variants
+                 WHERE merchant_id = $1 AND product_id = p.id
+              ) ELSE v.id IS NOT NULL END`,
+        [merchantId, item.productId, item.variantId],
+      );
+      const product = result.rows[0];
+      if (!product) {
+        throw new OrderOperationError("MANUAL_ORDER_PRODUCT_UNAVAILABLE", "catalog item is unavailable", 409);
+      }
+      const lineTotal = product.price * item.quantity;
+      subtotal += lineTotal;
+      if (subtotal + fee > maxMoney) {
+        throw new OrderOperationError("MANUAL_ORDER_TOTAL_INVALID", "order total is too large", 400);
+      }
+      await client.query(
+        `INSERT INTO order_items
+           (id, order_id, merchant_id, product_id, product_variant_id, product_name_snapshot,
+            quantity, unit_price_iqd, line_total_iqd)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        [`${orderId}-${index.toString().padStart(2, "0")}`, orderId, merchantId, item.productId,
+          item.variantId || null, product.variant_name ? `${product.name} — ${product.variant_name}` : product.name,
+          item.quantity, product.price, lineTotal],
+      );
+    }
+    await client.query(
+      `UPDATE orders SET subtotal_iqd = $3, delivery_fee_iqd = $4, total_iqd = $3::integer + $4::integer
+        WHERE merchant_id = $1 AND id = $2`,
+      [merchantId, orderId, subtotal, fee],
+    );
+    return { order: await mapOrder(client, await loadOrderRow(client, merchantId, orderId)), replayed: false };
+  });
+}
+
 export async function listServerOrdersAuthoritative(
   merchantIdValue: string,
 ): Promise<ServerOrder[]> {

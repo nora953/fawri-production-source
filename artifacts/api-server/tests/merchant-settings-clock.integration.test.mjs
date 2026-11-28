@@ -1,3 +1,4 @@
+import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import test from 'node:test';
@@ -6,7 +7,8 @@ const url = new URL(process.env.DATABASE_URL || 'http://invalid');
 assert.ok(['localhost', '127.0.0.1'].includes(url.hostname));
 assert.equal(url.pathname, '/fawri_ci');
 process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = 'required';
-const { pool } = await import('@workspace/db');
+const runtime=await createDisposableKnowledgeRuntime();
+const pool=runtime.admin;
 const settings = await import('../src/services/postgresMerchantSettingsAuthority.js');
 
 test('settings updates use database time despite application clock skew', async () => {
@@ -41,4 +43,4 @@ test('settings updates use database time despite application clock skew', async 
     await pool.query('DELETE FROM accounts WHERE id = $1', [id]);
   }
 });
-test.after(() => pool.end());
+test.after(() => runtime.dispose());

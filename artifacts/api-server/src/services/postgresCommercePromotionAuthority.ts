@@ -216,13 +216,22 @@ async function merchantRegion(
   merchantId: string,
   lock = false,
 ): Promise<MerchantRegionRow> {
+  // Only authenticated SQL session_user selects the held V1 source.
+  // The row lock stays on the original merchant transaction connection.
+  const principal = await operationalQueryRows<{ session_login: string }>(
+    target, "SELECT session_user::text AS session_login",
+  );
+  const firstCommercial = principal.length === 1 &&
+    principal[0].session_login === "fawri_restricted_runtime";
   const rows = await operationalQueryRows<MerchantRegionRow>(
     target,
-    `SELECT id, country_code, timezone, currency_code
-       FROM merchants
-      WHERE id = $1
-      LIMIT 2${lock ? " FOR UPDATE" : ""}`,
-    [merchantId],
+    firstCommercial
+      ? `SELECT id, country_code, timezone, currency_code
+           FROM public.fawri_v1_scoped_merchant_region($1::text,$2::boolean)`
+      : `SELECT id, country_code, timezone, currency_code
+           FROM merchants WHERE id = $1
+           LIMIT 2${lock ? " FOR UPDATE" : ""}`,
+    firstCommercial ? [merchantId, lock] : [merchantId],
   );
   if (rows.length !== 1) {
     throw new CommercePromotionError(

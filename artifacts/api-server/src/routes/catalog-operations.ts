@@ -8,6 +8,7 @@ import {
   getMerchantIdFromSession,
   requireMerchantSession,
 } from "./auth";
+import { enforceAuthOrigin } from "../middleware/authSession";
 import { CatalogRuntimeError } from "../services/catalogInventoryRuntime";
 import {
   CATALOG_IMAGE_MAX_BYTES,
@@ -189,6 +190,7 @@ function parseCatalogImageBody(
 router.post(
   "/catalog/media/images",
   requireMerchantSession,
+  enforceAuthOrigin,
   parseCatalogImageBody,
   async (req: Request, res: Response) => {
     try {
@@ -223,7 +225,10 @@ router.get(
         merchantId,
         storageKey: parameter(req.query.storage_key),
       });
-      res.setHeader("Cache-Control", "private, max-age=300");
+      // G3 tenant isolation: a shared browser must not replay merchant A's
+      // cached image to merchant B after a logout/account switch. This response
+      // is authenticated per session and must never be cached by the browser.
+      res.setHeader("Cache-Control", "private, no-store");
       res.setHeader("Content-Type", asset.mime_type);
       res.setHeader("ETag", `\"${asset.sha256}\"`);
       res.setHeader("X-Content-Type-Options", "nosniff");
@@ -272,6 +277,7 @@ router.get(
 router.post(
   "/catalog/promotions",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -297,6 +303,7 @@ router.post(
 router.patch(
   "/catalog/promotions/:promotionId",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -318,6 +325,7 @@ router.patch(
 router.delete(
   "/catalog/promotions/:promotionId",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -377,6 +385,7 @@ router.get(
 router.post(
   "/catalog/products",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -402,6 +411,7 @@ router.post(
 router.post(
   "/catalog/products/import",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -428,6 +438,7 @@ router.post(
 router.patch(
   "/catalog/products/:productId",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -449,6 +460,7 @@ router.patch(
 router.delete(
   "/catalog/products/:productId",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -470,6 +482,7 @@ router.delete(
 router.post(
   "/inventory/products/:productId/set",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -492,6 +505,7 @@ router.post(
 router.post(
   "/inventory/products/:productId/adjust",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);

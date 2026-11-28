@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import {randomUUID} from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -117,6 +118,8 @@ test(
     const suffix = `${process.pid}_${Date.now()}`;
     const databaseName = `fawri_edge_${suffix}`.slice(0, 60);
     const roleName = `fawri_edge_role_${suffix}`.slice(0, 60);
+    const authRole=`fawri_edge_auth_${suffix}`.slice(0,60);
+    const runtimePassword=randomUUID().replaceAll("-", ""),authPassword=randomUUID().replaceAll("-", "");
     assert.match(databaseName, /^[a-z0-9_]+$/);
     assert.match(roleName, /^[a-z0-9_]+$/);
 
@@ -130,6 +133,7 @@ test(
     let pool = null;
     let client = null;
     let rls = null;
+    let issuer=null;
     try {
       admin = new Client({ connectionString: adminUrl.toString() });
       await admin.connect();
@@ -274,16 +278,25 @@ test(
         /outbound_deliveries_outcome_check|check constraint/i,
       );
 
-      await client.query(`CREATE ROLE ${roleName} NOLOGIN`);
+      await client.query(`CREATE ROLE ${roleName} LOGIN PASSWORD '${runtimePassword}' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION`);
+      await client.query(`CREATE ROLE ${authRole} LOGIN PASSWORD '${authPassword}' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION`);
+      await client.query(`GRANT USAGE ON SCHEMA public,fawri_security TO ${authRole}`);
+      await client.query(`GRANT EXECUTE ON FUNCTION public.fawri_authentication_runtime(),fawri_security.issue_scope(name,integer,bigint,text) TO ${authRole}`);
       await client.query(`GRANT USAGE ON SCHEMA public TO ${roleName}`);
       await client.query(
         `GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ${roleName}`,
       );
-      rls = new Client({ connectionString: testUrl.toString() });
+      const runtimeUrl=new URL(testUrl);runtimeUrl.username=roleName;runtimeUrl.password=runtimePassword;runtimeUrl.search="";
+      const issuerUrl=new URL(testUrl);issuerUrl.username=authRole;issuerUrl.password=authPassword;issuerUrl.search="";
+      issuer=new Client({connectionString:issuerUrl.toString()});await issuer.connect();
+      rls = new Client({ connectionString: runtimeUrl.toString() });
       await rls.connect();
-      await rls.query(`SET ROLE ${roleName}`);
+      assert.deepEqual((await rls.query("SELECT session_user AS login,current_user AS active")).rows[0],{login:roleName,active:roleName});
       await rls.query("BEGIN");
       await setTenantContext(rls, "m1");
+      assert.deepEqual((await rls.query("SELECT id FROM products")).rows,[],"legacy GUC helper cannot authorize runtime SQL");
+      const target=(await rls.query("SELECT session_user::text AS login,pg_backend_pid() AS pid,txid_current()::text AS xid")).rows[0];
+      await issuer.query("SELECT fawri_security.issue_scope($1::name,$2::integer,$3::bigint,$4::text)",[target.login,target.pid,target.xid,"m1"]);
       const visible = await rls.query(
         "SELECT id,merchant_id FROM products ORDER BY id",
       );
@@ -293,10 +306,11 @@ test(
       );
       assert.equal(blocked.rowCount, 0);
       await rls.query("ROLLBACK");
-      await rls.query("RESET ROLE");
+      assert.deepEqual((await rls.query("SELECT id FROM products")).rows,[],"scope resets after rollback");
     } finally {
       try {
         if (rls) await rls.end();
+        if (issuer) await issuer.end();
       } catch {}
       try {
         if (client) await client.end();
@@ -312,6 +326,7 @@ test(
           );
           await admin.query(`DROP DATABASE IF EXISTS ${databaseName}`);
           await admin.query(`DROP ROLE IF EXISTS ${roleName}`);
+          await admin.query(`DROP ROLE IF EXISTS ${authRole}`);
           await admin.end();
         }
       } catch {}

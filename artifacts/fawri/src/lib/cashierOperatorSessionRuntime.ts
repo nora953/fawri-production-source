@@ -1,7 +1,18 @@
 import {
+  IndexedDbCashierAuthority,
+  type CashierLocalRecoverySnapshot,
+} from './cashierIndexedDbAuthority';
+import {
   persistCashierEntitlementAuthority,
+  assertCashierSaleEntitlementFromCache,
+  clearCashierEntitlementAuthority,
   type CashierServerEntitlementSnapshot,
 } from './cashierOfflineEntitlementAuthority';
+import {
+  cashierCrossTabLockAvailable,
+  withCashierFinancialMutationLock,
+} from './cashierFinancialMutationLock';
+import type { CashierOfflineEnvelope } from './cashierOfflineEntitlementSignature.mjs';
 import {
   bindCashierOperation,
   getCashierPendingEnvelopeCountForIdentity,
@@ -116,7 +127,7 @@ function randomId(prefix: string): string {
   return `${prefix}-${value}`;
 }
 
-function openBootstrapDatabase(): Promise<IDBDatabase> {
+function openBootstrapDatabase(existingOnly = false): Promise<IDBDatabase> {
   if (typeof indexedDB === 'undefined') {
     throw new CashierOperatorSessionClientError(
       'CASHIER_INDEXEDDB_UNAVAILABLE',
@@ -126,6 +137,10 @@ function openBootstrapDatabase(): Promise<IDBDatabase> {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(BOOTSTRAP_DATABASE, 1);
     request.onupgradeneeded = () => {
+      if (existingOnly) {
+        request.transaction!.abort();
+        return;
+      }
       if (!request.result.objectStoreNames.contains(BOOTSTRAP_STORE)) {
         request.result.createObjectStore(BOOTSTRAP_STORE, { keyPath: 'id' });
       }
@@ -138,11 +153,31 @@ function openBootstrapDatabase(): Promise<IDBDatabase> {
 export async function getOrCreateCashierDeviceIdentity(): Promise<CashierDeviceIdentity> {
   const database = await openBootstrapDatabase();
   try {
-    const read = database.transaction(BOOTSTRAP_STORE, 'readonly');
+    // The first creation must be atomic across tabs. Two separate readonly
+    // reads followed by readwrite puts can BOTH observe a missing identity,
+    // return incompatible device IDs, and overwrite one another's bootstrap.
+    // Serialize the read and conditional put in ONE native IDB transaction.
+    const transaction = database.transaction(BOOTSTRAP_STORE, 'readwrite');
+    const completion = transactionDone(transaction);
+    const store = transaction.objectStore(BOOTSTRAP_STORE);
     const existing = (await requestResult(
-      read.objectStore(BOOTSTRAP_STORE).get('default'),
+      store.get('default'),
     )) as CashierDeviceIdentity | undefined;
-    if (existing?.local_merchant_id && existing.device_id) return existing;
+    if (existing?.local_merchant_id && existing.device_id) {
+      await completion;
+      return existing;
+    }
+    if (existing) {
+      // A damaged/partial bootstrap row may still identify durable offline
+      // sales or outbox records. Never silently invent a new merchant/device
+      // ID over it, which would orphan the original financial history.
+      await completion;
+      throw new CashierOperatorSessionClientError(
+        'CASHIER_BOOTSTRAP_IDENTITY_INVALID',
+        'Existing cashier device identity is incomplete; preserve it for recovery',
+        409,
+      );
+    }
 
     const identity: CashierDeviceIdentity = {
       id: 'default',
@@ -150,9 +185,7 @@ export async function getOrCreateCashierDeviceIdentity(): Promise<CashierDeviceI
       device_id: randomId('device'),
       created_at: new Date().toISOString(),
     };
-    const write = database.transaction(BOOTSTRAP_STORE, 'readwrite');
-    const completion = transactionDone(write);
-    write.objectStore(BOOTSTRAP_STORE).put(identity);
+    store.put(identity);
     await completion;
     return identity;
   } finally {
@@ -169,6 +202,158 @@ export async function writeCashierDeviceIdentity(
     const completion = transactionDone(transaction);
     transaction.objectStore(BOOTSTRAP_STORE).put(identity);
     await completion;
+  } finally {
+    database.close();
+  }
+}
+
+/**
+ * Atomic bootstrap identity compare-and-swap for slow metadata refreshes.
+ * Both the comparison and put share one IndexedDB readwrite transaction.
+ * A re-pair, credential rotation, policy refresh, or changed station identity
+ * between the HTTP request and this write must win over the stale response.
+ *
+ * This function does NOT authenticate a device or approve financial recovery.
+ */
+export async function writeCashierDeviceIdentityIfUnchanged(
+  expected: CashierDeviceIdentity,
+  next: CashierDeviceIdentity,
+): Promise<boolean> {
+  // This bounded helper only updates station metadata; not device identity,
+  // merchant binding, pairing identity, or credentials.
+  for (const field of [
+    'id', 'local_merchant_id', 'cloud_merchant_id', 'device_id',
+    'created_at', 'cloud_bound_at', 'station_id', 'station_token',
+  ] as const) {
+    if (expected[field] !== next[field]) {
+      throw new CashierOperatorSessionClientError(
+        'CASHIER_STATION_IDENTITY_UPDATE_UNSAFE',
+        'Station metadata update attempted to replace a binding identity',
+      );
+    }
+  }
+  const database = await openBootstrapDatabase();
+  try {
+    const transaction = database.transaction(BOOTSTRAP_STORE, 'readwrite');
+    const completion = transactionDone(transaction);
+    const store = transaction.objectStore(BOOTSTRAP_STORE);
+    const current = await requestResult(
+      store.get('default'),
+    ) as CashierDeviceIdentity | undefined;
+    // Only serializable stable records are stored in this bootstrap store.
+    // A mismatch (including unrelated concurrent metadata) fails CLOSED;
+    // do not retry with a stale server response.
+    if (!current || JSON.stringify(current) !== JSON.stringify(expected)) {
+      await completion;
+      return false;
+    }
+    store.put(next);
+    await completion;
+    return true;
+  } finally {
+    database.close();
+  }
+}
+
+/**
+ * Commit a new station pairing only when the identity captured BEFORE its
+ * network request is still current. Separate from the metadata-only CAS:
+ * pairing is permitted to change station/token but must never mutate the
+ * durable local merchant/device identity, or silently switch merchants.
+ *
+ * Concurrent browser tabs can both pass the pending-outbox preflight and
+ * receive different server results in reverse order. The newer committed
+ * pairing wins, and a delayed original response must not overwrite it.
+ * This guards local bootstrap only; authoritative station admission remains
+ * server-side and no payment sequence is reset or declared recovered here.
+ */
+export async function writeCashierDevicePairingIfUnchanged(
+  expected: CashierDeviceIdentity,
+  next: CashierDeviceIdentity,
+): Promise<boolean> {
+  if (!expected || !expected.local_merchant_id || !expected.device_id ||
+      expected.id !== 'default' || next.id !== 'default' ||
+      next.local_merchant_id !== expected.local_merchant_id ||
+      next.device_id !== expected.device_id ||
+      next.created_at !== expected.created_at ||
+      (expected.cloud_merchant_id &&
+        next.cloud_merchant_id !== expected.cloud_merchant_id) ||
+      !next.cloud_merchant_id || !next.station_id || !next.station_token ||
+      !next.location_id || !next.branch_key) {
+    throw new CashierOperatorSessionClientError(
+      'CASHIER_PAIRING_IDENTITY_UNSAFE',
+      'Pairing attempted to change durable cashier device identity',
+      409,
+    );
+  }
+  const database = await openBootstrapDatabase(true);
+  try {
+    const transaction = database.transaction(BOOTSTRAP_STORE, 'readwrite');
+    const completion = transactionDone(transaction);
+    const store = transaction.objectStore(BOOTSTRAP_STORE);
+    const current = await requestResult(
+      store.get('default'),
+    ) as CashierDeviceIdentity | undefined;
+    if (!current || JSON.stringify(current) !== JSON.stringify(expected)) {
+      await completion;
+      return false;
+    }
+    store.put(next);
+    await completion;
+    return true;
+  } finally {
+    database.close();
+  }
+}
+
+/**
+ * Revoke ONLY the rejected station pairing, if it is still the exact
+ * merchant/station/device/token from the failed request. No new bootstrap
+ * database or device identity may be created to service a stale error.
+ *
+ * The condition and station-only field deletion occur in the SAME native
+ * IndexedDB readwrite transaction. Preserves merchant/device IDs and all
+ * cashier financial records. Separate from metadata-only CAS, which must
+ * continue rejecting station/token mutations.
+ */
+export async function clearCashierStationBindingIfMatches(
+  expected: CashierStationBinding,
+): Promise<boolean> {
+  if (!expected || !expected.merchant_id || !expected.station_id ||
+      !expected.station_token || !expected.device_id) return false;
+  const database = await openBootstrapDatabase(true);
+  try {
+    const transaction = database.transaction(BOOTSTRAP_STORE, 'readwrite');
+    const completion = transactionDone(transaction);
+    const store = transaction.objectStore(BOOTSTRAP_STORE);
+    const current = await requestResult(store.get('default')) as CashierDeviceIdentity | undefined;
+    if (!current ||
+        current.cloud_merchant_id !== expected.merchant_id ||
+        current.device_id !== expected.device_id ||
+        current.station_id !== expected.station_id ||
+        current.station_token !== expected.station_token ||
+        current.location_id !== expected.location_id ||
+        current.branch_key !== expected.branch_key ||
+        current.station_name !== expected.station_name ||
+        current.station_credential_expires_at !== expected.credential_expires_at ||
+        (current.branch_label || '') !== (expected.branch_label || '') ||
+        (current.offline_inventory_authority === true) !== expected.offline_inventory_authority) {
+      await completion;
+      return false;
+    }
+    const next = { ...current };
+    delete next.station_id;
+    delete next.station_name;
+    delete next.location_id;
+    delete next.branch_key;
+    delete next.branch_label;
+    delete next.offline_inventory_authority;
+    delete next.station_token;
+    delete next.station_credential_expires_at;
+    delete next.last_catalog_sync_at;
+    store.put(next);
+    await completion;
+    return true;
   } finally {
     database.close();
   }
@@ -206,6 +391,87 @@ function stationBinding(
 
 export async function getCashierStationBinding(): Promise<CashierStationBinding | null> {
   return stationBinding(await getOrCreateCashierDeviceIdentity());
+}
+
+
+export type CashierDeviceRecoveryInspection = CashierLocalRecoverySnapshot & {
+  /** Observed equal local values only; not authentication or an atomic lease. */
+  binding_observed_unchanged: boolean;
+};
+
+async function readExistingCashierRecoveryIdentity(): Promise<CashierDeviceIdentity | undefined> {
+  const database = await openBootstrapDatabase(true);
+  try {
+    const transaction = database.transaction(BOOTSTRAP_STORE, 'readonly');
+    const completion = transactionDone(transaction);
+    // Await both request and transaction; an aborted read is never a snapshot.
+    const [identity] = await Promise.all([
+      requestResult(transaction.objectStore(BOOTSTRAP_STORE).get('default')) as Promise<CashierDeviceIdentity | undefined>,
+      completion,
+    ]);
+    return identity;
+  } finally {
+    database.close();
+  }
+}
+
+/**
+ * Local diagnostic prerequisite for recovery. Does not call getOrCreate,
+ * stationBinding, session cleanup, legacy binding refresh or any HTTP route.
+ * Before/after equality detects observed drift across the separate databases;
+ * it cannot certify authenticity, ABA absence or stability after return.
+ */
+export async function inspectCashierDeviceRecovery(
+  options: { maxRecords?: number } = {},
+): Promise<CashierDeviceRecoveryInspection> {
+  const held = (reason: string): CashierDeviceRecoveryInspection => ({
+    status: 'HOLD', inspection_complete: false, local_counter: null,
+    inspected_envelopes: 0, reasons: [reason], operations: [],
+    enrollment_authorized: false, server_history_verified: false,
+    binding_observed_unchanged: false,
+  });
+  const bindingKey = (identity: CashierDeviceIdentity | undefined): string | null => {
+    if (!identity || identity.id !== 'default') return null;
+    const required = [
+      identity.local_merchant_id, identity.cloud_merchant_id, identity.device_id,
+      identity.station_id, identity.location_id, identity.branch_key,
+      identity.station_token, identity.station_credential_expires_at,
+    ];
+    if (required.some(value => typeof value !== 'string' || !value ||
+        value.length > 200 || value !== value.normalize('NFKC').trim() ||
+        /[\u0000-\u001f\u007f]/.test(value))) return null;
+    if (!Number.isFinite(Date.parse(identity.station_credential_expires_at!))) return null;
+    // Credential values are compared in memory, never included in the result.
+    // Expiry metadata is not treated as a server authentication decision here.
+    return JSON.stringify([
+      ...required, identity.created_at, identity.cloud_bound_at,
+      identity.offline_inventory_authority,
+    ]);
+  };
+  let authority: IndexedDbCashierAuthority | undefined;
+  try {
+    const before = await readExistingCashierRecoveryIdentity();
+    const beforeKey = bindingKey(before);
+    if (!before || !beforeKey) return held('BOOTSTRAP_RECOVERY_BINDING_MISSING_OR_INVALID');
+    authority = new IndexedDbCashierAuthority({
+      localMerchantId: before.local_merchant_id,
+      cloudMerchantId: before.cloud_merchant_id,
+      deviceId: before.device_id,
+      existingOnly: true,
+    });
+    const snapshot = await authority.inspectLocalRecoverySnapshot(options);
+    const after = await readExistingCashierRecoveryIdentity();
+    const afterKey = bindingKey(after);
+    if (!afterKey || beforeKey !== afterKey) {
+      // Discard the old view rather than exposing it as the new identity's view.
+      return held('BOOTSTRAP_RECOVERY_BINDING_CHANGED');
+    }
+    return { ...snapshot, binding_observed_unchanged: true };
+  } catch {
+    return held('BOOTSTRAP_RECOVERY_READ_FAILED');
+  } finally {
+    if (authority) await authority.close().catch(() => undefined);
+  }
 }
 
 function parseOperatorSession(value: string | null): CashierOperatorSession | null {
@@ -281,9 +547,10 @@ async function responsePayload(
     : {};
 }
 
-async function persistEntitlementFromPayload(
+export async function persistEntitlementFromPayload(
   payload: Record<string, unknown>,
   stationId: string,
+  context: CashierOperatorContext,
 ): Promise<void> {
   const raw = payload.cashier_entitlement;
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
@@ -298,17 +565,16 @@ async function persistEntitlementFromPayload(
     await persistCashierEntitlementAuthority({
       snapshot,
       stationId,
+      deviceId: context.device_id,
+      locationId: context.location_id,
+      credentialVersion: context.credential_version,
+      envelope: payload.cashier_offline_entitlement as CashierOfflineEnvelope | null,
     });
-  } catch (error) {
-    throw new CashierOperatorSessionClientError(
-      error instanceof Error && 'code' in error
-        ? String((error as { code?: unknown }).code || 'CASHIER_ENTITLEMENT_CACHE_FAILED')
-        : 'CASHIER_ENTITLEMENT_CACHE_FAILED',
-      error instanceof Error
-        ? error.message
-        : 'Cashier subscription authority could not be cached safely',
-      503,
-    );
+  } catch {
+    // Online authentication was established by the server response. A client
+    // awaiting public-key rollout must remain online-capable, with no offline
+    // privilege retained from an old or unverifiable envelope.
+    await clearCashierEntitlementAuthority();
   }
 }
 
@@ -338,6 +604,16 @@ export async function pairCashierStation(
       'CASHIER_PAIRING_OFFLINE',
       'Internet connection is required to pair this cashier station',
       0,
+    );
+  }
+  // Re-pairing without a cross-tab lock is not safe: concurrent sales use a
+  // different IndexedDB database from this bootstrap station identity.
+  // Check BEFORE sending a potentially single-use network pairing code.
+  if (!cashierCrossTabLockAvailable()) {
+    throw new CashierOperatorSessionClientError(
+      'CASHIER_PAIRING_CROSS_TAB_LOCK_UNAVAILABLE',
+      'Browser cross-tab coordination is required to re-pair cashier station',
+      503,
     );
   }
   const identity = await getOrCreateCashierDeviceIdentity();
@@ -414,21 +690,49 @@ export async function pairCashierStation(
     station_token: stationToken,
     station_credential_expires_at: credentialExpiresAt,
   };
-  await writeCashierDeviceIdentity(next);
-  if (typeof sessionStorage !== 'undefined') {
-    sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
-  }
-  await scrubCashierRawCostsForIdentity(next);
+  // The shared Web Lock serializes financial outbox writers against the
+  // FINAL pending check + station CAS + old-cost cleanup. No network wait is
+  // held under this lock. A queued earlier sale always wins and is observed
+  // before station admission; a later sale cannot interleave the two IDB DBs.
+  return withCashierFinancialMutationLock(
+    identity.local_merchant_id,
+    identity.device_id,
+    async () => {
+      const pendingAfterPairingResponse =
+        await getCashierPendingEnvelopeCountForIdentity(identity);
+      if (pendingAfterPairingResponse > 0) {
+        throw new CashierOperatorSessionClientError(
+          'CASHIER_PAIRING_PENDING_OPERATIONS',
+          'Pending cashier operations must synchronize before station pairing',
+          409,
+        );
+      }
 
-  const binding = stationBinding(next);
-  if (!binding) {
-    throw new CashierOperatorSessionClientError(
-      'CASHIER_PAIRING_RESPONSE_INVALID',
-      'Cashier station credential is invalid',
-      502,
-    );
-  }
-  return binding;
+      // This response may be older than a pairing committed from another
+      // tab. The authoritative bootstrap change stays an atomic IDB CAS.
+      if (!await writeCashierDevicePairingIfUnchanged(identity, next)) {
+        throw new CashierOperatorSessionClientError(
+          'CASHIER_PAIRING_STALE_RESPONSE',
+          'Station pairing changed while this request was in progress',
+          409,
+        );
+      }
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
+      }
+      await scrubCashierRawCostsForIdentity(next);
+      const binding = stationBinding(next);
+      if (!binding) {
+        throw new CashierOperatorSessionClientError(
+          'CASHIER_PAIRING_RESPONSE_INVALID',
+          'Cashier station credential is invalid',
+          502,
+        );
+      }
+      return binding;
+    },
+    { requireCrossTab: true },
+  );
 }
 
 export async function listCashierLoginStaff(): Promise<CashierLoginStaff[]> {
@@ -559,7 +863,7 @@ export async function loginCashierOperator(
     operator_token: operatorToken,
     context,
   };
-  await persistEntitlementFromPayload(payload, context.station_id);
+  await persistEntitlementFromPayload(payload, context.station_id, context);
   if (typeof sessionStorage === 'undefined') {
     throw new CashierOperatorSessionClientError(
       'CASHIER_OPERATOR_STORAGE_UNAVAILABLE',
@@ -571,10 +875,12 @@ export async function loginCashierOperator(
   return session;
 }
 
-export async function validateCashierOperatorSession(): Promise<CashierOperatorSession | null> {
+export async function validateCashierOperatorSession(options: { requireOnline?: boolean } = {}): Promise<CashierOperatorSession | null> {
   const session = await getCashierOperatorSession();
   if (!session) return null;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    if (options.requireOnline) throw new TypeError('Cashier is offline');
+    await assertSignedCashierOfflineSession(session);
     return session;
   }
 
@@ -584,13 +890,14 @@ export async function validateCashierOperatorSession(): Promise<CashierOperatorS
       headers: cashierOperatorHeaders(session),
     });
   } catch (cause) {
-    if (!(cause instanceof TypeError)) throw cause;
+    if (!(cause instanceof TypeError) || options.requireOnline) throw cause;
     const fallback = await getCashierOperatorSession();
     if (
       fallback &&
       fallback.operator_token === session.operator_token &&
       fallback.context.operator_session_id === session.context.operator_session_id
     ) {
+      await assertSignedCashierOfflineSession(fallback);
       return fallback;
     }
     return null;
@@ -609,8 +916,37 @@ export async function validateCashierOperatorSession(): Promise<CashierOperatorS
       'Could not validate cashier operator session',
     );
   }
-  await persistEntitlementFromPayload(payload, session.context.station_id);
-  return session;
+  const { applyCashierOperatorPolicyFromPayload } = await import('./cashierOperatorPolicyRefresh');
+  return applyCashierOperatorPolicyFromPayload(session, payload);
+}
+
+async function assertSignedCashierOfflineSession(session: CashierOperatorSession): Promise<void> {
+  await assertCashierSaleEntitlementFromCache({
+    merchantId: session.context.merchant_id,
+    stationId: session.context.station_id,
+    deviceId: session.context.device_id,
+    locationId: session.context.location_id,
+    credentialVersion: session.context.credential_version,
+  });
+}
+
+export async function assertCashierOperatorSaleAuthorization(
+  session: CashierOperatorSession,
+): Promise<void> {
+  try {
+    const current = await validateCashierOperatorSession({ requireOnline: true });
+    if (!current || current.operator_token !== session.operator_token ||
+        current.context.operator_session_id !== session.context.operator_session_id ||
+        !current.context.permissions.includes('sale.create')) {
+      throw new CashierOperatorSessionClientError('CASHIER_OPERATOR_LOGIN_REQUIRED',
+        'Current online sale authorization is required', 401);
+    }
+    // A successful authenticated online response authorizes this online sale even
+    // when optional offline signing is not configured. HTTP denials never fallback.
+  } catch (cause) {
+    if (!(cause instanceof TypeError)) throw cause;
+    await assertSignedCashierOfflineSession(session);
+  }
 }
 
 export function cashierOperatorCan(

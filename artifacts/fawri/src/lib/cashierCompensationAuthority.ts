@@ -389,6 +389,8 @@ export class IndexedDbCashierCompensationAuthority
     operationId: string,
     expectedKind: 'return' | 'void',
     expectedSaleId: string,
+    expectedNote: string | undefined,
+    expectedReturnLines?: Array<{ original_line_id: string; quantity: number }>,
   ): Promise<CashierReturnSaleResult | CashierVoidSaleResult | null> {
     const stored = (await requestResult(meta.get(compensationMetaKey(operationId)))) as
       | MetaRecord
@@ -427,6 +429,16 @@ export class IndexedDbCashierCompensationAuthority
           'return operation metadata exists but return snapshot is missing',
         );
       }
+      if (snapshot.note !== expectedNote || !expectedReturnLines ||
+          snapshot.lines.length !== expectedReturnLines.length ||
+          snapshot.lines.some((line, index) =>
+            line.original_line_id !== expectedReturnLines[index].original_line_id ||
+            line.quantity !== expectedReturnLines[index].quantity)) {
+        throw new CashierCompensationError(
+          'CASHIER_COMPENSATION_OPERATION_ID_CONFLICT',
+          'Operation id is already bound to different return input',
+        );
+      }
       return {
         sale,
         return_snapshot: snapshot,
@@ -439,6 +451,12 @@ export class IndexedDbCashierCompensationAuthority
       throw new CashierCompensationError(
         'CASHIER_COMPENSATION_REPLAY_CORRUPT',
         'void operation metadata exists but void snapshot is missing',
+      );
+    }
+    if (sale.void.note !== expectedNote) {
+      throw new CashierCompensationError(
+        'CASHIER_COMPENSATION_OPERATION_ID_CONFLICT',
+        'Operation id is already bound to different void input',
       );
     }
     return {
@@ -510,6 +528,8 @@ export class IndexedDbCashierCompensationAuthority
         operationId,
         'return',
         saleId,
+        note,
+        normalizedLines,
       );
       if (replay) {
         await completion;
@@ -741,6 +761,7 @@ export class IndexedDbCashierCompensationAuthority
         operationId,
         'void',
         saleId,
+        note,
       );
       if (replay) {
         await completion;

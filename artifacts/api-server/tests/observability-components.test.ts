@@ -7,7 +7,7 @@ import { createHealthSnapshot } from "../src/observability/health";
 import { FAWRI_METRICS, MetricsRegistry } from "../src/observability/metrics";
 import { createReadinessSnapshot } from "../src/observability/readiness";
 import { createObservabilityRouter } from "../src/observability/router";
-import { assertExpectedPostgresRuntimeRole } from "../src/observability/runtime";
+import { assertExpectedPostgresRuntimeRole, assertSafePostgresRuntimeRole, CRITICAL_POSTGRES_PRIVACY_RLS_TABLES, CRITICAL_POSTGRES_PRIVACY_POLICY_SHA256 } from "../src/observability/runtime";
 
 const fixedNow = () => new Date("2026-08-08T00:00:00.000Z");
 
@@ -105,6 +105,124 @@ test("expected PostgreSQL runtime role check is opt-in and fail-closed", () => {
       }),
     /POSTGRES_RUNTIME_ROLE_MISMATCH/,
   );
+});
+
+test("FIELD002 hosted runtime rejects incomplete or altered eight-table privacy policy coverage", () => {
+  const tables = Array.from(CRITICAL_POSTGRES_PRIVACY_RLS_TABLES);
+  assert.equal(tables.length, 8);
+  assert.equal(new Set(tables).size, 8);
+  assert.deepEqual(Object.keys(CRITICAL_POSTGRES_PRIVACY_POLICY_SHA256).sort(), tables.slice().sort());
+  for (const table of tables) {
+    assert.match(CRITICAL_POSTGRES_PRIVACY_POLICY_SHA256[table], /^[a-f0-9]{64}$/);
+  }
+
+  // The mocked catalog row otherwise satisfies every least-privilege check.
+  const good = {
+    role_name: "field002_restricted_test",
+    is_superuser: false,
+    can_create_role: false,
+    bypass_rls: false,
+    owns_unforced_rls_table: false,
+    session_role_name: "field002_restricted_test",
+    session_is_superuser: false,
+    session_bypass_rls: false,
+    session_can_create_role: false,
+    session_inherits_privileged_role: false,
+    session_can_set_privileged_role: false,
+    effective_has_authentication_runtime: false,
+    effective_has_admin_directory_authority: false,
+    session_has_authentication_runtime: false,
+    session_has_admin_directory_authority: false,
+    session_can_set_sensitive_function_role: false,
+    critical_privacy_rls_ready_count: 8,
+  };
+  const original = process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
+  try {
+    process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = good.role_name;
+    assert.doesNotThrow(() => assertSafePostgresRuntimeRole(good));
+    // Explicit production settings must never silently skip the full RLS gate.
+    assert.throws(
+      () => assertSafePostgresRuntimeRole(good, { NODE_ENV: "production" }),
+      /POSTGRES_RUNTIME_ROLE_CONFIGURATION_REQUIRED/,
+    );
+    assert.doesNotThrow(
+      () => assertSafePostgresRuntimeRole(good, { NODE_ENV: "production", FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: good.role_name }),
+    );
+    // FIELD002: a low-privilege but unapproved LOGIN must not mask its
+    // identity by SET ROLE into the expected tenant runtime.
+    assert.throws(
+      () => assertSafePostgresRuntimeRole({ ...good, session_role_name: "unexpected_login" },
+        { NODE_ENV: "production", FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: good.role_name }),
+      /POSTGRES_RUNTIME_ROLE_MISMATCH/,
+    );
+    assert.throws(
+      () => assertSafePostgresRuntimeRole({ ...good, session_role_name: "unexpected_login" },
+        { NODE_ENV: "test", FAWRI_DEPLOYMENT_MODE: "staging", FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: good.role_name }),
+      /POSTGRES_RUNTIME_ROLE_MISMATCH/,
+    );
+    assert.throws(
+      () => assertSafePostgresRuntimeRole({ ...good, critical_privacy_rls_ready_count: 7 },
+        { NODE_ENV: "production", FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: good.role_name }),
+      /POSTGRES_RUNTIME_PRIVACY_RLS_NOT_READY/,
+    );
+    assert.throws(
+      () => assertSafePostgresRuntimeRole(good,
+        { NODE_ENV: "production", FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "wrong_tenant_role" }),
+      /POSTGRES_RUNTIME_ROLE_MISMATCH/,
+    );
+    assert.doesNotThrow(
+      () => assertSafePostgresRuntimeRole({ ...good, critical_privacy_rls_ready_count: 0 },
+        { NODE_ENV: "test" }),
+    );
+    // Hosted mode is owned by the canonical deployment gate, not NODE_ENV
+    // alone. A production designation must fail closed even in a test process.
+    assert.throws(
+      () => assertSafePostgresRuntimeRole(good,
+        { NODE_ENV: "test", FAWRI_DEPLOYMENT_MODE: "production" }),
+      /POSTGRES_RUNTIME_ROLE_CONFIGURATION_REQUIRED/,
+    );
+    assert.throws(
+      () => assertSafePostgresRuntimeRole({ ...good, critical_privacy_rls_ready_count: 7 },
+        { NODE_ENV: "test", FAWRI_DEPLOYMENT_MODE: "production",
+          FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: good.role_name }),
+      /POSTGRES_RUNTIME_PRIVACY_RLS_NOT_READY/,
+    );
+    // A deliberate staging override is consistently excluded by the existing
+    // production startup gate; it does not authorize commercial deployment.
+    assert.doesNotThrow(
+      () => assertSafePostgresRuntimeRole({ ...good, critical_privacy_rls_ready_count: 0 },
+        { NODE_ENV: "production", FAWRI_DEPLOYMENT_MODE: "staging" }),
+    );
+    for (const malformed of [0, 7, "8", null, undefined]) {
+      assert.throws(
+        () => assertSafePostgresRuntimeRole({ ...good, critical_privacy_rls_ready_count: malformed }),
+        /POSTGRES_RUNTIME_PRIVACY_RLS_NOT_READY/,
+      );
+    }
+    assert.throws(
+      () => assertSafePostgresRuntimeRole({ ...good, bypass_rls: true }),
+      /POSTGRES_RUNTIME_ROLE_UNSAFE/,
+    );
+    // Isolate the trusted-function capability restriction from actual
+    // PostgreSQL catalog fingerprints: even an otherwise approved 8/8
+    // policy set must never admit a tenant runtime with auth powers.
+    for (const unsafeCapability of [
+      "effective_has_authentication_runtime",
+      "effective_has_admin_directory_authority",
+      "session_has_authentication_runtime",
+      "session_has_admin_directory_authority",
+      "session_can_set_sensitive_function_role",
+    ] as const) {
+      assert.throws(
+        () => assertSafePostgresRuntimeRole({ ...good, [unsafeCapability]: true }),
+        /POSTGRES_RUNTIME_ROLE_UNSAFE/,
+        unsafeCapability,
+      );
+    }
+  } finally {
+    if (original === undefined) delete process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
+    else process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = original;
+  }
 });
 
 test("readiness timeouts fail closed", async () => {

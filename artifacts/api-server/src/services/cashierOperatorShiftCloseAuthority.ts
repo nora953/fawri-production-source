@@ -1,9 +1,9 @@
+import { withMerchantAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import { verifyPassword } from "./authPasswordService";
 import { evaluateMerchantOperationalAccess } from "./merchantOperationalAccess";
 import {
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
-  withMerchantOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 import {
@@ -100,7 +100,7 @@ export async function logoutCashierOperatorWithPinAuthoritative(input: {
   const context = input.context;
   const pin = cashierPin(input.pin);
 
-  const decision = await withMerchantOperationalTransaction(
+  const decision = await withMerchantAuthenticationTransaction(
     context.merchant_id,
     async (client) => {
       await assertMerchantOperationalAccess(client, context.merchant_id);

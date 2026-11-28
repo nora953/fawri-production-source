@@ -297,6 +297,182 @@ export function isKnownHistoricalEntrypointFenceFixture(finding, objectPath, obj
     finding.rule === "credential-url" && finding.index === 641 && finding.length === 54;
 }
 
+// Fabricated pre-import rejection input from the initial fresh-role rehearsal.
+ // The current test no longer embeds credentials. Only this immutable historical
+ // blob/path/rule/span is classified as a fixture; all changed findings still fail.
+export function isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, objectPath, objectId) {
+  return objectId === "5b2ebc7b8262d8cc44fda859a2bab52337bafb59" &&
+    normalizeRepositoryPath(objectPath) === "scripts/tests/disposable-cashier-role-recovery.test.mjs" &&
+    finding.rule === "credential-url" && finding.index === 2607 && finding.length === 54;
+}
+
+
+ // A 2026-11-04 FIELD002 documentation revision briefly contained a generic
+ // illustrative connection URL, without any real credential or endpoint.
+ // Its immutable historical Git blob remains reachable even after the current
+ // file was corrected. Recognize only that exact synthetic substring at its
+ // precise position in that one immutable blob, never other URLs or findings.
+ const FIELD002_ILLUSTRATIVE_CONNECTION = [
+   "postgresql://role:", "password", "@host",
+ ].join("");
+ export function isKnownHistoricalField002IllustrativeUrl(text, finding, objectPath, objectId) {
+   if (objectId !== "ed0250ab4e829f4317b189f3a1696c3940d3b42b" ||
+       normalizeRepositoryPath(objectPath) !==
+         "docs/final-audit/evidence/P0-FIELD002-RAILWAY-NEON-LIVE-ENDPOINT-CORRELATION-20261104.md" ||
+       finding.rule !== "credential-url" ||
+       finding.index !== 13302 ||
+       finding.length !== 31) return false;
+   return String(text).slice(finding.index, finding.index + finding.length) ===
+     FIELD002_ILLUSTRATIVE_CONNECTION;
+ }
+
+// These three immutable FIELD002 test blobs contained a deliberately fake
+// password fragment in a SOURCE-STRING BUILDER. The apparent credential URL
+// ends at a quote; the hostname was concatenated separately, never committed
+// as a credential-bearing URL. The test now builds the fixture at runtime.
+// Pin exact blob/path/regex-span and synthetic substring; all other findings
+// remain reportable, including real URLs or any future modified file.
+const FIELD002_SYNTHETIC_URL_FRAGMENT = [
+  "postgresql://neondb_owner:", "encoded%40fixture", "@'",
+].join("");
+export function isKnownHistoricalField002SyntheticBuilderFixture(text, finding, objectPath, objectId) {
+  if (normalizeRepositoryPath(objectPath) !==
+      "scripts/tests/field002-isolated-acceptance-plan.test.mjs" ||
+      finding.rule !== "credential-url") return false;
+  const locations = {
+    "d739b637f04a36187727eed4714ea29958b27919": [280, 45],
+    "03acd56b7185a1be6b7ab0e3e4b0b997997009cc": [280, 45],
+    "65f004befa5e5d6c8e4c8cbf8f3d6777d5aeaef8": [255, 45],
+  };
+  const expected = locations[objectId];
+  return !!expected && finding.index === expected[0] &&
+    finding.length === expected[1] &&
+    String(text).slice(finding.index, finding.index + finding.length) ===
+      FIELD002_SYNTHETIC_URL_FRAGMENT;
+}
+
+// FIELD002 2026-11-07: three immutable historical test blobs briefly held
+// *synthetic* credential-shaped URLs used only by production-config rejection
+// tests. Current source constructs these URLs at runtime. Preserve the full
+// history scanner and pin every reviewed fixture by immutable Git blob, path,
+// rule, byte span, AND exact synthetic bytes; never allow a host or path broadly.
+const FIELD002_HISTORICAL_AUTH_URI_FRAGMENTS = Object.freeze([
+  ["postgresql://fawri_restricted_runtime:", "tenant-synthetic", "@db.internal:5432"].join(""),
+  ["postgresql://fawri_auth_issuer:", "auth-synthetic", "@db.internal:5432"].join(""),
+  ["postgresql://%2X:", "secret", "@db.internal:5432"].join(""),
+  ["postgresql://${username}:", "not-a-secret", "@db.internal:5432"].join(""),
+  ["postgresql://fawri_restricted_runtime:", "x", "@ep-test-case.c-5.eu-central-1.aws.neon.tech:5432"].join(""),
+  ["postgresql://fawri_auth_issuer:", "y", "@ep-test-case-pooler.c-5.eu-central-1.aws.neon.tech"].join(""),
+  ["postgresql://fawri_restricted_runtime:", "changed-not-real", "@db.internal:5432"].join(""),
+  ["postgresql://fawri_auth_issuer:", "changed-not-real", "@db.internal:5432"].join(""),
+  ["postgresql://fawri_tenant_runtime_v2:", "synthetic", "@db.internal:5432"].join(""),
+]);
+const FIELD002_HISTORICAL_AUTH_URI_SPANS = Object.freeze({
+  "12dad94ed53c718f9aab732559a3aec5775f6cdb": [
+    [610, 71, 0], [720, 62, 1], [2606, 40, 2], [3339, 54, 3],
+    [4192, 71, 6], [4302, 64, 7],
+  ],
+  "d42ab0e7ef1ed156e675b84acbed4bbb6cea444f": [
+    [610, 71, 0], [720, 62, 1], [2606, 40, 2], [3339, 54, 3],
+    [4502, 88, 4], [4630, 83, 5], [5352, 71, 6], [5462, 64, 7],
+  ],
+  "9de3f64f0023b551e0f925476cf11e121839adb6": [
+    [610, 71, 0], [720, 62, 1], [2606, 40, 2], [3339, 54, 3],
+    [4502, 88, 4], [4630, 83, 5], [5352, 71, 6], [5462, 64, 7],
+    [15945, 63, 8],
+  ],
+});
+
+export function isKnownHistoricalField002AuthConfigFixture(text, finding, objectPath, objectId) {
+  if (normalizeRepositoryPath(objectPath) !==
+      "artifacts/api-server/tests/production-release-readiness.test.ts" ||
+      finding.rule !== "credential-url") return false;
+  const spans = FIELD002_HISTORICAL_AUTH_URI_SPANS[objectId] || [];
+  const match = spans.find(([index, length]) =>
+    finding.index === index && finding.length === length);
+  return !!match && String(text).slice(finding.index,
+    finding.index + finding.length) ===
+    FIELD002_HISTORICAL_AUTH_URI_FRAGMENTS[match[2]];
+}
+
+// Two old synthetic fixture revisions contain credential-shaped source strings,
+// and one contains only concatenated JS segments. They were negative tests,
+// never connection values. The history scan remains enabled for every other
+// byte in every blob. Pin immutable blob, path, rule, precise span and bytes.
+const HISTORICAL_ISOLATED_NEON_DUMP_FIXTURES = Object.freeze({
+  "dc69d5c013484983d3d346ea60e1e5f69eea3f7c": {
+    index: 589, length: 68,
+    fragment: ["postgresql://", "'+'fawri_v1_backup_reader'+':'+'fake-not-a-secret'+'@'+"].join(""),
+  },
+  "8c06a8fbd4eadf187c858004744a819f225ea317": {
+    index: 438, length: 56,
+    fragment: ["postgresql://fawri_v1_backup_reader:", "fake-not-a-secret", "@'+"].join(""),
+  },
+  "f5af2b8af7e0ddcc7e49569b33ef04da9bfa4c13": {
+    index: 438, length: 45,
+    fragment: ["postgresql://fawri_owner:", "fake-not-a-secret", "@'+"].join(""),
+  },
+});
+
+export function isKnownHistoricalIsolatedNeonDumpFixture(
+  text, finding, objectPath, objectId,
+) {
+  if (normalizeRepositoryPath(objectPath) !==
+      "scripts/tests/v1-isolated-neon-dump-safety.test.mjs" ||
+      finding.rule !== "credential-url") return false;
+  const fixture = HISTORICAL_ISOLATED_NEON_DUMP_FIXTURES[objectId];
+  return !!fixture &&
+    finding.index === fixture.index &&
+    finding.length === fixture.length &&
+    String(text).slice(finding.index, finding.index + finding.length) ===
+      fixture.fragment;
+}
+
+// Retired, fabricated owner-URL strings existed in historic offline negative
+// tests, never as real credentials. Current
+// tests construct URL objects. History exemptions are EXACT Git blob, source path,
+// scanner rule, byte span and text. Every other finding still blocks the release.
+const HISTORICAL_V1_SYNTHETIC_OWNER_URLS = Object.freeze({
+  // Retired G5 test-only URL; exact immutable history finding, never a live secret.
+  "c22a6273dc27ce4c81c6e3103cfac41eb3df8436": {
+    path: "scripts/v1-g5-private-acl-capture.test.mjs", index: 2271, length: 98,
+    fragmentParts: ["postgresql://fawri_owner:", "synthetic-only", "@"+ "ep-polished-poetry-b9jpvn4r.c-7.eu-central-1.aws.neon.tech"],
+  },
+  "2b6cdbee6c7d9108753105702f9e2f7eaced2a5e": {
+    path: "scripts/tests/v1-g2-production-role-reservation-safety.test.mjs", index: 605, length: 44,
+    fragmentParts: ["postgresql://fawri_owner:", "test-placeholder", "@'+"],
+  },
+  "65d90ab0920177fa5345a3f1d9427bf5f2c86860": {
+    path: "scripts/tests/v1-g2-production-schema-migration-safety.test.mjs", index: 2340, length: 54,
+    fragmentParts: ["postgresql://fawri_owner:", "fake", "@'+G2_SCHEMA_TARGET.host+"],
+  },
+  "43b019b77bebb79c1c4a60f59c5015b3a815c85f": {
+    path: "scripts/tests/v1-owner-admin-bootstrap-safety.test.mjs", index: 749, length: 67,
+    fragmentParts: ["postgresql://fawri_owner:", "kept-secret", "@'+V1_OWNER_ADMIN_TARGET.host+'"],
+  },
+  "6a10a26fda03cd9ff19cecd90360532ef046f375": {
+    path: "scripts/tests/v1-production-postowner-rls-backup-safety.test.mjs", index: 651, length: 72,
+    fragmentParts: ["postgresql://fawri_owner:", "exampleSecret", "@'+POSTOWNER_TARGET.endpoint_host+"],
+  },
+  "9f97b048b00e462e161d248a282e7185072cfc14": {
+    path: "scripts/tests/v1-production-postschema-backup-safety.test.mjs", index: 699, length: 43,
+    fragmentParts: ["postgresql://fawri_owner:", "opaqueSecret123", "@'+"],
+  },
+});
+
+export function isKnownHistoricalV1SyntheticOwnerUrlFixture(
+  text, finding, objectPath, objectId,
+) {
+  if (finding.rule !== "credential-url") return false;
+  const fixture = HISTORICAL_V1_SYNTHETIC_OWNER_URLS[objectId];
+  return !!fixture &&
+    normalizeRepositoryPath(objectPath) === fixture.path &&
+    finding.index === fixture.index &&
+    finding.length === fixture.length &&
+    String(text).slice(finding.index, finding.index + finding.length) ===
+      fixture.fragmentParts.join("");
+}
+
 function scanHistory(root) {
   const output = execFileSync("git", ["rev-list", "--objects", "--all"], {
     cwd: root,
@@ -375,7 +551,13 @@ function scanHistory(root) {
         isKnownHistoricalScannerSelfTestCredentialUrl(objectText, finding, objectPath) ||
         isKnownHistoricalRestoreRejectionFixture(finding, objectPath, objectId) ||
         isKnownHistoricalDisposableGuardFixture(finding, objectPath, objectId) ||
-        isKnownHistoricalEntrypointFenceFixture(finding, objectPath, objectId)
+        isKnownHistoricalEntrypointFenceFixture(finding, objectPath, objectId) ||
+        isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, objectPath, objectId) ||
+        isKnownHistoricalField002IllustrativeUrl(objectText, finding, objectPath, objectId) ||
+        isKnownHistoricalField002SyntheticBuilderFixture(objectText, finding, objectPath, objectId) ||
+        isKnownHistoricalField002AuthConfigFixture(objectText, finding, objectPath, objectId) ||
+        isKnownHistoricalIsolatedNeonDumpFixture(objectText, finding, objectPath, objectId) ||
+        isKnownHistoricalV1SyntheticOwnerUrlFixture(objectText, finding, objectPath, objectId)
       ) continue;
       findings.push({
         blob: objectId,
@@ -455,6 +637,26 @@ function scanOutput(inputs) {
   return findings.length === 0 ? 0 : 1;
 }
 
+export function summarizeBlockingAdvisories(payload) {
+  const advisories = payload?.advisories;
+  if (!advisories || typeof advisories !== "object" || Array.isArray(advisories)) return [];
+  const rows = [];
+  for (const advisory of Object.values(advisories)) {
+    if (!advisory || !["high", "critical"].includes(advisory.severity)) continue;
+    const name = advisory.module_name;
+    const ghsa = advisory.github_advisory_id;
+    // Only bounded public identifiers, never advisory text, URLs, findings,
+    // dependency paths, request headers or raw registry error payloads.
+    const row = { severity: advisory.severity };
+    if (typeof name === "string" && name.length <= 128 &&
+        /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/.test(name)) row.package = name;
+    if (typeof ghsa === "string" && /^GHSA-[23456789cfghjmpqrvwx]{4}-[23456789cfghjmpqrvwx]{4}-[23456789cfghjmpqrvwx]{4}$/.test(ghsa)) row.ghsa = ghsa;
+    rows.push(row);
+    if (rows.length === 50) break;
+  }
+  return rows;
+}
+
 function dependencyAudit() {
   const result = spawnSync("pnpm", ["audit", "--json", "--audit-level=high"], {
     cwd: process.cwd(),
@@ -478,6 +680,7 @@ function dependencyAudit() {
     status: evaluation.status,
     vulnerabilities: counts,
     blocking_severities: ["high", "critical"],
+    blocking_advisories: summarizeBlockingAdvisories(payload),
   };
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 

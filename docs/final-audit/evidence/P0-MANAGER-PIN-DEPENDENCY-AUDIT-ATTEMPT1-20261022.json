@@ -1,0 +1,16 @@
+{
+  "source": "f0418c1350a4d51dc112fb805304978541ab1dfc",
+  "run": 39740821775,
+  "job": 119697341448,
+  "attempt": 1,
+  "status": "FAILED_CLOSED_NO_VULNERABILITY_COUNTS",
+  "message": "security-final-audit failed closed: audit output does not contain vulnerability counts",
+  "previousDependencyReviewJob": 119697340968,
+  "previousDependencyReviewCounts": {
+    "high": 0,
+    "critical": 0,
+    "moderate": 2
+  },
+  "claim": "No vulnerability counts inferred for the failed audit job; one bounded same-source retry only, no policy/dependency/source change.",
+  "releaseDecision": "NO-GO"
+}

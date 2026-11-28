@@ -10,6 +10,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import GoogleMerchantPhoneVerification from '@/components/GoogleMerchantPhoneVerification';
 import { useI18n } from '@/lib/i18n';
 import { clearMerchantTabSession } from '@/lib/store';
 import { secureMerchantLogout } from '@/lib/authClientCutover';
@@ -25,6 +26,9 @@ type PendingView =
   | 'rejected'
   | 'suspended'
   | 'unavailable';
+
+// Match the already-accepted dashboard session-rotation race protection.
+const SESSION_401_CONFIRM_DELAYS_MS = [150, 650] as const;
 
 export default function PendingPage() {
   const { isRTL, lang } = useI18n();
@@ -57,9 +61,22 @@ export default function PendingPage() {
       setChecking(true);
 
       try {
-        const result = await checkMerchantLifecycle(controller.signal);
+        let result = await checkMerchantLifecycle(controller.signal);
         if (cancelled) return;
 
+        // A lifecycle poll may carry the previous HttpOnly cookie while another
+        // response is rotating the session. Confirm a 401 twice, like
+        // DashboardLayout, before clearing a merchant's valid browser state.
+        if (!result.ok && result.reason === 'unauthenticated') {
+          for (const delay of SESSION_401_CONFIRM_DELAYS_MS) {
+            await new Promise<void>(resolve => window.setTimeout(resolve, delay));
+            if (cancelled) return;
+            result = await checkMerchantLifecycle(controller.signal);
+            if (result.ok || result.reason !== 'unauthenticated') break;
+          }
+        }
+
+        if (cancelled) return;
         if (!result.ok) {
           if (result.reason === 'unauthenticated') {
             clearMerchantTabSession();
@@ -179,6 +196,8 @@ export default function PendingPage() {
         <p className="mb-8 leading-relaxed text-muted-foreground">
           {viewConfig.body}
         </p>
+
+        {view === 'pending_review' && <GoogleMerchantPhoneVerification />}
 
         <Button
           type="button"

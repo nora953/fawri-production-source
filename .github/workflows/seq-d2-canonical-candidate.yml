@@ -1,0 +1,55 @@
+name: SEQ D2 canonical storage acceptance
+on:
+  pull_request:
+    paths:
+      - 'lib/db/**'
+      - 'artifacts/api-server/src/services/cashierStreamStorageReadiness.ts'
+      - 'artifacts/api-server/tests/cashier-stream-storage-proposal-postgres.integration.test.mjs'
+      - 'scripts/prepare-seq-d2-canonical-candidate.mjs'
+      - 'scripts/prepare-seq-d3-authority-candidate.mjs'
+      - 'scripts/tests/cashier-authority-candidate-history.test.mjs'
+      - 'lib/db/scripts/lib/cashier-authority-candidate-history.mjs'
+      - 'artifacts/api-server/src/services/cashierStreamAuthorityReadiness.ts'
+      - 'artifacts/api-server/src/services/cashierAuthorityCandidateInstallationReadiness.ts'
+      - 'scripts/execute-disposable-postgres-audit.mjs'
+      - 'scripts/run-isolated-postgres-audit.sh'
+      - 'artifacts/api-server/tests/cashier-authority-migration-postgres.integration.test.mjs'
+      - 'docs/final-audit/evidence/seq-d3-authority-candidate/**'
+      - 'lib/db/scripts/lib/cashier-stream-storage-candidate-readiness.mjs'
+      - 'artifacts/api-server/tests/cashier-stream-storage-readiness-postgres.integration.test.mjs'
+      - '.github/workflows/seq-d2-canonical-candidate.yml'
+permissions:
+  contents: read
+concurrency:
+  group: seq-d2-candidate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  generation-and-owned-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label seq-d2-install -- pnpm install --frozen-lockfile --ignore-scripts
+      - name: Verify complete candidate migration-history pins and drift rejection
+        run: node --test scripts/tests/cashier-authority-candidate-history.test.mjs
+      - name: Generate candidate and preserve historical migration bytes
+        run: node scripts/prepare-seq-d2-canonical-candidate.mjs
+      - name: Apply candidate in owned offline PostgreSQL with actual management contracts
+        run: bash scripts/run-isolated-postgres-audit.sh management
+      - name: Export generated candidate text for review
+        run: node scripts/prepare-seq-d2-canonical-candidate.mjs export
+      - name: Generate coordinated authority candidate in a separate copy and preserve canonical source
+        run: node scripts/prepare-seq-d3-authority-candidate.mjs
+      - name: Prove actual candidate migration fresh install and rollback in its own offline cluster
+        run: bash scripts/run-isolated-postgres-audit.sh authority-migration-fresh
+      - name: Prove actual candidate migration upgrade and rollback in a separate offline cluster
+        run: bash scripts/run-isolated-postgres-audit.sh authority-migration-upgrade

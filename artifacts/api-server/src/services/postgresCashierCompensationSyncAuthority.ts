@@ -1,4 +1,8 @@
 import {
+  prepareInternalCashierStreamBody, beginCashierStreamOperation, persistCashierStreamReceipt,
+  type CashierVersionedStreamContext, type CashierStreamAdmission,
+} from "./cashierStreamAdmissionAuthority";
+import {
   evaluateCashierHistoricalOperationAuthorityInTransaction,
   recordCashierOperationTimelineInTransaction,
 } from "./cashierHistoricalOperationAuthority";
@@ -74,6 +78,8 @@ type StoredCompensation = {
 };
 
 export type CashierCompensationSyncResult = {
+  protocol_version?: 2;
+  stream_id?: string;
   operation_id: string;
   order_id: string;
   device_sequence: number;
@@ -1098,6 +1104,7 @@ async function applyVoid(
 export async function syncCashierCompensationAuthoritative(params: {
   merchantId: unknown;
   body: unknown;
+  versionedStream?: CashierVersionedStreamContext;
 }): Promise<CashierCompensationSyncResult> {
   const merchantId = identifier(params.merchantId, "merchant_id");
   if (!operationalPostgresAuthorityRequired()) {
@@ -1107,7 +1114,7 @@ export async function syncCashierCompensationAuthoritative(params: {
       503,
     );
   }
-  const bundle = validateCashierCompensationSyncBundle(params.body);
+  const bundle = validateCashierCompensationSyncBundle(params.versionedStream ? prepareInternalCashierStreamBody(params.body,params.versionedStream) : params.body);
   if (bundle.cloudMerchantId !== merchantId) {
     throw new CashierSyncError(
       "CASHIER_SYNC_TENANT_MISMATCH",
@@ -1135,6 +1142,13 @@ export async function syncCashierCompensationAuthoritative(params: {
         403,
       );
     }
+    let admission: CashierStreamAdmission | undefined;
+    if(params.versionedStream){
+      admission=await beginCashierStreamOperation(client,params.versionedStream,{
+        merchantId,deviceId:bundle.deviceId,operationId:bundle.operationId,deviceSequence:bundle.deviceSequence,
+        kind:bundle.kind,occurredAt:bundle.occurredAt,requestHash:bundle.requestHash,resultId:bundle.saleId,
+      });
+    } else {
     const timeline = await recordCashierOperationTimelineInTransaction({
       target: client,
       merchantId,
@@ -1149,16 +1163,25 @@ export async function syncCashierCompensationAuthoritative(params: {
       throw new CashierSyncError(timeline.code, timeline.reason, 409);
     }
 
+    }
+    async function finish(result: CashierCompensationSyncResult): Promise<CashierCompensationSyncResult> {
+      if(!admission)return result;
+      if(result.replayed!==admission.replayed)throw new CashierSyncError("CASHIER_STREAM_RECONCILIATION_REQUIRED","financial result and original receipt disagree",409);
+      await persistCashierStreamReceipt(client,admission);
+      return {...result,protocol_version:2,stream_id:admission.streamId};
+    }
     const operationUsage = await findOperationUsage(
       client,
       merchantId,
       bundle.operationId,
     );
     if (operationUsage) {
-      const replay = replayFromUsage(operationUsage, bundle);
+      const existingReplay = replayFromUsage(operationUsage, bundle);
+      const replay = existingReplay ? await finish(existingReplay) : null;
       if (replay) return replay;
     }
 
+    if(admission?.replayed)throw new CashierSyncError("CASHIER_STREAM_RECONCILIATION_REQUIRED","receipt financial result is unavailable",409);
     const order = await loadOriginalOrder(client, merchantId, bundle.saleId);
     if (!order || order.source_channel !== "cashier") {
       throw new CashierSyncError(
@@ -1278,7 +1301,7 @@ export async function syncCashierCompensationAuthoritative(params: {
       [merchantId, order.id, JSON.stringify(nextMetadata)],
     );
 
-    return {
+    return finish({
       operation_id: bundle.operationId,
       order_id: order.id,
       device_sequence: bundle.deviceSequence,
@@ -1286,7 +1309,7 @@ export async function syncCashierCompensationAuthoritative(params: {
       replayed: false,
       inventory_mutation_count: inventoryMutationCount,
       accepted_entity_ids: acceptedEntityIds(bundle),
-    };
+    });
   });
 }
 

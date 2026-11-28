@@ -10,6 +10,10 @@ const recovery = fs.readFileSync(
   path.join(root, 'src/lib/cashierStationBindingRecovery.ts'),
   'utf8',
 );
+const runtime = fs.readFileSync(
+  path.join(root, 'src/lib/cashierOperatorSessionRuntime.ts'),
+  'utf8',
+);
 const gate = fs.readFileSync(
   path.join(root, 'src/components/cashier/CashierOperatorGate.tsx'),
   'utf8',
@@ -32,18 +36,41 @@ test('invalid station credentials clear only station binding fields', () => {
     'station_token',
     'station_credential_expires_at',
   ]) {
-    assert.match(recovery, new RegExp(`delete next\\.${field}`));
+    assert.match(runtime, new RegExp(`delete next\\.${field}`));
   }
-  assert.doesNotMatch(recovery, /delete next\.device_id/);
-  assert.doesNotMatch(recovery, /delete next\.cloud_merchant_id/);
+  assert.doesNotMatch(runtime, /delete next\.device_id/);
+  assert.doesNotMatch(runtime, /delete next\.cloud_merchant_id/);
   assert.doesNotMatch(recovery, /clear\(\)/);
+});
+
+test('delayed invalid-credential denial can only clear captured binding in one IDB transaction',()=>{
+  assert.match(recovery, /clearInvalidCashierStationBinding\(\s*expected: CashierStationBinding/);
+  assert.match(recovery, /return clearCashierStationBindingIfMatches\(expected\)/);
+  assert.match(runtime, /export async function clearCashierStationBindingIfMatches/);
+  assert.match(runtime, /openBootstrapDatabase\(true\)/);
+  assert.match(runtime, /database.transaction\(BOOTSTRAP_STORE, 'readwrite'\)/);
+  for(const term of [
+    'current.cloud_merchant_id !== expected.merchant_id',
+    'current.device_id !== expected.device_id',
+    'current.station_id !== expected.station_id',
+    'current.station_token !== expected.station_token',
+    'current.location_id !== expected.location_id',
+    'current.branch_key !== expected.branch_key',
+    'current.station_credential_expires_at !== expected.credential_expires_at',
+  ])assert.ok(runtime.includes(term),'guard captured request identity: '+term);
+  assert.match(gate, /attemptedBinding = binding/);
+  assert.match(gate, /recoverStationBinding\(error, attemptedBinding\)/);
+  assert.match(gate, /recoverStationBinding\(error, state\.binding\)/);
+  assert.match(gate, /if \(!await clearInvalidCashierStationBinding\(attemptedBinding\)\) return false/);
+  assert.doesNotMatch(gate, /clearInvalidCashierStationBinding\(\)/);
 });
 
 test('cashier gate self-recovers to pairing instead of generic error', () => {
   assert.match(gate, /isCashierStationBindingInvalidError/);
   assert.match(gate, /clearInvalidCashierStationBinding/);
   assert.match(gate, /setState\(\{ kind: 'pair', binding: null \}\)/);
-  assert.match(gate, /if \(await recoverStationBinding\(error\)\) return;/);
+  assert.match(gate, /if \(await recoverStationBinding\(error, attemptedBinding\)\) return;/);
+  assert.match(gate, /if \(await recoverStationBinding\(error, state\.binding\)\) return;/);
 });
 
 test('paired-device metadata is made non-expiring before the cashier gate renders', () => {
@@ -79,6 +106,18 @@ test('legacy paired devices hydrate canonical location from the existing station
   assert.match(recovery, /deviceId !== identity\.device_id/);
   assert.match(recovery, /location_id: locationId/);
   assert.match(recovery, /station_credential_expires_at: DURABLE_STATION_METADATA_EXPIRES_AT/);
+});
+
+test('legacy network recovery and expiry refresh use atomic native identity compare-and-swap',()=>{
+  const runtime=fs.readFileSync(
+    path.join(root,'src/lib/cashierOperatorSessionRuntime.ts'),'utf8',
+  );
+  assert.match(runtime,/export async function writeCashierDeviceIdentityIfUnchanged/);
+  assert.match(runtime,/database.transaction\(BOOTSTRAP_STORE, 'readwrite'\)/);
+  assert.match(runtime,/JSON.stringify\(current\) !== JSON.stringify\(expected\)/);
+  assert.match(runtime,/await completion/);
+  assert.match(recovery,/return writeCashierDeviceIdentityIfUnchanged\(identity, next\)/);
+  assert.match(recovery,/await writeCashierDeviceIdentityIfUnchanged\(identity, \{/);
 });
 
 test('legacy binding recovery runs before the cashier gate and does not generate a new pairing credential', () => {

@@ -213,10 +213,44 @@ test(
         merchantId,
         inboundId,
         reservationId,
-        `reply-intent-${proof}`,
+        `auto:${rawProviderEventId}`,
         rawProviderMessageId,
       ],
     );
+
+    // A separate owned tenant keeps its live event namespace and delivery.
+    const peer = await merchantAccounts.upsertPendingMerchantAuthoritative({
+      phone: randomPhone(), passwordHash: hashPassword("ProviderDeletionPeer9!"),
+      ownerName: "Synthetic peer", storeName: "Synthetic peer", activityType: "retail",
+      language: "en", requestedPlan: "silver",
+    });
+    const peerId = peer.account.id;
+    const peerChannelId = `peer-channel-${proof}`, peerJobId = `peer-job-${proof}`;
+    const peerInboundId = `peer-inbound-${proof}`, peerDeliveryId = `peer-delivery-${proof}`;
+    const peerEventId = `meta:peer-page-${proof}:mid.${proof}`;
+    await pool.query(`INSERT INTO merchant_channels (id,merchant_id,platform,status,version,metadata)
+      VALUES ($1,$2,'messenger','connected',1,'{}'::jsonb)`, [peerChannelId,peerId]);
+    await pool.query(`INSERT INTO background_jobs (id,type,dedupe_key,merchant_id,status,completed_at)
+      VALUES ($1,'meta.webhook.reply',$2,$3,'completed',now())`, [peerJobId,peerEventId,peerId]);
+    await pool.query(`INSERT INTO channel_inbound_events
+      (id,merchant_id,channel_id,provider,external_event_id,payload_hash,enqueue_job_id)
+      VALUES ($1,$2,$3,'messenger',$4,$5,$6)`,
+      [peerInboundId,peerId,peerChannelId,peerEventId,crypto.createHash("sha256").update(peerEventId).digest("hex"),peerJobId]);
+    await pool.query(`INSERT INTO outbound_deliveries
+      (id,merchant_id,inbound_event_id,reply_intent_id,outcome,provider_message_id,finalized_at)
+      VALUES ($1,$2,$3,$4,'sent',$5,now())`,
+      [peerDeliveryId,peerId,peerInboundId,`auto:${peerEventId}`,`peer-message-${proof}`]);
+    const peerSnapshot = async () => {
+      const result: Record<string, unknown> = {};
+      for (const [table,id] of [["accounts",peerId],["merchants",peerId],["merchant_channels",peerChannelId],
+        ["background_jobs",peerJobId],["channel_inbound_events",peerInboundId],["outbound_deliveries",peerDeliveryId]]) {
+        result[table] = (await pool.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE id = $1`, [id])).rows;
+      }
+      return result;
+    };
+    const peerBefore = await peerSnapshot();
+    const deliveryBefore = (await pool.query("SELECT * FROM outbound_deliveries WHERE id = $1", [deliveryId])).rows[0];
+    assert.equal(deliveryBefore.reply_intent_id, `auto:${rawProviderEventId}`);
 
     await merchantManagement.updateMerchantStatusPostgres({
       merchantId,
@@ -284,6 +318,11 @@ test(
       [deliveryId],
     );
     assert.equal(delivery.rows[0]?.provider_message_id, null);
+    const deliveryAfter = (await pool.query("SELECT * FROM outbound_deliveries WHERE id = $1", [deliveryId])).rows[0];
+    assert.deepEqual(deliveryAfter, { ...deliveryBefore,
+      provider_message_id: null,
+      reply_intent_id: `deleted:delivery:${deliveryId}`,
+    }, "terminal accounting linkage/outcome/timestamps stay intact while provider-derived intent is retired");
 
     const channel = await pool.query<{
       page_id: string | null;
@@ -308,5 +347,7 @@ test(
     assert.equal(retained.includes(rawProviderEventId), false);
     assert.equal(retained.includes(rawProviderMessageId), false);
     assert.equal(retained.includes(rawPageId), false);
+    assert.deepEqual(await peerSnapshot(), peerBefore, "retiring selected merchant identity must preserve the peer namespace and full delivery row");
+    console.log("PROVIDER_INTENT_RETIREMENT_PROOF " + JSON.stringify({actualDeletionService:true,terminalDeliveryFullRowPreservedExceptIdentity:true,peerTablesPreserved:6,rawIntentRemoved:true,retentionPolicyAccepted:false}));
   },
 );

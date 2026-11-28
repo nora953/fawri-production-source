@@ -31,7 +31,11 @@ const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const OwnerRecoveryPage = lazy(() => import("@/pages/OwnerRecoveryPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
-const cashierSmokeEnabled = import.meta.env.VITE_CASHIER_SMOKE === "1";
+// Production-built V1 never exposes deferred POS, even when a build flag was omitted.
+const firstCommercialPosDisabled = import.meta.env.PROD || import.meta.env.VITE_FAWRI_V1_POS_DISABLED === '1';
+// Production builds are fixed to the approved manual-commerce first release.
+const manualCommercialOnly = import.meta.env.PROD || import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1';
+const cashierSmokeEnabled = !firstCommercialPosDisabled && import.meta.env.VITE_CASHIER_SMOKE === "1";
 const CashierIndexedDbSmokePage = cashierSmokeEnabled
   ? lazy(() => import("@/pages/CashierIndexedDbSmokePage"))
   : null;
@@ -131,7 +135,7 @@ function AppRouter() {
 
         {/* Admin */}
         <Route path="/admin/support-preview/:sessionId">
-          {(params) => <AdminSupportPreviewPage sessionId={params.sessionId} />}
+          {(params) => manualCommercialOnly ? <NotFound /> : <AdminSupportPreviewPage sessionId={params.sessionId} />}
         </Route>
         <Route path="/admin/emergency-access/:requestId/snapshot">
           {(params) => (
@@ -162,7 +166,7 @@ function AppRouter() {
         </Route>
 
         <Route path="/dashboard/conversations">
-          {() => <DashboardRoute Page={ConversationsPage} />}
+          {() => manualCommercialOnly ? <NotFound /> : <DashboardRoute Page={ConversationsPage} />}
         </Route>
 
         <Route path="/dashboard/products/import">
@@ -182,7 +186,7 @@ function AppRouter() {
         </Route>
 
         <Route path="/dashboard/reports/combined">
-          {() => <DashboardRoute Page={ReportsPage} />}
+          {() => firstCommercialPosDisabled ? <NotFound /> : <DashboardRoute Page={ReportsPage} />}
         </Route>
 
         <Route path="/dashboard/reports/online">
@@ -190,7 +194,7 @@ function AppRouter() {
         </Route>
 
         <Route path="/dashboard/reports/cashier">
-          {() => <DashboardRoute Page={ReportsPage} />}
+          {() => firstCommercialPosDisabled ? <NotFound /> : <DashboardRoute Page={ReportsPage} />}
         </Route>
 
         <Route path="/dashboard/reports">
@@ -198,27 +202,27 @@ function AppRouter() {
         </Route>
 
         <Route path="/dashboard/cashiers/reports">
-          {() => <DashboardRoute Page={ReportsPage} />}
+          {() => firstCommercialPosDisabled ? <NotFound /> : <DashboardRoute Page={ReportsPage} />}
         </Route>
 
         <Route path="/dashboard/cashiers/discounts">
-          {() => <DashboardRoute Page={CashierDiscountPoliciesPage} />}
+          {() => firstCommercialPosDisabled ? <NotFound /> : <DashboardRoute Page={CashierDiscountPoliciesPage} />}
         </Route>
 
         <Route path="/dashboard/cashiers">
-          {() => <DashboardRoute Page={CashierManagementPage} />}
+          {() => firstCommercialPosDisabled ? <NotFound /> : <DashboardRoute Page={CashierManagementPage} />}
         </Route>
 
         <Route path="/dashboard/saved-answers">
-          {() => <DashboardRoute Page={SavedAnswersPage} />}
+          {() => manualCommercialOnly ? <NotFound /> : <DashboardRoute Page={SavedAnswersPage} />}
         </Route>
 
         <Route path="/dashboard/bot-training">
-          {() => <DashboardRoute Page={TrainingPage} />}
+          {() => manualCommercialOnly ? <NotFound /> : <DashboardRoute Page={TrainingPage} />}
         </Route>
 
         <Route path="/dashboard/channels">
-          {() => <DashboardRoute Page={ChannelsPage} />}
+          {() => manualCommercialOnly ? <NotFound /> : <DashboardRoute Page={ChannelsPage} />}
         </Route>
 
         <Route path="/dashboard/subscription">
@@ -226,7 +230,7 @@ function AppRouter() {
         </Route>
 
         <Route path="/dashboard/support">
-          {() => <DashboardRoute Page={SupportPage} />}
+          {() => manualCommercialOnly ? <NotFound /> : <DashboardRoute Page={SupportPage} />}
         </Route>
 
         <Route path="/dashboard/settings">
@@ -308,7 +312,7 @@ function App() {
           <WouterRouter base={routerBase}>
             <AdminSessionRevalidator />
             <AppRouter />
-            <SupportPreviewLauncher />
+            {!manualCommercialOnly && <SupportPreviewLauncher />}
             <EmergencyIncidentNoticeBanner />
           </WouterRouter>
 

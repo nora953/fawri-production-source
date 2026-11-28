@@ -1,0 +1,65 @@
+name: V1 identity capability postflight (local PG18 only)
+
+on:
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - ".github/workflows/v1-role-postflight-local-pg18.yml"
+      - "docs/final-audit/evidence/sql/P0-V1-FIRST-MERCHANT-ROLE-POSTFLIGHT-READONLY-HELD-20261112.sql"
+      - "lib/db/scripts/v1-hosted-role-postflight-pg18.mjs"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v1-identity-local-postflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  local-pg18-positive-negative:
+    if: >-
+      github.repository == 'nora953/fawri-production-source'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+      GITHUB_REPOSITORY: nora953/fawri-production-source
+      FAWRI_ALLOW_LOCAL_V1_ROLE_PROBE: "1"
+      NODE_ENV: test
+    steps:
+      - name: Checkout exact source without persistent credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Prepare Node 24 and pnpm
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Prove ONLY the new held read-only SQL against synthetic roles in local PostgreSQL18
+        working-directory: lib/db
+        run: |
+          node --check scripts/v1-hosted-role-postflight-pg18.mjs
+          node scripts/v1-hosted-role-postflight-pg18.mjs

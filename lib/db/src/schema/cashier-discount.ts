@@ -47,7 +47,7 @@ export const merchantCashierDiscountSettings = pgTable(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
-);
+).enableRLS();
 
 export const merchantCashierStaffDiscountPolicies = pgTable(
   "merchant_cashier_staff_discount_policies",
@@ -99,7 +99,7 @@ export const merchantCashierStaffDiscountPolicies = pgTable(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
-);
+).enableRLS();
 
 export const merchantCashierDiscountOverrideApprovals = pgTable(
   "merchant_cashier_discount_override_approvals",
@@ -176,7 +176,7 @@ export const merchantCashierDiscountOverrideApprovals = pgTable(
       sql`${table.consumedAt} IS NULL OR ${table.consumedAt} >= ${table.createdAt}`,
     ),
   }),
-);
+).enableRLS();
 
 export type MerchantCashierDiscountSetting =
   typeof merchantCashierDiscountSettings.$inferSelect;

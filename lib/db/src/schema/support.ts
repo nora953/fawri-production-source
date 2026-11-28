@@ -69,7 +69,7 @@ export const supportTickets = pgTable(
       table.updatedAt,
     ),
   }),
-);
+).enableRLS();
 
 export const supportMessages = pgTable(
   "support_messages",
@@ -101,7 +101,7 @@ export const supportMessages = pgTable(
       table.createdAt,
     ),
   }),
-);
+).enableRLS();
 
 export const supportAttachments = pgTable(
   "support_attachments",
@@ -134,7 +134,7 @@ export const supportAttachments = pgTable(
     ),
     ticketIndex: index("support_attachments_ticket_idx").on(table.ticketId),
   }),
-);
+).enableRLS();
 
 export const supportInspectionRequests = pgTable(
   "support_inspection_requests",
@@ -183,7 +183,7 @@ export const supportInspectionRequests = pgTable(
       table.requestedAt,
     ),
   }),
-);
+).enableRLS();
 
 export const supportPreviewSessions = pgTable(
   "support_preview_sessions",
@@ -229,7 +229,7 @@ export const supportPreviewSessions = pgTable(
       table.status,
     ),
   }),
-);
+).enableRLS();
 
 export type SupportTicket = typeof supportTickets.$inferSelect;
 export type SupportMessage = typeof supportMessages.$inferSelect;

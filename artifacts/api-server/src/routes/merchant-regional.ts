@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import {
+  enforceAuthOrigin,
   getMerchantIdFromSession,
   requireMerchantSession,
 } from "../middleware/authSession";
@@ -60,6 +61,7 @@ router.get(
 router.patch(
   "/merchant/regional",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);

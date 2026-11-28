@@ -84,9 +84,13 @@ function committedMigrationState() {
 }
 
 async function resetDisposableSchema(connectionString) {
+  assert.ok(safeDisposableDatabase(connectionString), "schema reset requires the local fawri_ci database");
   const client = new Client({ connectionString });
   await client.connect();
   try {
+    // Manual security migrations also own objects outside public. Leaving
+    // these behind breaks the next independent full-history application.
+    await client.query("DROP SCHEMA IF EXISTS fawri_security CASCADE");
     await client.query("DROP SCHEMA IF EXISTS drizzle CASCADE");
     await client.query("DROP SCHEMA IF EXISTS public CASCADE");
     await client.query("CREATE SCHEMA public");

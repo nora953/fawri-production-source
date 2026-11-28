@@ -1,0 +1,83 @@
+name: FAWRI V1 PG18 production backup Docker ownership (DISPOSABLE ONLY)
+# Exercises a real Docker pg_dump of a disposable local PG18 service.
+# NEVER receives production credentials and NEVER contacts production Neon.
+on:
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - .github/workflows/v1-pg18-backup-runner-ownership.yml
+      - scripts/lib/v1-pg18-backup-host-user.mjs
+      - scripts/lib/v1-pg18-backup-host-user.test.mjs
+      - lib/db/scripts/v1-export-production-prewrite-backup.mjs
+      - lib/db/scripts/v1-export-production-postschema-backup.mjs
+      - lib/db/scripts/v1-export-production-postowner-rls-backup.mjs
+      - lib/db/scripts/v1-export-production-current-prego-rls-backup.mjs
+      - lib/db/scripts/v1-export-production-postg4-rls-backup.mjs
+  pull_request:
+    paths:
+      - .github/workflows/v1-pg18-backup-runner-ownership.yml
+      - scripts/lib/v1-pg18-backup-host-user.mjs
+      - scripts/lib/v1-pg18-backup-host-user.test.mjs
+      - lib/db/scripts/v1-export-production-prewrite-backup.mjs
+      - lib/db/scripts/v1-export-production-postschema-backup.mjs
+      - lib/db/scripts/v1-export-production-postowner-rls-backup.mjs
+      - lib/db/scripts/v1-export-production-current-prego-rls-backup.mjs
+      - lib/db/scripts/v1-export-production-postg4-rls-backup.mjs
+permissions:
+  contents: read
+concurrency:
+  group: v1-disposable-backup-uid-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  pg18-nonroot-disposable-ownership:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Check all guarded export source syntax without credentials
+        run: |
+          node --check scripts/lib/v1-pg18-backup-host-user.mjs
+          for source in lib/db/scripts/v1-export-production-{prewrite,postschema,postowner-rls,current-prego-rls,postg4-rls}-backup.mjs; do
+            node --check "$source"
+            if grep -q -- '--user=0:0' "$source"; then
+              echo 'V1_ROOT_OWNED_BACKUP_ARCHIVE_FORBIDDEN'
+              exit 1
+            fi
+            if ! grep -Fq 'umask 077; exec "$@"' "$source"; then
+              echo 'V1_PG18_ARCHIVE_PRIVATE_MODE_REQUIRED'
+              exit 1
+            fi
+          done
+      - name: Test host identity and real disposable Docker PG18 archive ownership
+        env:
+          FAWRI_V1_PG18_DOCKER_E2E: "1"
+        run: node --test scripts/lib/v1-pg18-backup-host-user.test.mjs
+      - name: Delimit evidence
+        run: |
+          {
+            echo '## V1 G5 Docker archive ownership: disposable-only'
+            echo 'Runner uid/gid owns a real PG18 custom archive and can read its PGDMP bytes.'
+            echo 'This does not create a production backup; independent offsite DB+media recovery remains OPEN.'
+            echo 'No production secrets, external connection, RLS migration or merchant writes.'
+          } >> "${GITHUB_STEP_SUMMARY}"

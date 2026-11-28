@@ -16,11 +16,12 @@ process.env.FAWRI_META_TOKEN_KEY_ID = "meta-live-test-key";
 process.env.FAWRI_META_TOKEN_KEY_BASE64 = Buffer.alloc(32, 23).toString("base64");
 process.env.FAWRI_AUTH_SECURITY_SECRET = "meta-live-test-auth-secret-32-bytes-minimum";
 
-const dbModule = await import("@workspace/db");
-const pool = dbModule.pool;
+const {createDisposableKnowledgeRuntime} = await import("./helpers/disposable-knowledge-runtime.mjs");
+const runtimeFixture = await createDisposableKnowledgeRuntime();
+const pool = runtimeFixture.admin;
 await test('isolated Meta bot and AI lifecycle with injected providers', async t => {
 t.after(async () => cleanupResources([
-  ['pool', () => pool.end()],
+  ['runtime and bootstrap pools', () => runtimeFixture.dispose()],
   ['data directory', () => fs.rmSync(dataDir, { recursive: true, force: true })],
 ]));
 const accounts = await import("../src/services/postgresMerchantAccountAuthority.js");

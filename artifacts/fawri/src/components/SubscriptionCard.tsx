@@ -19,6 +19,8 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
   const { t, lang } = useI18n();
   const [isAddonExpanded, setIsAddonExpanded] = React.useState(false);
   const messages = subscriptionStateMessages[lang];
+  const manualCommercialOnly = import.meta.env.PROD ||
+    import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1';
   const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
   const planName = {
     silver: t.plan_silver,
@@ -50,12 +52,16 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
   );
   const isActive = subscription.status === 'active';
   const isBaseBalanceLow =
-    isActive &&
+    !manualCommercialOnly && isActive &&
     baseReplyLimit > 0 &&
     baseRepliesRemaining > 0 &&
     baseRepliesRemaining <= lowBaseBalanceThreshold;
+  // No emergency AI reply credits in manual-commerce V1, including a build
+  // that omitted the optional Vite flag.
   const canShowEmergency =
-    isActive || subscription.status === 'replies_exhausted';
+    !import.meta.env.PROD &&
+    import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE !== '1' &&
+    (isActive || subscription.status === 'replies_exhausted');
 
   const statusLabel = {
     pending_activation: t.subscription_status_pending_activation,
@@ -159,6 +165,8 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
           </div>
         )}
 
+        {!manualCommercialOnly && (
+          <>
         <div className="space-y-2 rounded-xl border border-border/70 bg-muted/15 p-3">
           <div className="flex justify-between gap-4 text-sm">
             <span>{t.subscription_base_limit}</span>
@@ -251,6 +259,9 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
             </p>
           </div>
         </div>
+
+          </>
+        )}
 
         {canShowEmergency && (
           <EmergencyCredit subscription={subscription} onActivate={onEmergencyActivate} />

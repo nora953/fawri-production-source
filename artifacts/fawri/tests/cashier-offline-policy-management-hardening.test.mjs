@@ -81,7 +81,7 @@ test('optional online policy refresh preserves identity without blocking pending
   const sync = await fawriSource('src/lib/cashierOperatorCloudSync.ts');
   assert.match(sync, /binding\.merchant_id === session\.context\.merchant_id/);
   assert.match(sync, /binding\.staff_id === session\.context\.staff_id/);
-  assert.match(sync, /binding\.shift_id === session\.context\.shift_id/);
+  assert.doesNotMatch(sync, /binding\.shift_id === session\.context\.shift_id/, 'historical shift attribution is verified on the server');
   assert.match(sync, /CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT/);
 });
 

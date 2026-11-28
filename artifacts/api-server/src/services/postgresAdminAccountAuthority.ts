@@ -1,3 +1,4 @@
+import { authenticationDatabasePool, withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import {
   authAccountRepository,
@@ -10,10 +11,8 @@ import {
   type AdminPermission,
 } from "./authPolicy";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
-  withOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 
@@ -93,7 +92,7 @@ export async function findAdminByPhoneAuthoritative(
   if (!operationalPostgresAuthorityRequired()) {
     return authAccountRepository.findByPhone(phone, "admin");
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   return selectAdmin(pool, "a.phone = $1", [phone]);
 }
 
@@ -104,7 +103,7 @@ export async function findAdminByIdAuthoritative(
   if (!operationalPostgresAuthorityRequired()) {
     return authAccountRepository.findById(accountId, "admin");
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   return selectAdmin(pool, "a.id = $1", [accountId]);
 }
 
@@ -112,7 +111,7 @@ export async function listAdminsAuthoritative(): Promise<AuthAccount[]> {
   if (!operationalPostgresAuthorityRequired()) {
     return authAccountRepository.listAdmins();
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const ids = await operationalQueryRows<{ id: string }>(
     pool,
     `SELECT a.id
@@ -137,7 +136,7 @@ export async function createAssistantAdminAuthoritative(input: {
   const phone = normalizePhone(input.phone);
   if (!isE164Phone(phone)) throw new Error("INVALID_PHONE");
 
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const collisions = await operationalQueryRows<{ id: string }>(
       client,
       "SELECT id FROM accounts WHERE phone = $1 FOR UPDATE",
@@ -174,7 +173,7 @@ export async function setAdminEnabledAuthoritative(
   if (!operationalPostgresAuthorityRequired()) {
     return authAccountRepository.setAdminEnabled(accountId, enabled);
   }
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const target = await selectAdmin(client, "a.id = $1", [accountId], true);
     if (!target?.adminProfile || target.adminProfile.role !== "assistant_admin") return false;
     await client.query(
@@ -205,7 +204,7 @@ export async function setAssistantPermissionsAuthoritative(
   if (!operationalPostgresAuthorityRequired()) {
     return authAccountRepository.setAssistantPermissions(accountId, permissions);
   }
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const target = await selectAdmin(client, "a.id = $1", [accountId], true);
     if (!target?.adminProfile || target.adminProfile.role !== "assistant_admin") return false;
     await client.query("DELETE FROM admin_permissions WHERE admin_id = $1", [accountId]);
@@ -237,7 +236,7 @@ export async function updateAdminPasswordAuthoritative(
   if (!operationalPostgresAuthorityRequired()) {
     return authAccountRepository.updatePassword(accountId, "admin", passwordHash, options);
   }
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const target = await selectAdmin(client, "a.id = $1", [accountId], true);
     if (!target?.adminProfile) return false;
     await client.query(

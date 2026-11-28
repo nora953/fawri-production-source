@@ -99,17 +99,20 @@ test('operator browser deletes a local outbox operation only after complete serv
   assert.match(source, /payload\.order_id/);
   assert.match(source, /payload\.accepted_entity_ids/);
   assert.match(source, /CASHIER_OPERATOR_ACK_INVALID/);
-  assert.match(source, /authority\.acknowledgeSynced\(\[operationId\]\)/);
+  assert.match(source, /authority\.acknowledgeSyncedExact\(operationId, envelopes\)/);
+  assert.doesNotMatch(source, /authority\.acknowledgeSynced\(\[operationId\]\)/,
+    'ACK by operation ID alone must never delete unsubmitted late envelopes');
 
   const fetchCall = source.indexOf('fetch(`/api/cashier/operator/sync/${kind}`');
   const responseAccepted = source.indexOf('payload.ok !== true', fetchCall);
   const entityAckValidation = source.indexOf('acceptedEntityIds.length !== expectedEntityIds.length', responseAccepted);
-  const localAck = source.indexOf('authority.acknowledgeSynced([operationId])');
+  const localAck = source.indexOf('authority.acknowledgeSyncedExact(operationId, envelopes)');
 
   assert.ok(fetchCall >= 0, 'operator outbox uploader must call the selected cashier sync endpoint');
   assert.ok(responseAccepted > fetchCall, 'server success must be checked after upload');
   assert.ok(entityAckValidation > responseAccepted, 'complete entity acknowledgement must be verified');
-  assert.ok(localAck > entityAckValidation, 'local outbox acknowledgement must happen only after full server ACK');
+  assert.ok(localAck > entityAckValidation,
+    'exact original uploaded snapshot must be acknowledged only after complete server entity acceptance');
 });
 
 test('cashier keeps one operator-aware manual sync action and auto-syncs real POS operations while online', async () => {

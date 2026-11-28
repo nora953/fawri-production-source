@@ -1,0 +1,44 @@
+name: P0 signed cashier offline authority
+on:
+  pull_request:
+    paths:
+      - 'artifacts/fawri/src/lib/cashierOffline*'
+      - 'artifacts/fawri/build/cashierOfflinePublicKeyConfig.mjs'
+      - 'artifacts/fawri/vite.config.ts'
+      - 'artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts'
+      - 'artifacts/fawri/src/lib/cashierOperatorPosRuntime.ts'
+      - 'artifacts/fawri/tests/cashier-offline-entitlement*'
+      - 'artifacts/api-server/src/services/cashierOfflineEntitlementIssuer.ts'
+      - 'artifacts/api-server/src/routes/cashier-staff-operations.ts'
+      - 'scripts/fawri-offline-signed-native-audit.mjs'
+      - '.github/workflows/cashier-offline-entitlement.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: signed-offline-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  signed-native-authority:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label signed-offline-install -- pnpm install --frozen-lockfile --ignore-scripts
+      - name: Run actual signing and defensive cache authorization tests
+        run: node --test artifacts/fawri/tests/cashier-offline-entitlement-*.test.mjs
+      - name: Require real browser and test signed storage, inventory and acknowledgement
+        shell: bash
+        run: |
+          node --check scripts/fawri-offline-signed-native-audit.mjs
+          audit_chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$audit_chrome"
+          FAWRI_AUDIT_CHROME="$audit_chrome" node scripts/fawri-offline-signed-native-audit.mjs

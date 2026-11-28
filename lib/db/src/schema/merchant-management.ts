@@ -43,7 +43,7 @@ export const merchantAdminNotes = pgTable(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
-);
+).enableRLS();
 
 /**
  * Historical administrative overrides are kept separate from canonical channel
@@ -80,7 +80,7 @@ export const merchantChannelOverrides = pgTable(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
-);
+).enableRLS();
 
 /**
  * Deletion requests preserve an immutable review trail even if the merchant FK
@@ -144,7 +144,7 @@ export const merchantDeletionRequests = pgTable(
       sql`(${table.status} = 'pending' AND ${table.reviewedAt} IS NULL AND ${table.completedAt} IS NULL) OR (${table.status} = 'rejected' AND ${table.reviewedAt} IS NOT NULL AND ${table.completedAt} IS NULL) OR (${table.status} = 'completed' AND ${table.reviewedAt} IS NOT NULL AND ${table.completedAt} IS NOT NULL)`,
     ),
   }),
-);
+).enableRLS();
 
 export type MerchantAdminNote = typeof merchantAdminNotes.$inferSelect;
 export type MerchantChannelOverride = typeof merchantChannelOverrides.$inferSelect;

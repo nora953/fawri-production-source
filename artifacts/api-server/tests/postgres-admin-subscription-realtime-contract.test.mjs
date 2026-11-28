@@ -15,7 +15,7 @@ test("PostgreSQL entitlement router owns admin subscription realtime", async () 
 
   assert.match(route, /\/admin\/subscriptions\/events/);
   assert.match(route, /requireSecureAdminPermission\("manage_subscriptions"\)/);
-  assert.match(route, /listSubscriptionsPostgres\(\)/);
+  assert.match(route, /listSubscriptionsPostgres\(actorId\(res\)\)/);
   assert.match(route, /text\/event-stream/);
   assert.match(route, /writeSseEvent\(res, "snapshot", \{ subscriptions/);
   assert.doesNotMatch(route, /adminSubscriptionRealtimeClients|ensureDb\(/);

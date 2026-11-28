@@ -1,0 +1,92 @@
+name: V1 isolated Neon child encrypted offsite PG18 export (NO production)
+
+on:
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - ".github/workflows/v1-isolated-neon-encrypted-exit.yml"
+      - "scripts/lib/v1-isolated-neon-dump-safety.mjs"
+      - "scripts/tests/v1-isolated-neon-dump-safety.test.mjs"
+      - "lib/db/scripts/v1-export-isolated-neon-backup.mjs"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v1-pinned-isolated-neon-export-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  target-and-encryption-fail-closed:
+    if: >-
+      github.repository == 'nora953/fawri-production-source'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify PINNED CHILD only and encryption tamper protection
+        run: node --test scripts/tests/v1-isolated-neon-dump-safety.test.mjs
+
+  actual-synthetic-child-dump:
+    needs: target-and-encryption-fail-closed
+    if: >-
+      github.repository == 'nora953/fawri-production-source'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      FAWRI_ALLOW_ISOLATED_NEON_DUMP: "1"
+      FAWRI_ISOLATED_NEON_DUMP_URL: ${{ secrets.FAWRI_ISOLATED_NEON_DUMP_URL }}
+      FAWRI_ISOLATED_BACKUP_PASSPHRASE: ${{ secrets.FAWRI_ISOLATED_BACKUP_PASSPHRASE }}
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Confirm required privately owned GitHub secrets exist (no values printed)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$FAWRI_ISOLATED_NEON_DUMP_URL" || -z "$FAWRI_ISOLATED_BACKUP_PASSPHRASE" ]]; then
+            echo "::error::V1_HOSTED_BACKUP_BLOCKED_MISSING_TWO_PRIVATE_REPOSITORY_SECRETS"
+            exit 2
+          fi
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Frozen dependencies with no lifecycle scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Export exactly ONE synthetic Neon child and test local PG18 restoration
+        working-directory: lib/db
+        run: |
+          node --check scripts/v1-export-isolated-neon-backup.mjs
+          node scripts/v1-export-isolated-neon-backup.mjs
+      - name: Hand off ONLY the encrypted archive and secret-free verification manifest
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: fawri-v1-isolated-neon-child-encrypted-pg18-handoff
+          path: |
+            lib/db/v1-neon-export-out/*.enc
+            lib/db/v1-neon-export-out/manifest.json
+          if-no-files-found: error
+          retention-days: 2

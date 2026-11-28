@@ -1,6 +1,8 @@
 import {
   getOrCreateCashierDeviceIdentity,
-  writeCashierDeviceIdentity,
+  writeCashierDeviceIdentityIfUnchanged,
+  clearCashierStationBindingIfMatches,
+  type CashierStationBinding,
 } from './cashierOperatorSessionRuntime';
 
 const STATION_BINDING_INVALID_CODES = new Set([
@@ -104,8 +106,9 @@ export async function recoverLegacyCashierStationBinding(): Promise<boolean> {
     delete next.branch_label;
   }
 
-  await writeCashierDeviceIdentity(next);
-  return true;
+  // A network response may arrive after another tab re-pairs the device.
+  // Reject the stale result atomically; never resurrect its old station.
+  return writeCashierDeviceIdentityIfUnchanged(identity, next);
 }
 
 /**
@@ -147,7 +150,9 @@ export async function refreshDurableCashierStationBindingMetadata(): Promise<voi
     return;
   }
 
-  await writeCashierDeviceIdentity({
+  // A concurrent station rotation must not be overwritten by a delayed
+  // metadata refresh based on this previously observed identity.
+  await writeCashierDeviceIdentityIfUnchanged(identity, {
     ...identity,
     station_credential_expires_at: DURABLE_STATION_METADATA_EXPIRES_AT,
   });
@@ -158,17 +163,11 @@ export async function refreshDurableCashierStationBindingMetadata(): Promise<voi
  * binding, and local cashier operation stores remain untouched so recovery
  * cannot silently discard unsynchronized commerce data.
  */
-export async function clearInvalidCashierStationBinding(): Promise<void> {
-  const identity = await getOrCreateCashierDeviceIdentity();
-  const next = { ...identity };
-  delete next.station_id;
-  delete next.station_name;
-  delete next.location_id;
-  delete next.branch_key;
-  delete next.branch_label;
-  delete next.offline_inventory_authority;
-  delete next.station_token;
-  delete next.station_credential_expires_at;
-  delete next.last_catalog_sync_at;
-  await writeCashierDeviceIdentity(next);
+export async function clearInvalidCashierStationBinding(
+  expected: CashierStationBinding,
+): Promise<boolean> {
+  // The server error must be associated with a captured request binding.
+  // Compare and revoke in ONE IndexedDB transaction; never clear the
+  // current pairing because a previous request used a now-invalid token.
+  return clearCashierStationBindingIfMatches(expected);
 }

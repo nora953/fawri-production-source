@@ -1,0 +1,55 @@
+name: P0 held 0052 plus 0053 non-superuser PG18 composite
+on:
+  pull_request:
+    paths:
+      - 'lib/db/first-commercial/held/0052_cashier_stream_receipt_storage_invoker.sql'
+      - 'lib/db/first-commercial/held/0053_verified_receipt_manual_cases_candidate.sql'
+      - 'lib/db/first-commercial/held/0053_receipt_manual_case_operator_grants.sql'
+      - 'lib/db/first-commercial/held/meta/_journal_with_0053.json'
+      - 'scripts/lib/p0-held-0053-source-admission-plan.mjs'
+      - 'scripts/lib/ft01-first-commercial-disposable-bundle.mjs'
+      - 'lib/db/scripts/p0-held-0053-first-commercial-disposable-rehearsal.mjs'
+      - 'scripts/tests/p0-held-0053-composite-http-pg18.mjs'
+      - '.github/workflows/p0-held-0053-composite-pg18.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  held-0052-0053-composite:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+      NODE_ENV: test
+      FAWRI_ALLOW_FT01_INVOKER_CANDIDATE: '1'
+      FAWRI_ALLOW_HELD_0053_DISPOSABLE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Prove exact 53 parent plus HELD 0053 under non-superuser owner
+        working-directory: lib/db
+        run: node scripts/p0-held-0053-first-commercial-disposable-rehearsal.mjs

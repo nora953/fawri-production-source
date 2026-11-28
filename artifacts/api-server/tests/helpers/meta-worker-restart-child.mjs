@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
 import {assertDisposablePostgres} from '../../../../scripts/lib/disposable-postgres-test-guard.mjs';
 await assertDisposablePostgres();
-const {pool}=await import('@workspace/db');
 assert.match(process.env.FAWRI_TEST_META_ROLE,/^meta_app_[a-f0-9]{32}$/);
-pool.options.options=`-c role=${process.env.FAWRI_TEST_META_ROLE}`;pool.options.max=1;pool.options.application_name=process.env.FAWRI_TEST_META_MARKER;
+assert.match(process.env.FAWRI_TEST_META_PASSWORD || '',/^[a-f0-9]{32}$/);
+const runtimeUrl=new URL(process.env.DATABASE_URL);
+runtimeUrl.username=process.env.FAWRI_TEST_META_ROLE;runtimeUrl.password=process.env.FAWRI_TEST_META_PASSWORD;runtimeUrl.search='';
+process.env.DATABASE_URL=runtimeUrl.toString();delete process.env.FAWRI_TEST_META_PASSWORD;
+const {pool}=await import('@workspace/db');
+pool.options.max=1;pool.options.application_name=process.env.FAWRI_TEST_META_MARKER;
 async function send(m){if(process.connected)await new Promise(r=>process.send(m,()=>r()));}
 let proxy;
 if(process.env.FAWRI_TEST_META_DEADLETTER_CRASH==='1'){
@@ -72,8 +76,18 @@ if(process.env.FAWRI_TEST_META_PRECOMMIT_CRASH==='1'){
     return connect.apply(this,args).then(observe);
   };
 }
-const flags=(await pool.query("SELECT current_user AS role,rolsuper,rolbypassrls,EXISTS(SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relowner=r.oid) AS owns_table FROM pg_roles r WHERE rolname=current_user")).rows[0];
-assert.deepEqual(flags,{role:process.env.FAWRI_TEST_META_ROLE,rolsuper:false,rolbypassrls:false,owns_table:false});
+assert.ok(process.env.FAWRI_AUTH_DATABASE_URL,'owned worker requires separate authentication credentials');
+const {withAuthenticationTransaction,closeAuthenticationPool}=await import('../../src/services/authenticationPostgresAuthority.ts');
+await withAuthenticationTransaction(async client=>{
+  const identity=(await client.query("SELECT session_user AS login,current_user AS active,rolsuper,rolbypassrls,rolcreaterole,nullif(current_setting('fawri.tenant_id',true),'') AS tenant FROM pg_roles WHERE rolname=session_user")).rows[0];
+  assert.equal(identity.login,identity.active);
+  assert.equal(identity.login,new URL(process.env.FAWRI_AUTH_DATABASE_URL).username);
+  assert.equal(identity.rolsuper,false);assert.equal(identity.rolbypassrls,false);assert.equal(identity.rolcreaterole,false);assert.equal(identity.tenant,null);
+});
+const flags=(await pool.query("SELECT current_user AS role,session_user AS login,rolsuper,rolbypassrls,EXISTS(SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relowner=r.oid) AS owns_table FROM pg_roles r WHERE rolname=current_user")).rows[0];
+assert.deepEqual(flags,{role:process.env.FAWRI_TEST_META_ROLE,login:process.env.FAWRI_TEST_META_ROLE,rolsuper:false,rolbypassrls:false,owns_table:false});
+const {assertProductionDatabaseRlsReady}=await import('../../src/services/postgresRuntimeRlsSecurity.ts');
+await assertProductionDatabaseRlsReady({NODE_ENV:'production',FAWRI_DEPLOYMENT_MODE:'production',FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_AUTH_DATABASE_URL:process.env.FAWRI_AUTH_DATABASE_URL,FAWRI_OPERATOR_DATABASE_URL:'postgresql://operator@127.0.0.1/fawri_ci'},pool);
 const knowledge=await import('../../src/services/ai/knowledgeDecisionEngine.ts');
 knowledge.configureKnowledgeEmbeddingProvider({providerId:'synthetic-meta-restart',model:'synthetic-meta-restart-v1',dimensions:2,async embed(){return [1,0];}});
 const {default:app}=await import('../../src/app.ts');
@@ -88,8 +102,8 @@ process.on('message',async task=>{
       assert.equal((await pool.query("SELECT NULLIF(current_setting('fawri.tenant_id',true),'') AS tenant")).rows[0].tenant,null);
       await send({id:task.id,isolated:true,contextReset:true});
     }else if(task.command==='stop'&&!stopping){
-      stopping=true;worker.stop();server.closeAllConnections();await new Promise((r,j)=>server.close(e=>e?j(e):r()));await pool.end();if(proxy)await proxy.close();await send({id:task.id,stopped:true});process.disconnect();
+      stopping=true;worker.stop();server.closeAllConnections();await new Promise((r,j)=>server.close(e=>e?j(e):r()));await closeAuthenticationPool();await pool.end();if(proxy)await proxy.close();await send({id:task.id,stopped:true});process.disconnect();
     }else throw Error('invalid owned command');
   }catch(error){await send({id:task.id,failure:true,code:/^[A-Z0-9_]{1,80}$/.test(error?.code||'')?error.code:'META_WORKER_RESTART_TEST_FAILURE'});process.exitCode=1;}
 });
-await send({type:'ready',port:server.address().port,restricted:true});
+await send({type:'ready',port:server.address().port,restricted:true,authenticatedAuthority:true});

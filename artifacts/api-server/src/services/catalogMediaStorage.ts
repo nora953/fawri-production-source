@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { getFawriDataDir } from "../lib/dataPaths";
+import { assertHostedV1CatalogMediaMount } from "./hostedV1CatalogMediaReadiness";
 
 export const CATALOG_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
 
@@ -68,10 +69,44 @@ function resolveStoragePath(storageKey: string): string {
 const filesystemProvider: CatalogMediaStorageProvider = {
   async put(storageKey, buffer) {
     const destination = resolveStoragePath(storageKey);
-    fs.mkdirSync(path.dirname(destination), { recursive: true });
-    const temporary = `${destination}.${process.pid}.${Date.now()}.tmp`;
-    fs.writeFileSync(temporary, buffer, { flag: "wx" });
-    fs.renameSync(temporary, destination);
+    const directory = path.dirname(destination);
+    // Catalog photos are private merchant data, not default-mode 0644 files.
+    // Do not acknowledge an uploaded image before both its bytes and the
+    // committed directory entry have been flushed to the mounted disk.
+    await fs.promises.mkdir(directory, { recursive: true, mode: 0o700 });
+    const temporary = `${destination}.${process.pid}.${crypto.randomUUID()}.tmp`;
+    let temporaryCreated = false;
+    let committed = false;
+    try {
+      const file = await fs.promises.open(temporary, "wx", 0o600);
+      temporaryCreated = true;
+      try {
+        await file.writeFile(buffer);
+        await file.sync();
+      } finally {
+        await file.close();
+      }
+      await fs.promises.rename(temporary, destination);
+      temporaryCreated = false;
+      committed = true;
+      const parent = await fs.promises.open(directory, "r");
+      try {
+        await parent.sync();
+      } finally {
+        await parent.close();
+      }
+    } catch (error) {
+      // A failed acknowledgement must not leave a newly created orphan
+      // object that is absent from the merchant's catalog reference ledger.
+      if (committed) {
+        await fs.promises.rm(destination, { force: true }).catch(() => {});
+      }
+      throw error;
+    } finally {
+      if (temporaryCreated) {
+        await fs.promises.rm(temporary, { force: true }).catch(() => {});
+      }
+    }
   },
   async read(storageKey) {
     const source = resolveStoragePath(storageKey);
@@ -100,7 +135,22 @@ export function catalogMediaStorageProviderName(): string {
 
 function storageProviderByName(providerValue: unknown): CatalogMediaStorageProvider {
   const provider = String(providerValue || "").trim().toLowerCase();
-  if (provider === "filesystem") return filesystemProvider;
+  if (provider === "filesystem") {
+    // G3: startup and /readyz probes do not protect a subsequent image write
+    // if a mounted disk disappears mid-process. Check the current mount before
+    // EVERY merchant media operation; never silently switch to container storage.
+    // The assertion is a no-op for non-commercial/dev/test profiles.
+    try {
+      assertHostedV1CatalogMediaMount();
+    } catch {
+      throw new CatalogMediaError(
+        "CATALOG_MEDIA_MOUNT_NOT_READY",
+        "catalog image storage is temporarily unavailable",
+        503,
+      );
+    }
+    return filesystemProvider;
+  }
 
   throw new CatalogMediaError(
     "CATALOG_MEDIA_STORAGE_PROVIDER_UNAVAILABLE",
@@ -292,17 +342,13 @@ export async function removeCatalogImage(params: {
 }
 
 export async function removeCatalogMediaStorageObject(params: {
+  merchantId: string;
   storageProvider: unknown;
   storageKey: unknown;
 }): Promise<void> {
-  const storageKey = String(params.storageKey || "").trim();
-  if (!storageKey || storageKey.length > 1024) {
-    throw new CatalogMediaError(
-      "CATALOG_MEDIA_STORAGE_KEY_INVALID",
-      "catalog media storage key is invalid",
-      400,
-    );
-  }
+  // Deletion manifests contain DB-derived keys. A corrupted or forged row
+  // must never physically delete another merchant's media object.
+  const storageKey = assertMerchantStorageKey(params.merchantId, params.storageKey);
   await storageProviderByName(params.storageProvider).remove(storageKey);
 }
 

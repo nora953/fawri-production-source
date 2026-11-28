@@ -1,4 +1,4 @@
-import { parseMetaReplyJob as parseJob, type ParsedMetaJob, digest, stableJson } from "./metaReplyJobAdmission";
+import { assertNoUnreconciledLegacyMetaEvent, parseMetaReplyJob as parseJob, type ParsedMetaJob, digest, stableJson } from "./metaReplyJobAdmission";
 import type { DurableJob } from "./durableJobQueue";
 import { decideMetaKnowledgeReply } from "./metaKnowledgeDecisionBoundary";
 
@@ -121,6 +121,7 @@ async function ensureInboundState(
   repliedToInternalMessageId: string | null;
 }> {
   return withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
+    await assertNoUnreconciledLegacyMetaEvent(client, parsed.merchantId, parsed.eventId);
     const channelResult = await client.query<{ id: string }>(
       `SELECT id
          FROM merchant_channels

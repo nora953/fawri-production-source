@@ -5,6 +5,7 @@ import {
 import {
   operationalPostgresAuthorityRequired,
 } from "./operationalPostgresAuthority";
+import { manualCommercialRelease } from "./manualCommercialRelease";
 import { refreshSubscriptionNotificationsPostgresForAllMerchants } from "./postgresMerchantNotificationAuthority";
 import {
   refreshSupportLifecyclePostgresCanonical,
@@ -41,6 +42,12 @@ export function startPostgresSupportRuntimeCutover(): void {
   // PostgreSQL required mode must never let them read/write the JSON authority.
   clearInterval(supportLifecycleTimer);
   clearInterval(subscriptionLifecycleTimer);
+
+  // Manual V1 does not expose the support/inspection routes. The auth issuer
+  // must NEVER acquire direct cross-merchant support/notification privileges
+  // just to start these background sweeps. Subscription entitlement checks
+  // remain on the normal request path, not this optional reminder worker.
+  if (manualCommercialRelease()) return;
 
   void sweepPostgresSupportRuntime().catch((error) => {
     console.error("PostgreSQL support lifecycle startup sweep failed:", error);

@@ -61,8 +61,7 @@ async function invalidatePendingDiscountOverrideApprovals(
 ): Promise<void> {
   try {
     await target.query(
-      `DELETE FROM merchant_cashier_discount_override_approvals
-        WHERE merchant_id = $1 AND consumed_at IS NULL`,
+      `SELECT public.fawri_invalidate_pending_cashier_discount_approvals($1::text)`,
       [merchantId],
     );
   } catch (error) {
@@ -81,10 +80,10 @@ export async function loadMerchantCashierDiscountSetting(
   try {
     rows = await operationalQueryRows<MerchantDiscountSettingRow>(
       target,
-      `SELECT discount_kind, version
-         FROM merchant_cashier_discount_settings
-        WHERE merchant_id = $1
-        LIMIT 1${lock ? ' FOR UPDATE' : ''}`,
+      lock
+        ? `SELECT discount_kind, version FROM public.fawri_lock_cashier_discount_setting($1::text)`
+        : `SELECT discount_kind, version FROM merchant_cashier_discount_settings
+            WHERE merchant_id = $1 LIMIT 1`,
       [merchantId],
     );
   } catch (error) {

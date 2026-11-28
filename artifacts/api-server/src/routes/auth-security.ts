@@ -19,6 +19,7 @@ import supportInspectionDecisionPostgresRoutes from "./auth-support-inspection-d
 import supportMessagePostgresRoutes from "./auth-support-message-postgres-routes";
 import supportPostgresRoutes from "./auth-support-postgres-routes";
 import publicRoutes from "./auth-public-routes";
+import googleMerchantRoutes from "./auth-google-merchant-routes";
 import sessionRoutes from "./auth-session-routes";
 import adminPostgresRoutes from "./auth-admin-postgres-routes";
 import adminRoutes from "./auth-admin-routes";
@@ -32,7 +33,7 @@ const router = Router();
 startPostgresSupportRuntimeCutover();
 router.use(enforceAuthOrigin);
 router.use((req: Request, res: Response, next: NextFunction) => {
-  const path = String(req.path || "");
+  const path = String(req.path || "").toLowerCase();
   const adminSurface = path === "/admin" || path.startsWith("/admin/") ||
     path === "/admins" || path.startsWith("/admins/");
   if (adminSurface && adminAuthPostgresCutoverMode() === "incomplete") {
@@ -76,6 +77,8 @@ router.post(
 );
 router.use(ownerRecoveryPostgresRoutes as any);
 router.use(adminDeviceOtpPgRoutes as any);
+// Google routes are mounted but default-off behind independent server release gates.
+router.use(googleMerchantRoutes as any);
 router.use(publicRoutes as any);
 router.use(sessionRoutes as any);
 router.use(adminPostgresRoutes as any);

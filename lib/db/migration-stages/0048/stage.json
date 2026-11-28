@@ -1,0 +1,11 @@
+{
+  "index": 48,
+  "name": "emergency_privacy_authentication_authority",
+  "when": 1791936000020,
+  "mode": "reviewed_sql",
+  "sql_sha256": "c2c72a603315d38a35848365fc8da424be57b2fb6a1438e875a97cb532502b24",
+  "preimage_files": [
+    "emergency.ts",
+    "tenant-security.ts"
+  ]
+}

@@ -3,6 +3,7 @@ import { authPostgresSessionAuthority } from "../services/authPostgresSessionAut
 import { findAdminByIdAuthoritative } from "../services/postgresAdminAccountAuthority";
 import { listAdminDevicesAuthoritative } from "../services/postgresAdminSecurityAuthority";
 import { findMerchantByIdAuthoritative } from "../services/postgresMerchantAccountAuthority";
+import { isGoogleMerchantIdentityLinked } from "../services/googleMerchantIdentityAssurance";
 import {
   clearAuthSessionCookie,
   getAuthContext,
@@ -142,7 +143,9 @@ router.get("/lifecycle", async (req, res) => {
     ...(deviceId ? { deviceId } : {}),
   });
   if (!validated) {
-    clearAuthSessionCookie(res, "merchant");
+    // A stale request may race with a successful session-token rotation.
+    // Do not clear the browser cookie: its newer token may already be valid.
+    // Invalid credentials still fail closed; explicit revocation clears cookies.
     sendAuthError(
       res,
       401,
@@ -155,7 +158,19 @@ router.get("/lifecycle", async (req, res) => {
   const account = await findMerchantByIdAuthoritative(
     validated.session.account_id,
   );
-  if (!account?.merchantProfile || !account.account.otpVerified) {
+  const googleIdentityAllowed = account?.merchantProfile && !account.account.otpVerified
+    ? await isGoogleMerchantIdentityLinked(account.account.id)
+    : false;
+  // Rejected/suspended merchants may inspect only their own lifecycle
+  // decision with a still-valid session. This endpoint grants no commerce
+  // permissions and never restores an invalid/revoked session. Operational
+  // routes continue to reject these merchants via secure auth middleware.
+  const statusOnlyAccount = account?.merchantProfile &&
+    (account.merchantProfile.accountStatus === "rejected" ||
+     account.merchantProfile.accountStatus === "suspended");
+  if (!account?.merchantProfile ||
+      (!account.account.enabled && !statusOnlyAccount) ||
+      (!account.account.otpVerified && !googleIdentityAllowed)) {
     await authPostgresSessionAuthority.revokeSession(
       token,
       "merchant",

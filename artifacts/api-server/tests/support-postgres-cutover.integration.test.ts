@@ -6,6 +6,7 @@ import path from "node:path";
 import test from "node:test";
 import { cleanupResources } from "./helpers/cleanup-resources.mjs";
 import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
+import { createDisposableKnowledgeRuntime } from "./helpers/disposable-knowledge-runtime.mjs";
 
 await assertDisposablePostgres();
 
@@ -75,8 +76,9 @@ test("Support is end-to-end PostgreSQL authoritative with Auth v2 cookies", asyn
     SUPPORT_AUTO_CLOSE_MINUTES: "4320",
   });
 
+  const runtime = await createDisposableKnowledgeRuntime();
+  const pool = runtime.admin;
   const [
-    { pool },
     { hashPassword },
     { authPostgresSessionAuthority },
     { ADMIN_SESSION_COOKIE, MERCHANT_SESSION_COOKIE },
@@ -85,7 +87,6 @@ test("Support is end-to-end PostgreSQL authoritative with Auth v2 cookies", asyn
     { default: cookieParser },
     { default: authSecurityRouter },
   ] = await Promise.all([
-    import("@workspace/db"),
     import("../src/services/authPasswordService.js"),
     import("../src/services/authPostgresSessionAuthority.js"),
     import("../src/middleware/authSession.js"),
@@ -119,7 +120,7 @@ test("Support is end-to-end PostgreSQL authoritative with Auth v2 cookies", asyn
     ["Support runtime", () => stopPostgresSupportRuntimeCutoverForTests()],
     ["HTTP server", () => server ? new Promise<void>((resolve, reject) => server!.close(error => error ? reject(error) : resolve())) : undefined],
     ["fixture rows", () => cleanup()],
-    ["database pool", () => pool.end()],
+    ["database runtime", () => runtime.dispose()],
     ["fixture directory", () => rm(runtimeDirectory, { recursive: true, force: true })],
   ]));
 

@@ -1,6 +1,7 @@
 import { COMMON_UI_COPY } from '@/lib/translations/commonUi';
 import { LOGIN_PAGE_SECURITY_TEXT } from '@/lib/translations/features/pages/LoginPage';
 import React, { useState } from 'react';
+import { GOOGLE_MERCHANT_AUTH_COPY } from '@/lib/translations/features/pages/GoogleMerchantAuth';
 import { useI18n } from '@/lib/i18n';
 import { Link, useLocation } from 'wouter';
 import {
@@ -29,6 +30,7 @@ import {
   validateInternationalPhone,
 } from '@/lib/internationalPhone';
 import { MERCHANT_REGION_BY_COUNTRY } from '@/lib/merchantRegions';
+import { googleMerchantSignupBuildReady, prepareGoogleMerchantLogin } from '@/lib/googleMerchantSignup';
 
 type OwnerDeviceChallenge = {
   phone: string;
@@ -42,7 +44,9 @@ type OwnerDeviceChallenge = {
 function cacheMerchantLocally(merchant: any) {
   if (!merchant?.id) return;
   const merchants = getMerchants();
-  const cleaned = merchants.filter(item => item.id !== merchant.id && item.phone !== merchant.phone);
+  const cleaned = merchants.filter(item =>
+    item.id !== merchant.id && (!merchant.phone || item.phone !== merchant.phone),
+  );
   saveMerchants([merchant, ...cleaned]);
 }
 
@@ -102,6 +106,14 @@ export default function LoginPage() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [googlePrepared, setGooglePrepared] = useState(false);
+  const googleButtonHost = React.useRef<HTMLDivElement>(null);
+  const googleDispose = React.useRef<(() => void) | null>(null);
+  React.useEffect(() => () => {
+    googleDispose.current?.();
+    googleDispose.current = null;
+  }, []);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [policyTab, setPolicyTab] = useState<PolicyTab>('privacy');
@@ -113,6 +125,57 @@ export default function LoginPage() {
   const commonCopy = COMMON_UI_COPY[lang];
   const selectedRegion = MERCHANT_REGION_BY_COUNTRY.get(countryCode)
     || MERCHANT_REGION_BY_COUNTRY.get('IQ');
+
+  const googleCopy = GOOGLE_MERCHANT_AUTH_COPY[lang].login;
+
+  const handleGoogleLogin = async () => {
+    if (!googleMerchantSignupBuildReady() || googleBusy || !googleButtonHost.current) return;
+    googleDispose.current?.();
+    googleDispose.current = null;
+    setGoogleBusy(true);
+    setGooglePrepared(false);
+    try {
+      // /google/begin rejects mixed/old role cookies before issuing the nonce.
+      // An explicit Google login click must end either previous role session
+      // before its challenge, not after the Google callback succeeds.
+      await secureAdminLogout();
+      await secureMerchantLogout();
+      clearMerchantTabSession();
+      const dispose = await prepareGoogleMerchantLogin(
+        googleButtonHost.current,
+        (account) => {
+          googleDispose.current?.();
+          googleDispose.current = null;
+          void (async () => {
+            await secureAdminLogout();
+            clearMerchantTabSession();
+            cacheMerchantLocally(account.merchant);
+            setSession(account.account.id);
+            setGooglePrepared(false);
+            setLocation(account.merchant_profile.accountStatus === 'approved'
+              ? '/dashboard' : '/pending');
+          })().catch(() => {
+            toast.error(googleCopy.error);
+            setGooglePrepared(false);
+          });
+        },
+        () => {
+          googleDispose.current?.();
+          googleDispose.current = null;
+          setGooglePrepared(false);
+          toast.error(googleCopy.error);
+        },
+      );
+      googleDispose.current = dispose;
+      setGooglePrepared(true);
+    } catch {
+      googleDispose.current?.();
+      googleDispose.current = null;
+      toast.error(googleCopy.error);
+    } finally {
+      setGoogleBusy(false);
+    }
+  };
 
   const showAuthError = (result: any) => {
     if (result?.code === 'ADMIN_DEVICE_APPROVAL_REQUIRED') {
@@ -437,6 +500,20 @@ export default function LoginPage() {
               >
                 {loading ? '...' : t.login}
               </Button>
+
+              {googleMerchantSignupBuildReady() && (
+                <section className="space-y-3 border-t pt-5" aria-label={googleCopy.title} data-testid="google-merchant-login">
+                  <p className="text-sm font-semibold">{googleCopy.title}</p>
+                  <Button type="button" variant="outline" className="h-12 w-full rounded-xl"
+                    disabled={loading || googleBusy} onClick={handleGoogleLogin}
+                    data-testid="button-prepare-google-login">
+                    {googleBusy ? '...' : googlePrepared ? googleCopy.retry : googleCopy.start}
+                  </Button>
+                  <div ref={googleButtonHost} className="flex justify-center" data-testid="google-login-identity-button" />
+                  {googlePrepared && <p className="text-xs text-muted-foreground">{googleCopy.choose}</p>}
+                  <p className="text-xs text-muted-foreground">{googleCopy.note}</p>
+                </section>
+              )}
 
               <div className="mt-6 text-center text-sm text-muted-foreground">
                 {t.no_account}{' '}

@@ -1,0 +1,104 @@
+{
+  "policyId": "FAWRI_FIELD002_NOTIFICATION_POLICY_20261105",
+  "version": 1,
+  "approvedBy": "product_owner_in_current_conversation",
+  "approvedOn": "2026-11-05",
+  "appliesTo": "postgresql_required_notification_authority",
+  "R1": {
+    "status": "PRODUCT_APPROVED_WITH_BOUNDED_SOURCE_AND_HTTP_EVIDENCE",
+    "responseFields": "EXPLICIT_REVIEWED_12_TYPE_ALLOWLIST",
+    "unknownTypes": "CANONICAL_METADATA_ONLY_ON_SERVER_SKIP_IN_CLIENT_WHEN_SAFE",
+    "malformedKnownTypes": "CLIENT_FAIL_CLOSED",
+    "unknownWithExtraFields": "CLIENT_FAIL_CLOSED",
+    "historicalStorage": "NO_AUTOMATIC_REWRITE",
+    "breakingConsumerChanges": "REQUIRE_COMPATIBILITY_TESTS_AND_VERSIONED_API_WHEN_NEEDED",
+    "reviewedTypes": [
+      "subscription_expiry_reminder",
+      "subscription_expired",
+      "addon_expiry_reminder",
+      "operational_new_order",
+      "operational_payment_conflict",
+      "operational_knowledge_gap",
+      "operational_customer_message",
+      "inspection_session_request",
+      "support_reply_reminder",
+      "subscription_balance_purchase",
+      "subscription_plan_event",
+      "subscription_emergency_activated"
+    ]
+  },
+  "R2": {
+    "status": "TEST_FIXTURE_DISPOSITION_ACCEPTED_RELEASE_IMPORT_RESTORE_EXCLUSION_PENDING",
+    "historicalRows": "PRESERVE_UNCHANGED_DURING_SOURCE_REVIEW",
+    "missingLinks": "DO_NOT_INVENT_RELATIONS_OR_BACKFILL_WITHOUT_PROVENANCE",
+    "unverifiedWriters": "NO_AUTOMATIC_DELETE_QUARANTINE_OR_REPAIR",
+    "retention": "SEPARATE_LEGAL_BUSINESS_REVIEW_REQUIRED",
+    "historicCountIsSnapshotNotInventoryGuarantee": true,
+    "historicalRowSnapshot": 28,
+    "missingCompleteSourceRefSnapshot": 15,
+    "isolatedTestCleanupOwnerOverride20261106": {
+      "status": "AUTHORIZED_AND_VERIFIED_ON_ONLY_THE_EXISTING_FIELD002_NONDEFAULT_REHEARSAL_CLONE",
+      "supersedesHistoricalPreservationOnlyFor": "br-young-hill-b1x9vhlz",
+      "deletedTestRows": 28,
+      "verifiedRemainingRows": 0,
+      "evidence": "P0-FIELD002-R2-ISOLATED-FIXTURE-DELETION-20261106.md",
+      "originalStagingOrProductionMutationApproved": false,
+      "fullR2Closure": false
+    },
+    "originalStagingTestCleanupOwnerOverride20261106": {
+      "status": "OWNER_AUTHORIZED_ATOMIC_DELETE_AND_INDEPENDENT_ZERO_ROW_VERIFIED",
+      "scope": {
+        "projectId": "round-fire-18493605",
+        "branchId": "br-falling-dust-b1km4gix",
+        "branchName": "staging-runtime",
+        "database": "neondb",
+        "nonPrimary": true,
+        "nonDefault": true
+      },
+      "deletedTestRows": 28,
+      "missingCompleteSourceRefSnapshot": 15,
+      "completeSourceRefSnapshot": 13,
+      "verifiedRemainingRows": 0,
+      "evidence": "P0-FIELD002-R2-ORIGINAL-STAGING-FIXTURE-DELETION-20261106.md",
+      "postCleanupRlsReady": false,
+      "postCleanupRlsProtectedTables": 0,
+      "postCleanupRlsRequiredTables": 8,
+      "supersedesHistoricalPreservationOnlyFor": "br-falling-dust-b1km4gix",
+      "defaultOrProductionMutationApproved": false,
+      "releaseImportRestoreExclusionVerified": false,
+      "fullR2Closure": false
+    }
+  },
+  "R3": {
+    "status": "PRODUCT_SCOPE_APPROVED_RUNTIME_ACTIVATION_NOT_APPROVED",
+    "legacyNotificationTypes": [
+      "subscription_balance_purchase",
+      "subscription_plan_event",
+      "subscription_emergency_activated"
+    ],
+    "legacyPolicy": "READ_COMPATIBILITY_ONLY_NO_NEW_CANONICAL_POSTGRES_NOTIFICATION_WRITER",
+    "markReadPolicy": "EXISTING_AUTHORIZED_MARK_AS_READ_REMAINS_ALLOWED",
+    "legacyJsonPaths": "RETIRED_IN_POSTGRES_REQUIRED_MODE",
+    "newOrderNotification": "DEFERRED_NO_NEW_APPLICATION_CALLER",
+    "newOrderActivationRequirements": [
+      "verified_order_commit_source",
+      "deduplication_and_replay",
+      "two_tenant_isolation",
+      "failure_rollback",
+      "product_explicit_activation"
+    ]
+  },
+  "release": {
+    "field002": "OPEN",
+    "migration0052": "BLOCKED",
+    "p0": "NO_GO",
+    "originalNeonTouched": true,
+    "railwayTouched": false,
+    "deploymentOrMergeApproved": false,
+    "originalNeonTouchScope": "NONDEFAULT_STAGING_RUNTIME_TEST_NOTIFICATIONS_ONLY_OWNER_AUTHORIZED",
+    "productionNeonTouched": false,
+    "preCommercialNotificationFixturesOnOriginalStaging": 0,
+    "notificationImportRestoreExclusion": "OPEN_NOT_PROVEN_FOR_COMMERCIAL_DEPLOYMENT",
+    "hostedStagingRls": "OPEN_ZERO_OF_EIGHT_CRITICAL_TABLES_PROTECTED"
+  }
+}

@@ -190,11 +190,13 @@ export function BottomNav() {
       label: t.subscription,
       icon: CreditCard,
     },
-    {
-      href: "/dashboard/support",
-      label: t.support_nav,
-      icon: Headphones,
-    },
+    ...(import.meta.env.PROD || import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1'
+      ? []
+      : [{
+          href: "/dashboard/support",
+          label: t.support_nav,
+          icon: Headphones,
+        }]),
     {
       href: "/dashboard/settings",
       label: t.settings,

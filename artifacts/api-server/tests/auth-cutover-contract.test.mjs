@@ -159,7 +159,9 @@ test(
   "validated PostgreSQL merchant context reaches business routes without merchants.json authority",
   { skip: !process.env.DATABASE_URL },
   async (t) => {
-    const { pool } = await import("@workspace/db");
+    const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+    const runtime=await createDisposableKnowledgeRuntime();
+    const pool=runtime.admin;
     const proof = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
     const merchantId = `auth-cutover-business-${proof}`;
     const phone = `+9647${String(crypto.randomInt(0, 1_000_000_000)).padStart(9, "0")}`;
@@ -169,7 +171,7 @@ test(
     t.after(async () => cleanupResources([
       ["API child", () => stopTestChild(child)],
       ["fixture identity", () => pool.query("DELETE FROM accounts WHERE id=$1", [merchantId])],
-      ["pool", () => pool.end()],
+      ["runtime", () => runtime.dispose()],
       ["runtime directory", () => runtimeDirectory ? rm(runtimeDirectory, { recursive: true, force: true }) : undefined],
     ]));
     runtimeDirectory = await mkdtemp(

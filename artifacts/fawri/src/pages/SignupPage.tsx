@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { GOOGLE_MERCHANT_AUTH_COPY } from '@/lib/translations/features/pages/GoogleMerchantAuth';
 import { useI18n } from '@/lib/i18n';
 import { Link, useLocation } from 'wouter';
-import { getMerchants, saveMerchants } from '@/lib/store';
+import { clearMerchantTabSession, getMerchants, saveMerchants, setSession } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -25,7 +26,13 @@ import {
   savePendingSignupChallenge,
 } from '@/lib/authOtpChallenge';
 import { toast } from 'sonner';
+import {
+  googleMerchantNewSignupBuildReady,
+  prepareGoogleMerchantSignup,
+  type GoogleSignupProfile,
+} from '@/lib/googleMerchantSignup';
 import { PolicyModal, type PolicyTab } from '@/components/PolicyModal';
+import { secureAdminLogout, secureMerchantLogout } from '@/lib/authClientCutover';
 
 type RequestedPlan = 'silver' | 'gold' | 'diamond';
 
@@ -37,7 +44,9 @@ function getRequestedPlanFromSearch(search: string): RequestedPlan | null {
 function cacheMerchantLocally(merchant: any) {
   if (!merchant?.id) return;
   const merchants = getMerchants();
-  const cleaned = merchants.filter(item => item.id !== merchant.id && item.phone !== merchant.phone);
+  const cleaned = merchants.filter(item =>
+    item.id !== merchant.id && (!merchant.phone || item.phone !== merchant.phone),
+  );
   saveMerchants([merchant, ...cleaned]);
 }
 
@@ -63,6 +72,14 @@ export default function SignupPage() {
   const requestedPlanPrefix =
     lang === 'ar' ? 'الخطة المطلوبة' : lang === 'ku' ? 'پلانی داواکراو' : 'Requested plan';
   const [loading, setLoading] = useState(false);
+  const [googlePreparing, setGooglePreparing] = useState(false);
+  const [googlePrepared, setGooglePrepared] = useState(false);
+  const googleButtonHost = React.useRef<HTMLDivElement>(null);
+  const googleDispose = React.useRef<(() => void) | null>(null);
+  React.useEffect(() => () => {
+    googleDispose.current?.();
+    googleDispose.current = null;
+  }, []);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [policyTab, setPolicyTab] = useState<PolicyTab>('privacy');
 
@@ -174,6 +191,79 @@ export default function SignupPage() {
     !!formData.confirm_password &&
     formData.agree_terms &&
     formData.confirm_legal;
+
+  // Google OIDC verifies identity only. Phone/password aren't prerequisites
+  // for this separate signup path, but regional details and legal consent are.
+  const googleProfileReady =
+    !!formData.owner_name.trim() && !!formData.store_name.trim() &&
+    !!formData.country_code && !!formData.currency_code &&
+    !!formData.activity_type && (!isOther || !!formData.custom_activity.trim()) &&
+    formData.agree_terms && formData.confirm_legal;
+  const googleCopy = GOOGLE_MERCHANT_AUTH_COPY[lang].signup;
+
+  const handleGoogleSignup = async () => {
+    if (!googleMerchantNewSignupBuildReady() || !googleProfileReady ||
+        googlePreparing || !googleButtonHost.current) return;
+
+    googleDispose.current?.();
+    googleDispose.current = null;
+    setGooglePrepared(false);
+    setGooglePreparing(true);
+    try {
+      const activity = isOther ? formData.custom_activity.trim() : formData.activity_type;
+      const timezone = (() => {
+        try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; }
+        catch { return 'UTC'; }
+      })();
+      const profile: GoogleSignupProfile = {
+        owner_name: formData.owner_name.trim(),
+        store_name: formData.store_name.trim(),
+        activity_type: activity,
+        country_code: formData.country_code,
+        currency_code: formData.currency_code,
+        timezone,
+        language: lang,
+        // The backend independently enforces both requirements for new users.
+        agree_terms: true,
+        confirm_legal: true,
+        ...(requestedPlan ? { requested_plan: requestedPlan } : {}),
+      };
+      // /google/begin rejects both admin and prior merchant cookies. Switching
+      // identities must revoke them before requesting a new OIDC challenge.
+      await secureAdminLogout();
+      await secureMerchantLogout();
+      clearMerchantTabSession();
+      const dispose = await prepareGoogleMerchantSignup(
+        googleButtonHost.current,
+        profile,
+        (account) => {
+          googleDispose.current?.();
+          googleDispose.current = null;
+          clearPendingSignupChallenge();
+          clearMerchantTabSession();
+          cacheMerchantLocally(account.merchant);
+          setSession(account.account.id);
+          setGooglePrepared(false);
+          setLocation(account.merchant_profile.accountStatus === 'approved'
+            ? '/dashboard' : '/pending');
+        },
+        () => {
+          googleDispose.current?.();
+          googleDispose.current = null;
+          setGooglePrepared(false);
+          toast.error(googleCopy.error);
+        },
+      );
+      googleDispose.current = dispose;
+      setGooglePrepared(true);
+    } catch {
+      googleDispose.current?.();
+      googleDispose.current = null;
+      toast.error(googleCopy.error);
+    } finally {
+      setGooglePreparing(false);
+    }
+  };
 
   const getSignupServerErrorMessage = (serverError?: string) => {
     const message = String(serverError || "");
@@ -532,6 +622,25 @@ export default function SignupPage() {
           >
             {loading ? '...' : t.create_account}
           </Button>
+
+          {googleMerchantNewSignupBuildReady() && (
+            <section className="mt-6 space-y-3 border-t pt-5" aria-label={googleCopy.title} data-testid="google-merchant-signup">
+              <p className="text-sm font-semibold">{googleCopy.title}</p>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 w-full rounded-xl"
+                disabled={loading || googlePreparing || !googleProfileReady}
+                onClick={handleGoogleSignup}
+                data-testid="button-prepare-google-signup"
+              >
+                {googlePreparing ? '...' : googlePrepared ? googleCopy.restart : googleCopy.start}
+              </Button>
+              <div ref={googleButtonHost} className="flex min-h-0 justify-center" data-testid="google-identity-button" />
+              {googlePrepared && <p className="text-xs text-muted-foreground">{googleCopy.choose}</p>}
+              <p className="text-xs text-muted-foreground">{googleCopy.pending}</p>
+            </section>
+          )}
 
           <div className="text-center text-sm text-muted-foreground pt-4">
             {t.already_have_account}{' '}

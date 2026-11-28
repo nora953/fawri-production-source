@@ -1,0 +1,91 @@
+name: V1 production CURRENT_PREGO+POS-OFF pre-Google encrypted backup (OWNER ONESHOT)
+# One-shot owner authorization: source-only guarded export of exact current commercial pre-Google DB, no automatic live read.
+# 2026-11-22 requested one-shot run: existing owner variable + exact commit gate remain mandatory; no bypass.
+# Owner confirmed enabling Actions variable; one bounded retry without changing any security condition.
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/v1-production-current-prego-rls-backup.yml"
+      - "scripts/lib/v1-production-current-prego-rls-backup-safety.mjs"
+      - "scripts/tests/v1-production-current-prego-rls-backup-safety.test.mjs"
+      - "lib/db/scripts/v1-export-production-current-prego-rls-backup.mjs"
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - ".github/workflows/v1-production-current-prego-rls-backup.yml"
+      - "scripts/lib/v1-production-current-prego-rls-backup-safety.mjs"
+      - "scripts/tests/v1-production-current-prego-rls-backup-safety.test.mjs"
+      - "lib/db/scripts/v1-export-production-current-prego-rls-backup.mjs"
+permissions:
+  contents: read
+concurrency:
+  group: fawri-v1-current-prego-rls-backup-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  offline-authorization-and-exact-catalog-tests:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Validate source without any secrets or production DB
+        run: |
+          node --check lib/db/scripts/v1-export-production-current-prego-rls-backup.mjs
+          node --test scripts/tests/v1-production-current-prego-rls-backup-safety.test.mjs
+  one-shot-owner-authorized-encrypted-production-backup:
+    needs: offline-authorization-and-exact-catalog-tests
+    if: >-
+      github.event_name == 'push'
+      && github.repository == 'nora953/fawri-production-source'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+      && github.actor == 'nora953'
+      && vars.FAWRI_V1_CURRENT_PREGO_BACKUP_ENABLED == '1'
+      && github.event.head_commit.message == 'FAWRI_V1_OWNER_AUTHORIZED_CURRENT_PREGO_ENCRYPTED_BACKUP'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      FAWRI_V1_CURRENT_PREGO_BACKUP_COMMIT: ${{ github.event.head_commit.message }}
+      FAWRI_V1_CURRENT_PREGO_BACKUP_ENABLED: ${{ vars.FAWRI_V1_CURRENT_PREGO_BACKUP_ENABLED }}
+      FAWRI_V1_G2B_ACCEPTANCE: G2B-20261116-SCHEMA54-43852308674
+      FAWRI_V1_G2C_ACCEPTANCE: G2C-20261116-THREE-LOGIN-43917539519
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - run: corepack enable && pnpm install --frozen-lockfile --ignore-scripts
+      - name: Read-only PG18 export, encrypted, isolated restore (no production DDL)
+        working-directory: lib/db
+        env:
+          FAWRI_V1_PRODUCTION_PREWRITE_DUMP_URL: ${{ secrets.FAWRI_V1_PRODUCTION_PREWRITE_DUMP_URL }}
+          FAWRI_V1_PRODUCTION_PREWRITE_PASSPHRASE: ${{ secrets.FAWRI_V1_PRODUCTION_PREWRITE_PASSPHRASE }}
+        run: node scripts/v1-export-production-current-prego-rls-backup.mjs
+      - name: Encrypted handoff only, 2-day expiry; independent offsite needed
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: fawri-v1-current-prego-rls-pre-google-encrypted
+          path: |
+            lib/db/v1-production-current-prego-rls-export-out/*.enc
+            lib/db/v1-production-current-prego-rls-export-out/manifest.json
+          if-no-files-found: error
+          retention-days: 2
